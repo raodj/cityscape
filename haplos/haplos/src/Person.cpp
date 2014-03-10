@@ -1,0 +1,74 @@
+/*
+ * Person.cpp
+ *
+ *  Created on: Feb 2, 2013
+ *      Author: schmidee
+ */
+
+#include "Person.h"
+
+using namespace std;
+
+int age=0;
+char gender=' ';
+
+Person::Person(){
+	age=-1;
+	gender='n';
+	location=new int[2];
+	location[0]=-1;
+	location[1]=-1;
+}
+Person::Person(int a, char g, int x, int y) {
+	// TODO Auto-generated constructor stub
+	age=a;
+	gender=g;
+	location=new int[2];
+	location[0]=x;
+	location[1]=y;
+}
+
+void Person::setLocation(int x, int y){
+
+	location[0]=x;
+	location[1]=y;
+}
+Person::Person(const Person &p){
+	age=0;
+	gender=' ';
+	age=p.age;
+	gender=p.gender;
+	location=p.location;
+}
+
+Person &Person::operator = (const Person &p){
+	if(this!=&p){
+		age=0;
+		gender=' ';
+		age=p.age;
+		gender=p.gender;
+	}
+	return *this;
+}
+
+char Person::getGender(){
+	return gender;
+}
+
+void Person::setGender(char g){
+	gender=g;
+}
+
+int Person::getAge(){
+	return age;
+}
+
+int* Person::getLocation(){
+	return location;
+}
+
+Person::~Person() {
+	// TODO Auto-generated destructor stub
+}
+
+
