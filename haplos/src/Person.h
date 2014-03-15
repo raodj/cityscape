@@ -25,7 +25,7 @@ public:
 private:
 	int age;
 	int gender;
-	int* location;
+	int location[2];
 };
 
 #endif /* PERSON_H_ */

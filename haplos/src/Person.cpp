@@ -15,15 +15,14 @@ char gender=' ';
 Person::Person(){
 	age=-1;
 	gender='n';
-	location=new int[2];
 	location[0]=-1;
 	location[1]=-1;
 }
+
 Person::Person(int a, char g, int x, int y) {
 	// TODO Auto-generated constructor stub
 	age=a;
 	gender=g;
-	location=new int[2];
 	location[0]=x;
 	location[1]=y;
 }
@@ -38,7 +37,8 @@ Person::Person(const Person &p){
 	gender=' ';
 	age=p.age;
 	gender=p.gender;
-	location=p.location;
+	location[0]=p.location[0];
+	location[1]=p.location[1];
 }
 
 Person &Person::operator = (const Person &p){
