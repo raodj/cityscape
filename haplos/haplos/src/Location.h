@@ -15,7 +15,7 @@ public:
 	Location();
 	Location(int x, int y, float m);
 	void addPerson();
-	int getCurrentPopulation();
+	int getCurrentPopulation() const;
 	int* getCoordinates();
 	Location &operator=(const Location &p);
 	float getMaxPopulation();

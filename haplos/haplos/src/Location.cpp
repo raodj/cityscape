@@ -26,7 +26,7 @@ Location::Location(int x, int y, float m) {
 	coordinates[1]=y;
 }
 
-int Location::getCurrentPopulation(){
+int Location::getCurrentPopulation() const {
 	return numberOfPeople;
 }
 

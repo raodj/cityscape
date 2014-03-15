@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <vector>
 #include <iostream>
+
+#ifdef HAVE_MAGICK
 #include <Magick++.h>
 
 using namespace Magick;
@@ -155,3 +157,5 @@ double* ImageGen::hsv2rgb(double h, double s, double v)
 ImageGen::~ImageGen() {
 	// TODO Auto-generated destructor stub
 }
+
+#endif

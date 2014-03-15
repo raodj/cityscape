@@ -7,13 +7,13 @@
 
 #include "SedacReader.h"
 #include "Location.h"
-#include<iostream>
+#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <string>
 
 using namespace std;
-
 
 SedacReader::SedacReader() {
 	// TODO Auto-generated constructor stub
@@ -39,7 +39,7 @@ vector<vector<Location> > SedacReader::readFile(string fileName){
 		//Get Number of Rows
 		getline(infile,line);
 		unsigned pos = line.find_last_of(" ");
-		cols=std::atoi(line.substr(pos+1).c_str());
+		cols = std::stoi(line.substr(pos+1).c_str());
 		cols=2750; 	//Cut out Random Few islands off the cost of alaska
 		//Get Number of cols
 		getline(infile,line);
