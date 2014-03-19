@@ -57,7 +57,7 @@ int main() {
     cout << "-----HAPLOS-----" << endl;
     SedacReader *sr = new SedacReader();
     densityData=sr->readFile(sedacDataFile);
-    Population *pop = new Population(numberOfPeople);
+    Population *pop =  new Population(numberOfPeople);
     int x=0;
     int y=0;
     int notAssigned=0;
@@ -97,8 +97,12 @@ int main() {
     XFigImageGenerator xfig;
     xfig.createImage(outputFolder + "haplos.fig", densityData,
 		     densityData.size(), densityData[0].size());
-	
     pop->displayStatistics();
+
+    //Clean Up
+    delete sr;
+    delete pop;
+
     return 0;
 }
 

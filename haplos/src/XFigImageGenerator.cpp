@@ -41,52 +41,92 @@
 #include "XFigHelper.h"
 
 #define MIN_COLOR_CODE 33
-
-void
-XFigImageGenerator::createImage(const std::string& outFileName,
-				const std::vector<std::vector<Location>>& data,
-				const int rows, const int cols)
-    throw(std::exception) {
-    // Create a XFigHelper to help generating an image.
-    XFigHelper xfig;
-    xfig.setOutput(outFileName); // Setup output file.
-    std::cout << std::string(70, '-')
-	      << "\nGenerating XFig image to: " << outFileName << std::endl;
-    // Generate well defined colors for plotting points
-    const int maxColors = generateColorScale(xfig);
-    const int radius    = 5, scale = 10;
-    // Iterate over the points and generate circles...
-    for(size_t r = 0; (r < data.size()); r++) {
-	for(size_t c = 0; (c < data.size()); c++) {
-	    // Compute color code for 
-	    if (data[r][c].getCurrentPopulation() <= 0) {
-		int colorCode = MIN_COLOR_CODE +
-		    data[r][c].getCurrentPopulation();
-		colorCode     = std::min(maxColors, colorCode);
-		xfig.drawOval(c * scale, r * scale,
-			      radius, radius, colorCode, colorCode);
-	    }
+int redColor=33;
+int blueColor=34;
+int greenColor=35;
+int yellowColor=36;
+int orangeColor=37;
+void XFigImageGenerator::createImage(const std::string& outFileName,
+		const std::vector<std::vector<Location>>& data, const int rows,
+		const int cols) throw (std::exception) {
+	// Create a XFigHelper to help generating an image.
+	XFigHelper xfig;
+	xfig.setOutput(outFileName); // Setup output file.
+	std::cout << std::string(70, '-') << "\nGenerating XFig image to: "
+			<< outFileName << std::endl;
+	// Generate well defined colors for plotting points
+	const int maxColors = generateColorScale(xfig);
+	const int radius = 4, scale = 8;
+	// Iterate over the points and generate circles...
+	for (size_t r = 0; (r < rows); r++) {
+		for (size_t c = 0; (c < cols); c++) {
+			// Compute color code for
+			if (data[r][c].getCurrentPopulation() <= 0) {
+				if(data[r][c].getMaxPopulation()>0){
+					//Land but Unpopulated
+					int colorCode = MIN_COLOR_CODE
+							+ data[r][c].getCurrentPopulation();
+					colorCode = std::min(maxColors, colorCode);
+					xfig.drawOval(c * scale, r * scale, radius, radius, MIN_COLOR_CODE,
+							MIN_COLOR_CODE);
+				}
+				else{
+					//Not Land
+					xfig.drawOval(c * scale, r * scale, radius, radius, maxColors,
+							maxColors);
+				}
+			}
+			else{
+				//Populated
+				int colorCode=MIN_COLOR_CODE;
+				if((data[r][c].getCurrentPopulation()/500.0)<0.25){
+					colorCode=blueColor;
+				}
+				if((data[r][c].getCurrentPopulation()/500.0)<1.0&&(data[r][c].getCurrentPopulation()/500.0)>=0.25){
+					colorCode=greenColor;
+				}
+				if((data[r][c].getCurrentPopulation()/500.0)<10.0&&(data[r][c].getCurrentPopulation()/500.0)>=1.0){
+					colorCode=yellowColor;
+				}
+				if((data[r][c].getCurrentPopulation()/500.0)<20.0&&(data[r][c].getCurrentPopulation()/500.0)>=10.0){
+					colorCode=orangeColor;
+				}
+				if((data[r][c].getCurrentPopulation()/500.0)>=20.0){
+					colorCode=redColor;
+				}
+				xfig.drawOval(c * scale, r * scale, radius, radius, colorCode,
+						colorCode);
+			}
+		}
 	}
-    }
-    std::cout << "Done generating XFig image.\n"
-	      << "You may view the file using xfig or generate other image "
-	      << "formats\n(PNG, JPG, GIF, PDF, SVG etc.) using fig2dev.\n"
-	      << std::string(70, '-') << std::endl;
+	std::cout << "Done generating XFig image.\n"
+			<< "You may view the file using xfig or generate other image "
+			<< "formats\n(PNG, JPG, GIF, PDF, SVG etc.) using fig2dev.\n"
+			<< std::string(70, '-') << std::endl;
 }
 
-int
-XFigImageGenerator::generateColorScale(XFigHelper& xfig) {
-    // Dump custom color codes for further use.
-    int colorCode = MIN_COLOR_CODE;
-    for(int red = 0; (red < 256); red += 85) {
-        for(int blue = 0; (blue < 256); blue += 85) {
-            for(int green = 0; (green < 256); green += 85) {
-		xfig.addColor(colorCode, red, green, blue);
-                colorCode++;
-            }
-        }
-    }
-    return colorCode;
+int XFigImageGenerator::generateColorScale(XFigHelper& xfig) {
+	// Dump custom color codes for further use.
+	int colorCode = MIN_COLOR_CODE;
+	xfig.addColor(colorCode, 0, 0, 0);
+	colorCode++;
+	redColor=colorCode;
+	xfig.addColor(colorCode, 255, 0, 0);
+	colorCode++;
+	blueColor=colorCode;
+	xfig.addColor(colorCode, 0, 0, 255);
+	colorCode++;
+	greenColor=colorCode;
+	xfig.addColor(colorCode, 0, 255, 0);
+	colorCode++;
+	yellowColor=colorCode;
+	xfig.addColor(colorCode, 255, 255, 0);
+	colorCode++;
+	orangeColor=colorCode;
+	xfig.addColor(colorCode, 255, 150, 0);
+	colorCode++;
+	xfig.addColor(colorCode, 255, 255, 255);
+	return colorCode;
 }
 
 #endif

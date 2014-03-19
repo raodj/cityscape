@@ -13,7 +13,6 @@ using namespace std;
 Location::Location(){
 	numberOfPeople=0;
 	maxPopulation=0;
-	coordinates= new int[2];
 	coordinates[0]=-1;
 	coordinates[1]=-1;
 }
@@ -21,7 +20,6 @@ Location::Location(int x, int y, float m) {
 	// TODO Auto-generated constructor stub
 	numberOfPeople=0;
 	maxPopulation=m;
-	coordinates= new int[2];
 	coordinates[0]=x;
 	coordinates[1]=y;
 }
@@ -38,7 +36,7 @@ bool Location::isFull(){
 		return false;
 	}
 }
-float Location::getMaxPopulation(){
+float Location::getMaxPopulation() const{
 	return maxPopulation;
 }
 int* Location::getCoordinates(){
@@ -56,7 +54,8 @@ Location &Location::operator = (const Location &p){
 	if(this!=&p){
 		numberOfPeople=p.numberOfPeople;
 		maxPopulation=p.maxPopulation;
-		int *coordinates=p.coordinates;
+		coordinates[0]=p.coordinates[0];
+		coordinates[1]=p.coordinates[1];
 	}
 	return *this;
 }
