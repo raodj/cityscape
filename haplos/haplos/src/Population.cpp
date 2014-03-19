@@ -30,8 +30,8 @@ char Population::determineGender(){
 	double maleProb=0.488203012;
 	//double femaleProb=0.511796988;
 	//Generate random number
-	//double x = 1.0*rand()/RAND_MAX;
-	double x =1;
+	double x = 1.0*rand()/RAND_MAX;
+	//double x =1;
 	if(x<maleProb){
 		return 'm';
 	}
@@ -132,5 +132,11 @@ void Population::displayStatistics(){
 }
 Population::~Population() {
 	// TODO Auto-generated destructor stub
+
+	/*for(int i = 0; i < size; i++)
+	{
+	        delete population[i];
+	}*/
+	delete[] population;
 }
 

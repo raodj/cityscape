@@ -8,7 +8,6 @@
 #ifndef LOCATION_H_
 #define LOCATION_H_
 
-using namespace std;
 
 class Location {
 public:
@@ -18,13 +17,13 @@ public:
 	int getCurrentPopulation() const;
 	int* getCoordinates();
 	Location &operator=(const Location &p);
-	float getMaxPopulation();
+	float getMaxPopulation() const;
 	bool isFull();
 	void removePerson();
 	virtual ~Location();
 private:
 	int numberOfPeople;
-	int* coordinates;
+	int coordinates [2];
 	float maxPopulation;
 
 };

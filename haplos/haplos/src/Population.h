@@ -9,7 +9,7 @@
 #define POPULATION_H_
 #include "Person.h"
 
-using namespace std;
+//using namespace std;
 
 class Population {
 public:

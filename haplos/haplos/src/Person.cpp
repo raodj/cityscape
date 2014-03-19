@@ -7,7 +7,6 @@
 
 #include "Person.h"
 
-using namespace std;
 
 int age=0;
 char gender=' ';

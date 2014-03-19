@@ -56,11 +56,11 @@ vector<vector<Location> > SedacReader::readFile(string fileName){
 		pos = line.find_last_of(" ");
 		int noDataValue=std::atoi(line.substr(pos+1).c_str());
 		cout<<"Starting Processing"<<endl;
-		//densityData = new double*[rows];
 		densityData.resize(rows);
 		for(int i =0; i < rows; i++){
 			densityData[i].resize(cols);
 		}
+
 		cout<<"Data Allocated"<<endl;
 		int currentRow=0;
 		bool actualData=false;
@@ -71,7 +71,6 @@ vector<vector<Location> > SedacReader::readFile(string fileName){
 		{
 			//Process Line
 			getline(infile,line);
-			//cout<<line<<endl;
 		    string buf; // Have a buffer string
 		    stringstream ss(line); // Insert the string into a stream
 
@@ -80,14 +79,11 @@ vector<vector<Location> > SedacReader::readFile(string fileName){
 		    while (ss >> buf){
 		        tokens.push_back(buf);
 		    }
-		   // cout<<tokens.size()<<endl;
 		    vector<string>::iterator i;
 		    int currentColumn=0;
 		    for (vector<string>::iterator i = tokens.begin();i != tokens.end();++i){
 		    	if(currentColumn<cols){
-		    		//totalSpace+=(std::atof((*i).c_str()))*1000;
 					densityData[currentRow][currentColumn]= Location(currentRow, currentColumn, (std::atof((*i).c_str())));
-					//densityData[currentRow][currentColumn].operator =(new Location(currentRow, currentColumn, (std::atof((*i).c_str())*1000)));
 		    		currentColumn++;
 		    	}else{
 		    		break;
