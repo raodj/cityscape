@@ -48,16 +48,18 @@
 
 using namespace std;
 
-string sedacDataFile="data/usap00ag.asc";
-string outputFolder="output/";
+// The following two lines should be command-line arguments processed
+// using the ArgParser in MUSE.
+string sedacDataFile = "data/usap00ag.asc";
+string outputFolder  = "output/";
 
 int main() {
-    vector<vector<Location> > densityData;
-    int const numberOfPeople=283230000; //281424000;
+    vector<vector<Location>> densityData;
+    int const numberOfPeople = 283230000; //281424000;
     cout << "-----HAPLOS-----" << endl;
-    SedacReader *sr = new SedacReader();
-    densityData=sr->readFile(sedacDataFile);
-    Population *pop =  new Population(numberOfPeople);
+    SedacReader sr;
+    densityData = sr.readFile(sedacDataFile);
+    Population pop(numberOfPeople);
     int x=0;
     int y=0;
     int notAssigned=0;
@@ -81,7 +83,7 @@ int main() {
 	if(y>=densityData[0].size()){
 	    break;
 	}
-	pop->setLocationOfPerson(x, y, i);
+	pop.setLocationOfPerson(x, y, i);
 	densityData[x][y].addPerson();
     }
     cout<<"Not Assigned: "<<notAssigned<<endl;
@@ -97,12 +99,7 @@ int main() {
     XFigImageGenerator xfig;
     xfig.createImage(outputFolder + "haplos.fig", densityData,
 		     densityData.size(), densityData[0].size());
-    pop->displayStatistics();
-
-    //Clean Up
-    delete sr;
-    delete pop;
-
+    pop.displayStatistics();
     return 0;
 }
 
