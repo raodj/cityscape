@@ -1,0 +1,14 @@
+#Configuration File for USA Data
+#####Population Data#####
+#Density
+Density_File:	examples/data/SEDAC_USA_2000.asc
+Total_Population:	283230000
+Max_Population_In_Area:	500
+#Demographics
+Male_Probablity:	0.488203012
+Age_20-24_Probablity:	0.066147942
+Age_25-34_Probablity:	0.188365123
+Age_35-49_Probablity:	0.390763094
+Age_50-64_Probablity:	0.593538823
+Age_65-Older_Probablity: 	0.734137309
+

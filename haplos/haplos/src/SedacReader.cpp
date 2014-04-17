@@ -1,9 +1,37 @@
-/*
- * sedacReader.cpp
- *
- *  Created on: Mar 2, 2014
- *      Author: schmidee
- */
+//------------------------------------------------------------
+//
+// This file is part of HAPLOS <http://pc2lab.cec.miamiOH.edu/>
+//
+// Human  Population  and   Location  Simulator (HAPLOS)  is
+// free software: you can  redistribute it and/or  modify it
+// under the terms of the GNU  General Public License  (GPL)
+// as published  by  the   Free  Software Foundation, either
+// version 3 (GPL v3), or  (at your option) a later version.
+//
+// HAPLOS is distributed in the hope that it will  be useful,
+// but   WITHOUT  ANY  WARRANTY;  without  even  the IMPLIED
+// WARRANTY of  MERCHANTABILITY  or FITNESS FOR A PARTICULAR
+// PURPOSE.
+//
+// Miami University and the HAPLOS  development team make no
+// representations  or  warranties  about the suitability of
+// the software,  either  express  or implied, including but
+// not limited to the implied warranties of merchantability,
+// fitness  for a  particular  purpose, or non-infringement.
+// Miami  University and  its affiliates shall not be liable
+// for any damages  suffered by the  licensee as a result of
+// using, modifying,  or distributing  this software  or its
+// derivatives.
+//
+// By using or  copying  this  Software,  Licensee  agree to
+// abide  by the intellectual  property laws,  and all other
+// applicable  laws of  the U.S.,  and the terms of the  GNU
+// General  Public  License  (version 3).  You  should  have
+// received a  copy of the  GNU General Public License along
+// with HAPLOS.  If not, you may  download copies  of GPL V3
+// from <http://www.gnu.org/licenses/>.
+//
+//-----------------------------------------------------------
 
 #include "SedacReader.h"
 #include "Location.h"
@@ -32,15 +60,16 @@ vector<vector<Location> > SedacReader::readFile(string fileName){
 	    string line;
 		ifstream infile;
 		infile.open (fileName.c_str());
-		if(infile.fail()){
-			cout<<"Unable to Open SEDAC Data File."<<endl;
+    
+		if (infile.fail()) {
+            std::cout << "Unable to Open SEDAC Data File." << std::endl;
 			return densityData;
 		}
 		//Get Number of Rows
 		getline(infile,line);
 		unsigned pos = line.find_last_of(" ");
 		cols = std::stoi(line.substr(pos+1).c_str());
-		cols=2750; 	//Cut out Random Few islands off the cost of alaska
+		//cols=2750; 	//Cut out Random Few islands off the coast of alaska
 		//Get Number of cols
 		getline(infile,line);
 		pos = line.find_last_of(" ");
@@ -58,41 +87,44 @@ vector<vector<Location> > SedacReader::readFile(string fileName){
 		cout<<"Starting Processing"<<endl;
 		densityData.resize(rows);
 		for(int i =0; i < rows; i++){
-			densityData[i].resize(cols);
+			densityData.at(i).resize(cols);
 		}
 
 		cout<<"Data Allocated"<<endl;
 		int currentRow=0;
 		bool actualData=false;
 		float maxVal=0;
+    
 		//Get all the Data
-		//double totalSpace=0;
-		while(!infile.eof()) // To get you all the lines.
-		{
+        densityData.resize(rows);
+        for(int i = 0; i<rows; i++){
+            densityData.at(i).resize(cols);
+        }
+		while (!infile.eof()) { // To get you all the lines.
 			//Process Line
 			getline(infile,line);
 		    string buf; // Have a buffer string
 		    stringstream ss(line); // Insert the string into a stream
 
-		    vector<string> tokens; // Create vector to hold our words
+		    vector<std::string> tokens; // Create vector to hold our words
 
-		    while (ss >> buf){
+		    while (ss >> buf) {
 		        tokens.push_back(buf);
 		    }
-		    vector<string>::iterator i;
+		    vector<std::string>::iterator i;
 		    int currentColumn=0;
-		    for (vector<string>::iterator i = tokens.begin();i != tokens.end();++i){
-		    	if(currentColumn<cols){
-					densityData[currentRow][currentColumn]= Location(currentRow, currentColumn, (std::atof((*i).c_str())));
+		    for (vector<std::string>::iterator i = tokens.begin();i != tokens.end();++i) {
+		    	if (currentColumn<cols) {
+					densityData.at(currentRow).at(currentColumn)= Location(currentRow, currentColumn, (std::atof((*i).c_str())));
 		    		currentColumn++;
-		    	}else{
+		    	}
+                else {
 		    		break;
 		    	}
 		    }
 			currentRow++;
 		}
-	//	cout<<"Total Space: "<<totalSpace<<endl;
-		cout<<"Done reading Data"<<endl;
+        std::cout << "Done reading Data" << std::endl;
 		infile.close();
 		return densityData;
 
