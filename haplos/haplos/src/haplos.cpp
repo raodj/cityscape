@@ -49,16 +49,10 @@
 
 using namespace std;
 
-string const sedacDataFile="examples/data/MicroWorld.asc";
-//string const sedacDataFile = "examples/data/SEDAC_USA_2000.asc";
 string const outputFolder="output/";
 string const configFile="examples/config/MicroworldData.hapl";
 int main() {
     vector< vector < Location > > densityData;
-    //Real Data
-    //int const numberOfPeople=283230000; //281424000;
-    //Micro World Data
-    int const numberOfPeople= 104;
     std::cout << "-----HAPLOS-----" << std::endl;
     ConfigFile configuration= ConfigFile(configFile);
     SedacReader sr = SedacReader();
@@ -75,7 +69,7 @@ int main() {
     int notAssigned=0;
     std::cout << "Assigning Locations to Population" << std::endl;
     std::cout << densityData.size() << " " <<densityData[0].size() <<std::endl;
-    for (int i =0; i<numberOfPeople;i++) {
+    for (int i =0; i<configuration.getVariable("Total_Population");i++) {
         while (densityData.at(x).at(y).isFull()) {
             x++;
             if(x>=densityData.size()&&y<densityData[0].size()){
