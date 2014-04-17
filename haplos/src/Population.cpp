@@ -1,74 +1,107 @@
-/*
- * Population.cpp
- *
- *  Created on: Mar 4, 2014
- *      Author: schmidee
- */
+//------------------------------------------------------------
+//
+// This file is part of HAPLOS <http://pc2lab.cec.miamiOH.edu/>
+//
+// Human  Population  and   Location  Simulator (HAPLOS)  is
+// free software: you can  redistribute it and/or  modify it
+// under the terms of the GNU  General Public License  (GPL)
+// as published  by  the   Free  Software Foundation, either
+// version 3 (GPL v3), or  (at your option) a later version.
+//
+// HAPLOS is distributed in the hope that it will  be useful,
+// but   WITHOUT  ANY  WARRANTY;  without  even  the IMPLIED
+// WARRANTY of  MERCHANTABILITY  or FITNESS FOR A PARTICULAR
+// PURPOSE.
+//
+// Miami University and the HAPLOS  development team make no
+// representations  or  warranties  about the suitability of
+// the software,  either  express  or implied, including but
+// not limited to the implied warranties of merchantability,
+// fitness  for a  particular  purpose, or non-infringement.
+// Miami  University and  its affiliates shall not be liable
+// for any damages  suffered by the  licensee as a result of
+// using, modifying,  or distributing  this software  or its
+// derivatives.
+//
+// By using or  copying  this  Software,  Licensee  agree to
+// abide  by the intellectual  property laws,  and all other
+// applicable  laws of  the U.S.,  and the terms of the  GNU
+// General  Public  License  (version 3).  You  should  have
+// received a  copy of the  GNU General Public License along
+// with HAPLOS.  If not, you may  download copies  of GPL V3
+// from <http://www.gnu.org/licenses/>.
+//
+//-----------------------------------------------------------
 
 #include "Population.h"
 #include <cstdlib>
 #include <iostream>
 #include "Person.h"
+#include <vector>
 
 using namespace std;
 
-Population::Population(int s) {
+Population::Population(int s, double a2024Prob, double a2534Prob, double a3549Prob, double a5064Prob, double a65OlderProb, double mProb) {
 	// TODO Auto-generated constructor stub
-	population=new Person[s];
 	size=s;
-	cout<<"Creating Population of size: "<<s<<endl;
-	for(int i=0;i<s;i++){
-		population[i]= Person(determineAge(), determineGender(), -1, -1);
+    age2024Prob=a2024Prob;
+    age2534Prob=a2534Prob;
+    age3549Prob=a3549Prob;
+    age5064Prob=a5064Prob;
+    age65OlderProb=a65OlderProb;
+    maleProb=mProb;
+    
+    std::cout << "Creating Population of size: " << s << std::endl;
+	for (int i=0;i<s;i++) {
+		population.push_back(Person(determineAge(), determineGender(), -1, -1));
 	}
 }
 
 void Population::setLocationOfPerson(int x, int y, int person){
-	population[person].setLocation(x, y);
+	population.at(person).setLocation(x, y);
 }
 
 char Population::determineGender(){
-	double maleProb=0.488203012;
 	//double femaleProb=0.511796988;
 	//Generate random number
 	double x = 1.0*rand()/RAND_MAX;
 	//double x =1;
-	if(x<maleProb){
+	if (x<maleProb) {
 		return 'm';
 	}
-	else{
+	else {
 		return 'f';
 	}
 
 }
 int Population::determineAge(){
-	double age2024Prob=0.066147942;
-	double age2534Prob=0.188365123;
-	double age3549Prob=0.390763094;
-	double age5064Prob=0.593538823;
-	double age65OlderProb=0.734137309;
+
 	double x = 1.0*rand()/RAND_MAX;
-	if(x<age2024Prob){
+    
+	if (x<age2024Prob) {
 		//20-24
 		return 1;
 	}else{
-		if(x<age2534Prob){
+		if (x<age2534Prob) {
 			//25-34
 			return 2;
-		}else{
-			if(x<age3549Prob){
+		}
+        else {
+			if (x<age3549Prob) {
 				//35-49
 				return 3;
-			}else{
-				if(x<age5064Prob){
+			}
+            else {
+				if (x<age5064Prob) {
 					//50-64
 					return 4;
 				}
-				else{
-					if(x<age65OlderProb){
+				else {
+					if (x<age65OlderProb) {
 						//Older 65
 						return 5;
 					}
-					else{
+					else {
 						//Under 20
 						return 0;
 					}
@@ -88,14 +121,15 @@ void Population::displayStatistics(){
 	int age3=0;
 	int age4=0;
 	int age5=0;
-	for(int i=0;i<size;i++){
-		if(population[i].getGender()=='f'){
+	for (int i=0;i<size;i++) {
+		if (population[i].getGender()=='f') {
 			numOfFemales++;
 		}
-		else{
+		else {
 			numOfMales++;
 		}
-		switch(population[i].getAge()){
+        
+		switch (population[i].getAge()) {
 			case 0:
 				age0++;
 				break;
@@ -132,11 +166,5 @@ void Population::displayStatistics(){
 }
 Population::~Population() {
 	// TODO Auto-generated destructor stub
-
-	/*for(int i = 0; i < size; i++)
-	{
-	        delete population[i];
-	}*/
-	delete[] population;
 }
 

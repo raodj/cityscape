@@ -1,9 +1,37 @@
-/*
- * ImageGen.cpp
- *
- *  Created on: Mar 2, 2014
- *      Author: schmidee
- */
+//------------------------------------------------------------
+//
+// This file is part of HAPLOS <http://pc2lab.cec.miamiOH.edu/>
+//
+// Human  Population  and   Location  Simulator (HAPLOS)  is
+// free software: you can  redistribute it and/or  modify it
+// under the terms of the GNU  General Public License  (GPL)
+// as published  by  the   Free  Software Foundation, either
+// version 3 (GPL v3), or  (at your option) a later version.
+//
+// HAPLOS is distributed in the hope that it will  be useful,
+// but   WITHOUT  ANY  WARRANTY;  without  even  the IMPLIED
+// WARRANTY of  MERCHANTABILITY  or FITNESS FOR A PARTICULAR
+// PURPOSE.
+//
+// Miami University and the HAPLOS  development team make no
+// representations  or  warranties  about the suitability of
+// the software,  either  express  or implied, including but
+// not limited to the implied warranties of merchantability,
+// fitness  for a  particular  purpose, or non-infringement.
+// Miami  University and  its affiliates shall not be liable
+// for any damages  suffered by the  licensee as a result of
+// using, modifying,  or distributing  this software  or its
+// derivatives.
+//
+// By using or  copying  this  Software,  Licensee  agree to
+// abide  by the intellectual  property laws,  and all other
+// applicable  laws of  the U.S.,  and the terms of the  GNU
+// General  Public  License  (version 3).  You  should  have
+// received a  copy of the  GNU General Public License along
+// with HAPLOS.  If not, you may  download copies  of GPL V3
+// from <http://www.gnu.org/licenses/>.
+//
+//-----------------------------------------------------------
 
 #include "ImageGen.h"
 #include <string>
@@ -45,20 +73,21 @@ ImageGen::ImageGen(string outputFolder) {
 }*/
 
 void ImageGen::createPNGImage(vector<vector<Location> > data, int rows, int cols){
-	cout<<"Creating Image"<<endl;
-	string size = to_string(cols)+"x"+to_string(rows);
-	cout<<"String Size: "<<size<<endl;
+    std::cout << "Creating Image" << std::endl;
+    std::string size = to_string(cols)+"x"+to_string(rows);
+    std::cout << "String Size: " << size << std::endl;
 	Image image(size, "white" );
-	cout<<"Image Initialzied "<<endl;
-	  for(int i=0; i<rows;i++){
-	  		for(int j=0; j<cols;j++){
-	  			if(data[i][j].getCurrentPopulation()<=0){
-	  					if(data[i][j].getMaxPopulation()>0){
+    std::cout << "Image Initialzied " << std::endl;
+	  for (int i=0; i<rows;i++) {
+	  		for (int j=0; j<cols;j++) {
+	  			if (data[i][j].getCurrentPopulation()<=0) {
+	  					if (data[i][j].getMaxPopulation()>0) {
 	  						//Unpopulated Land
 		  					image.pixelColor(j, i, ColorRGB(0,0,0));
 	  					}
 
-	  				}else{
+	  				}
+                else {
 	  					float precentage= data[i][j].getCurrentPopulation()/500.0;
 	  					if(precentage>1){
 	  						precentage=1;
@@ -74,10 +103,11 @@ void ImageGen::createPNGImage(vector<vector<Location> > data, int rows, int cols
 	  				}
 	  		}
 	  	}
-	  cout<<"Done making Image writing"<<endl;
-	  image.write( "red_pixel.png" );
+    std::cout << "Done making Image writing" << std::endl;
+    image.write( "red_pixel.png" );
 
 }
+
 /*void ImageGen::createPoint(float x, float y, float value){
 	if(value<=0){
 		board.setPenColorRGBi( 0, 0, 0 );
@@ -103,13 +133,16 @@ double* ImageGen::hsv2rgb(double h, double s, double v)
 	double      hh, p, q, t, ff;
 	long        i;
 	static double out[3];
-	if(s <= 0.0) {       // < is bogus, just shuts up warnings
+    
+    //Invalid Saturation, set to Black
+	if (s <= 0.0) {
 		out[0] = h;
 		out[1] = s;
 		out[2] = v;
 	}
+    
 	hh = h;
-	if(hh >= 360.0) hh = 0.0;
+	if (hh >= 360.0) hh = 0.0;
 	hh /= 60.0;
 	i = (long)hh;
 	ff = hh - i;
@@ -117,39 +150,42 @@ double* ImageGen::hsv2rgb(double h, double s, double v)
 	q = v * (1.0 - (s * ff));
 	t = v * (1.0 - (s * (1.0 - ff)));
 
-	switch(i) {
-	case 0:
-		out[0] = v;
-		out[1] = t;
-		out[2] = p;
-		break;
-	case 1:
-		out[0] = q;
-		out[1] = v;
-		out[2] = p;
-		break;
-	case 2:
-		out[0] = p;
-		out[1] = v;
-		out[2] = t;
-		break;
+	switch (i) {
+        case 0:
+            out[0] = v;
+            out[1] = t;
+            out[2] = p;
+            break;
+            
+        case 1:
+            out[0] = q;
+            out[1] = v;
+            out[2] = p;
+            break;
+            
+        case 2:
+            out[0] = p;
+            out[1] = v;
+            out[2] = t;
+            break;
 
-	case 3:
-		out[0] = p;
-		out[1] = q;
-		out[2] = v;
-		break;
-	case 4:
-		out[0] = t;
-		out[1] = p;
-		out[2] = v;
-		break;
-	case 5:
-	default:
-		out[0] = v;
-		out[1] = p;
-		out[2]= q;
-		break;
+        case 3:
+            out[0] = p;
+            out[1] = q;
+            out[2] = v;
+            break;
+            
+        case 4:
+            out[0] = t;
+            out[1] = p;
+            out[2] = v;
+            break;
+            
+        default:
+            out[0] = v;
+            out[1] = p;
+            out[2]= q;
+            break;
 	}
 	return out;
 }

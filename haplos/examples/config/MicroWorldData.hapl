@@ -1,0 +1,14 @@
+#Data File Paths
+Density_File=examples/data/Microworld.asc
+
+#Configuration for MicroWorld Data
+Total_Population=104
+Max_Population_In_Area=10
+
+#Demographics
+Male_Probablity=0.488203012
+Age_20-24_Probablity=0.066147942
+Age_25-34_Probablity=0.188365123
+Age_35-49_Probablity=0.390763094
+Age_50-64_Probablity=0.593538823
+Age_65-Older_Probablity=0.734137309

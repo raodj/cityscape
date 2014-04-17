@@ -45,61 +45,73 @@
 #include "Location.h"
 #include "Population.h"
 #include "XFigImageGenerator.h"
+#include "ConfigFile.h"
 
 using namespace std;
 
-// The following two lines should be command-line arguments processed
-// using the ArgParser in MUSE.
-string sedacDataFile = "data/usap00ag.asc";
-string outputFolder  = "output/";
-
+string const sedacDataFile="examples/data/MicroWorld.asc";
+//string const sedacDataFile = "examples/data/SEDAC_USA_2000.asc";
+string const outputFolder="output/";
+string const configFile="examples/config/MicroworldData.hapl";
 int main() {
-    vector<vector<Location>> densityData;
-    int const numberOfPeople = 283230000; //281424000;
-    cout << "-----HAPLOS-----" << endl;
-    SedacReader sr;
-    densityData = sr.readFile(sedacDataFile);
-    Population pop(numberOfPeople);
+    vector< vector < Location > > densityData;
+    //Real Data
+    //int const numberOfPeople=283230000; //281424000;
+    //Micro World Data
+    int const numberOfPeople= 104;
+    std::cout << "-----HAPLOS-----" << std::endl;
+    ConfigFile configuration= ConfigFile(configFile);
+    SedacReader sr = SedacReader();
+    densityData = sr.readFile(configuration.getSedacFileLocation());
+    Population pop = Population(configuration.getVariable("Total_Population"),
+                                configuration.getVariable("Age_20-24_Probablity"),
+                                configuration.getVariable("Age_25-34_Probablity"),
+                                configuration.getVariable("Age_35-49_Probablity"),
+                                configuration.getVariable("Age_50-64_Probablity"),
+                                configuration.getVariable("Age_65-Older_Probablity"),
+                                configuration.getVariable("Male_Probablity"));
     int x=0;
     int y=0;
     int notAssigned=0;
-    cout<<"Assigning Locations to Population"<<endl;
-    for(int i =0; i<numberOfPeople;i++){
-	while(densityData[x][y].isFull()){
-	    x++;
-	    if(x>=densityData.size()&&y<=densityData[0].size()){
-		x=0;
-		y++;
-	    }
-	    else{
-		if(y>=densityData[0].size()){
-		    notAssigned++;
-		    break;
-		}
-	    }
-	    // cout << x << " " << y << endl;
-	}
-
-	if(y>=densityData[0].size()){
-	    break;
-	}
-	pop.setLocationOfPerson(x, y, i);
-	densityData[x][y].addPerson();
+    std::cout << "Assigning Locations to Population" << std::endl;
+    std::cout << densityData.size() << " " <<densityData[0].size() <<std::endl;
+    for (int i =0; i<numberOfPeople;i++) {
+        while (densityData.at(x).at(y).isFull()) {
+            x++;
+            if(x>=densityData.size()&&y<densityData[0].size()){
+                x=0;
+                y++;
+            }
+            else{
+                if (y>=densityData[0].size()-1) {
+                    notAssigned++;
+                    break;
+                }
+            }
+        }
+        
+        if (y>=densityData[0].size()-1) {
+            break;
+        }
+        pop.setLocationOfPerson(x, y, i);
+        densityData.at(x).at(y).addPerson();
     }
-    cout<<"Not Assigned: "<<notAssigned<<endl;
-    cout<<"Population Assigned Locations"<<endl;
+    
+    std::cout << "Not Assigned: " << notAssigned << std::endl;
+    std::cout << "Population Assigned Locations" << std::endl;
 
-#ifdef HAVE_MAGICK	
-    ImageGen ig(outputFolder);
-    ig.createPNGImage(densityData, densityData.size(),
-		      densityData[0].size());
-#endif
+    #ifdef HAVE_MAGICK
+        ImageGen ig(outputFolder);
+        ig.createPNGImage(densityData, densityData.size(),
+                      densityData[0].size());
+    #endif
     // Generate image in XFig file format. This should be an
     // option indicated by the user.
     XFigImageGenerator xfig;
     xfig.createImage(outputFolder + "haplos.fig", densityData,
 		     densityData.size(), densityData[0].size());
     pop.displayStatistics();
+
     return 0;
 }
 

@@ -49,6 +49,8 @@ XFigHelper::~XFigHelper() {
 
 bool
 XFigHelper::setOutput(const std::string &fileName,
+                      const int width,
+                      const int height,
                       const bool genCustomColors,
                       const bool appendFlag) {
     os.open(fileName.c_str(), (appendFlag ? std::ios_base::app :
@@ -58,7 +60,7 @@ XFigHelper::setOutput(const std::string &fileName,
     }
     // Dump the XFIG header if needed
     if (!appendFlag) {
-        dumpHeader(genCustomColors);
+        dumpHeader(genCustomColors, width, height);
     }
     // Everything went well.
     return true;
@@ -66,7 +68,7 @@ XFigHelper::setOutput(const std::string &fileName,
 
 
 void
-XFigHelper::dumpHeader(const bool genCustomColors) {
+XFigHelper::dumpHeader(const bool genCustomColors, const int width, const int height) {
     os << "#FIG 3.2  Produced by HAPLOS from http://pc2lab.cec.miamiOH.edu\n"
        << "Landscape\n"
        << "Center\n"
@@ -75,7 +77,7 @@ XFigHelper::dumpHeader(const bool genCustomColors) {
        << "100.00\n"
        << "Single\n"
        << "-2\n"
-       << "1200 2\n"
+       << width <<" "<<height<<"\n"
        << "0 32 #cccccc\n";
 
     if (genCustomColors) {

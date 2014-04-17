@@ -103,6 +103,8 @@ public:
         returns \c false.
     */
     bool setOutput(const std::string &fileName,
+                   const int width = 100,
+                   const int height = 100,
                    const bool genCustomColors = false,
 		   const bool appendFlag      = false);
 
@@ -253,7 +255,7 @@ protected:
 	XFig. The user-defined color table guarantees a set of visibly
 	different colors for use in applications.
     */
-    void dumpHeader(const bool genCustomColors);
+    void dumpHeader(const bool genCustomColors, const int width = 100, const int height = 100);
 
     /** Helper method generate color table.
 
