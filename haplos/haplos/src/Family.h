@@ -36,7 +36,6 @@
 // from <http://www.gnu.org/licenses/>.
 //
 //-----------------------------------------------------------
-using namespace std;
 
 
 class Family {

@@ -39,8 +39,6 @@
 #include "Person.h"
 #include <vector>
 
-//using namespace std;
-
 class Population {
     /** A class specifically repersenting a population.
      */

@@ -57,19 +57,19 @@ int main() {
     ConfigFile configuration= ConfigFile(configFile);
     SedacReader sr = SedacReader();
     densityData = sr.readFile(configuration.getSedacFileLocation());
-    Population pop = Population(configuration.getVariable("Total_Population"),
-                                configuration.getVariable("Age_20-24_Probablity"),
-                                configuration.getVariable("Age_25-34_Probablity"),
-                                configuration.getVariable("Age_35-49_Probablity"),
-                                configuration.getVariable("Age_50-64_Probablity"),
-                                configuration.getVariable("Age_65-Older_Probablity"),
-                                configuration.getVariable("Male_Probablity"));
+    Population pop = Population(configuration["Total_Population"],
+                                configuration["Age_20-24_Probablity"],
+                                configuration["Age_25-34_Probablity"],
+                                configuration["Age_35-49_Probablity"],
+                                configuration["Age_50-64_Probablity"],
+                                configuration["Age_65-Older_Probablity"],
+                                configuration["Male_Probablity"]);
     int x=0;
     int y=0;
     int notAssigned=0;
     std::cout << "Assigning Locations to Population" << std::endl;
     std::cout << densityData.size() << " " <<densityData[0].size() <<std::endl;
-    for (int i =0; i<configuration.getVariable("Total_Population");i++) {
+    for (int i =0; i<configuration["Total_Population"];i++) {
         while (densityData.at(x).at(y).isFull()) {
             x++;
             if(x>=densityData.size()&&y<densityData[0].size()){
