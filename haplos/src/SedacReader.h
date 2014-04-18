@@ -41,9 +41,6 @@
 
 
 
-using namespace std;
-
-
 class SedacReader {
     /** A class specifically for reading and processing SEDAC data.
      
@@ -52,7 +49,7 @@ public:
     /** The default constructor for this class.s
      */
 	SedacReader();
-	vector<vector<Location> > readFile(string filename);
+    std::vector<std::vector<Location> > readFile(std::string filename);
 	virtual ~SedacReader();
 };
 

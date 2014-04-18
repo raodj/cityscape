@@ -108,14 +108,6 @@ public:
 	\param[in] nameOfVariable Name of variable to retrive.
      
 	\return value of variable.
-    */
-    double getVariable(const std::string& variableName) const;
-
-    /** Return variable from variable map.
-     
-	\param[in] nameOfVariable Name of variable to retrive.
-     
-	\return value of variable.
     */    
     double operator[](const std::string& variableName) const {
 	return variables.at(variableName);

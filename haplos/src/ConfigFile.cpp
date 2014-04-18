@@ -69,7 +69,7 @@ ConfigFile::ConfigFile(const std::string& fileLocation) :
 	}
     }
     std::cout << "Configuration File Loaded Successfully." << std::endl;
-    std::cout << *this << std::endl;
+  //  std::cout << *this << std::endl;
 }
 
 void
@@ -78,10 +78,6 @@ ConfigFile::addVariable(const std::string& nameOfVariable,
     variables[nameOfVariable] = valueOfVariable;
 }
 
-double
-ConfigFile::getVariable(const std::string& variableName) const {
-    return variables.at(variableName);
-}
 
 void
 ConfigFile::displayVariables(std::ostream& os) const {
