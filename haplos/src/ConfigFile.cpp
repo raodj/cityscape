@@ -1,3 +1,6 @@
+#ifndef HAPLOS_CONFIG_FILE_CPP
+#define HAPLOS_CONFIG_FILE_CPP
+
 //------------------------------------------------------------
 //
 // This file is part of HAPLOS <http://pc2lab.cec.miamiOH.edu/>
@@ -38,64 +41,68 @@
 #include <fstream>
 #include <sstream>
 
-using namespace std;
-
-ConfigFile::ConfigFile(string FileLocation) {
-    configFileLocation = FileLocation;
-    std::cout << "Loading Configuration file from : " << configFileLocation << std::endl;
-    ifstream infile;
-    infile.open (configFileLocation.c_str());
-    
-    if (infile.fail()) {
-        std::cout << "Unable to Open Configuration File." << std::endl;
-        sedacFileLocation="";
-    }else{
-        std::string line="";
-        sedacFileLocation="";
-
-        while (infile) {
-            getline(infile,line);
-            if (!line.empty()) {
-                if (line.at(0)!='#') {
-                //Not Comment
-                    int equal_pos = line.find_first_of("=");
-
-                    if(sedacFileLocation.empty()){
-                        //SEDAC File not set
-                        sedacFileLocation=line.substr(equal_pos+1);
-                    }else{
-                        addVariable(line.substr(0, equal_pos), std::atof(line.substr(equal_pos+1).c_str()));
-                    }
-                }
-                //Comment
-            }
-            //Blank Line
-        }
+ConfigFile::ConfigFile(const std::string& fileLocation) :
+    configFileLocation(fileLocation) {
+    std::cout << "Loading config file: " << configFileLocation << std::endl;
+    std::ifstream infile(configFileLocation);
+    if (!infile.good()) {
+        std::cerr << "Unable to Open Configuration File." << std::endl;
+	return;
     }
-    std::cout<< "Configuration File Loaded Successfully."<<std::endl;
-    displayVariables();
-}
-
-
-void ConfigFile::addVariable(string nameOfVariable, double valueOfVariable){
-    variables[nameOfVariable]= valueOfVariable;
-}
-double ConfigFile::getVariable(string variableName){
-    return variables[variableName];
-}
-
-void ConfigFile::displayVariables(){
-    for (std::tr1::unordered_map<std::string, double>::iterator i = variables.begin();i != variables.end(); ++i){
-        std::cout << " [" << i->first << ", ";
-        std::cout << i->second << "]"<< std::endl;
-    }
+    std::string line="";
+    sedacFileLocation="";
     
+    while (getline(infile, line)) {
+	if (line.empty()) {
+	    continue;
+	}
+	if (line.at(0) != '#') {
+	    // Not Comment
+	    int equal_pos = line.find_first_of("=");
+	    if (sedacFileLocation.empty()) {
+		//SEDAC File not set
+		sedacFileLocation = line.substr(equal_pos+1);
+	    } else {
+		addVariable(line.substr(0, equal_pos),
+			    std::atof(line.substr(equal_pos + 1).c_str()));
+	    }
+	}
+    }
+    std::cout << "Configuration File Loaded Successfully." << std::endl;
+    std::cout << *this << std::endl;
 }
-string ConfigFile::getSedacFileLocation(){
+
+void
+ConfigFile::addVariable(const std::string& nameOfVariable,
+			double valueOfVariable){
+    variables[nameOfVariable] = valueOfVariable;
+}
+
+double
+ConfigFile::getVariable(const std::string& variableName) const {
+    return variables.at(variableName);
+}
+
+void
+ConfigFile::displayVariables(std::ostream& os) const {
+    for (std::unordered_map<std::string, double>::const_iterator i = variables.cbegin(); (i != variables.cend()); ++i){
+        os << " [" << i->first << ", "
+	   << i->second << "]" << std::endl;
+    }
+}
+
+std::string
+ConfigFile::getSedacFileLocation() const {
     return sedacFileLocation;
-    
 }
 
 ConfigFile::~ConfigFile() {
-	// TODO Auto-generated destructor stub
+    // TODO Auto-generated destructor stub
 }
+
+std::ostream& operator<<(std::ostream& os, const ConfigFile& cf) {
+    cf.displayVariables(os);
+    return os;
+}
+
+#endif
