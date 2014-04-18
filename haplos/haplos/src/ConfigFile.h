@@ -1,5 +1,6 @@
-#ifndef __haplos__ConfigFile__
-#define __haplos__ConfigFile__
+#ifndef HAPLOS_CONFIG_FILE_H
+#define HAPLOS_CONFIG_FILE_H
+
 //------------------------------------------------------------
 //
 // This file is part of HAPLOS <http://pc2lab.cec.miamiOH.edu/>
@@ -34,65 +35,118 @@
 // from <http://www.gnu.org/licenses/>.
 //
 //-----------------------------------------------------------
+
 #include <iostream>
 #include <vector>
 #include <string>
+#include <unordered_map>
 
-// Mavricks downgraded G++ compiler, thus doesn't include the tr1 libraries, using BOOST Libraries for now
-#include <boost/tr1/unordered_map.hpp>
+/** A class specifically for Parsing ConfigFile.
 
-using namespace std;
+    This class essentially encapsulates a simple HashMap to ease
+    look-up of various configuration variables that: <ul>
 
+    <li>can loaded from a configuration file or</li>
+    <li>Directly added to the hash map in this class.</li>
+
+    </ul>
+
+    A configuration file has the following convention:
+
+    <ul>
+
+    <li>All lines beginning with a '#' (pound/hash sign) are treated
+    as comments and they are ignored.</li>
+
+    <li>Other lines are assumed to be in the format <variable>=<value>
+    and the variable is used as the key to store the value into a hash
+    map.</li>
+
+    </ul>
+
+    This class can be used in the following manner:
+
+    \begincode
+
+    ConfigFile config("../MicroWorldData.hapl");
+    std::cout << config["Male_Probability"] << std::endl;
+    
+    \endcode
+*/
 class ConfigFile {
-    /** A class specifically for Parsing ConfigFile     */
+    /** Stream insertion operator for ConfigFile.
+
+	Convenience operator to write the current set of variables and
+	their values to a given output stream.
+
+	\param[out] os The output stream to which the values are to be
+	written.
+
+	\param[in] cf The configuration file whose values are to be
+	written.
+    */
+    friend std::ostream& operator<<(std::ostream& os, const ConfigFile& cf);
 public:
     /** The default constructor for this class.
-     
-     \param[in] FileLocation Location of ConfigFile
-     */
-	ConfigFile(string FileLocation);
+	
+	\param[in] FileLocation Location of ConfigFile
+    */
+    ConfigFile(const std::string& fileLocation);
     
     /** Add variable to variable map.
-     
-     \param[in] nameOfVariable Name of variable to add.
-     \param[in] valueOfVariable Value of variable to add.
-     */
-    void addVariable(string nameOfVariable, double valueOfVariable);
+	
+	\param[in] nameOfVariable Name of variable to add.  If the
+	variable already exists in the configuration, then its value
+	is overwritten.
+	
+	\param[in] valueOfVariable Value of variable to add.
+    */
+    void addVariable(const std::string& nameOfVariable, double valueOfVariable);
     
     /** Return variable from variable map.
      
-     \param[in] nameOfVariable Name of variable to retrive.
-     \return value of variable.
-     */
-    double getVariable(string variableName);
+	\param[in] nameOfVariable Name of variable to retrive.
+     
+	\return value of variable.
+    */
+    double getVariable(const std::string& variableName) const;
+
+    /** Return variable from variable map.
+     
+	\param[in] nameOfVariable Name of variable to retrive.
+     
+	\return value of variable.
+    */    
+    double operator[](const std::string& variableName) const {
+	return variables.at(variableName);
+    }
     
     /** Helper Method to display variables set.
-     */
-    void displayVariables();
-    /** Return SEDAC file location.
-     
-     \param[in] nameOfVariable Name of variable to retrive.
-     \return path to SEDAC file.
-     */
+
+	\param[out] os The output stream to which the variable
+	information is to be written.
+    */
+    void displayVariables(std::ostream& os) const;
     
-    string getSedacFileLocation();
+    /** Return SEDAC file location.
+	
+	\return path to SEDAC file.
+    */
+    std::string getSedacFileLocation() const;
     
     /**
-     The destructor.
-     
-     Currently the destructor does not have any specific task to
-     perform in this class.  However, it is defined for adherence
-     with conventions and for future extensions.
-     */
-	virtual ~ConfigFile();
+       The destructor.
+       
+       Currently the destructor does not have any specific task to
+       perform in this class.  However, it is defined for adherence
+       with conventions and for future extensions.
+    */
+    virtual ~ConfigFile();
     
 private:
     std::string configFileLocation;
     std::string sedacFileLocation;
-    std::tr1::unordered_map<string, double> variables;
-    
-    
+    std::unordered_map<std::string, double> variables;
 };
 
-
-#endif /* defined(__haplos__ConfigFile__) */
+#endif
