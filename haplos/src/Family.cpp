@@ -39,11 +39,42 @@
 
 using namespace std;
 
-Family::Family(int s) {
-	// TODO Auto-generated constructor stub
-    numberOfPeople=s;
+Family::Family() {
+    hasAdult=false;
+    numberOfPeople=0;
 }
 
+Person* Family::getPerson(int id){
+    return &members[id];
+    
+}
+
+int Family::getNumberOfPeople(){
+    return numberOfPeople;
+    
+}
+
+Person* Family::getAllPersons(){
+    return &members[0];
+}
+void Family::addPerson(Person newPerson){
+    members.push_back(newPerson);
+    if(newPerson.getAge()>17){
+        hasAdult=true;
+    }
+    numberOfPeople++;
+    
+}
+
+void Family::setLocation(int x, int y){
+    for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){
+        it->setLocation(x, y);
+    }
+}
+
+bool Family::getHasAdult(){
+    return hasAdult;
+}
 Family::~Family() {
 	// TODO Auto-generated destructor stub
 }

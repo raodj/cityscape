@@ -5,10 +5,21 @@ Density_File=examples/data/Microworld.asc
 Total_Population=104
 Max_Population_In_Area=10
 
-#Demographics
+#Demographics (Population Projects 2015 US Census http://www.census.gov/population/projections/data/national/2012/summarytables.html)
 Male_Probablity=0.488203012
-Age_20-24_Probablity=0.066147942
-Age_25-34_Probablity=0.188365123
-Age_35-49_Probablity=0.390763094
-Age_50-64_Probablity=0.593538823
-Age_65-Older_Probablity=0.734137309
+Age_5-Younger_Probablity=0.065505363
+Age_5-13_Probablity=0.114425121
+Age_14-17_Probablity=0.051950598
+Age_18-24_Probablity=0.096411223
+Age_25-44_Probablity=0.262404197
+Age_45-64_Probablity=0.260885665
+Age_65-Older_Probablity=0.148414721
+
+#Family
+Family_Size_1_Probablity=0.3;
+Family_Size_2_Probablity=0.2;
+Family_Size_3_Probablity=0.1;
+Family_Size_4_Probablity=0.1;
+Family_Size_5_Probablity=0.1;
+Family_Size_6_Probablity=0.1;
+#Family_Size_7_Probablity=0.1;

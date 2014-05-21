@@ -37,7 +37,8 @@
 //
 //-----------------------------------------------------------
 
-
+#import <vector>
+#import "Person.h"
 class Family {
     /** A class specifically for repersenting a family of indviduals. 
      */
@@ -46,14 +47,36 @@ public:
      
      \param[in] size Size of family.
      */
-	Family(int size);
+	Family();
     
-    /** Get all members of a family.
-     
+    /** Get a member of a family.
+     \param id  id of family memember to retrive.
      \return An array of memembers in the family.
      */
-    Person* getMemebers();
+    Person* getPerson(int id);
     
+    int getNumberOfPeople();
+    
+    /** Get All memembers of the family
+     \return Vector of all family memembers
+     */
+    Person* getAllPersons();
+    
+    /**Add new Person to Family
+     \param newPerson Person to be added
+     */
+    void addPerson(Person newPerson);
+    
+    /**Sets starting location for family
+     \param x X Location of Family.
+     \param y Y Location of family.
+     */
+    void setLocation(int x, int y);
+    
+    /** Get if Family has an Adult.
+     \return True if family has at least 1 adult in it, false if otherwise.
+     */
+    bool getHasAdult();
     /**
      The destructor.
      
@@ -64,8 +87,9 @@ public:
 	virtual ~Family();
     
 private:
-    std::vector< Person > members;
+    std::vector < Person > members;
     int numberOfPeople;
+    bool hasAdult;
     
     
 };

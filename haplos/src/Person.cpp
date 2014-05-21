@@ -36,8 +36,6 @@
 #include "Person.h"
 
 
-int age=0;
-char gender=' ';
 
 Person::Person(){
 	age=-1;
@@ -46,12 +44,13 @@ Person::Person(){
 	location[1]=-1;
 }
 
-Person::Person(int a, char g, int x, int y) {
+Person::Person(int a, char g, int x, int y, int id_number) {
 	// TODO Auto-generated constructor stub
 	age=a;
 	gender=g;
 	location[0]=x;
 	location[1]=y;
+    id_num = id_number;
 }
 
 void Person::setLocation(int x, int y){
@@ -74,6 +73,7 @@ Person &Person::operator = (const Person &p){
 		gender=' ';
 		age=p.age;
 		gender=p.gender;
+        id_num=p.id_num;
 	}
 	return *this;
 }
@@ -94,6 +94,10 @@ int* Person::getLocation(){
 	return location;
 }
 
+int Person::getID(){
+    return id_num;
+    
+}
 Person::~Person() {
 	// TODO Auto-generated destructor stub
 }

@@ -37,10 +37,15 @@
 //
 //-----------------------------------------------------------
 
+#include <unordered_map>
+#include "Person.h"
+#include "Family.h"
+
 class Location {
     /** A class specifically for handeling set area of land.
      */
 public:
+    
     /** The default constructor for this class.
      */
 	Location();
@@ -55,8 +60,16 @@ public:
 	Location(int x, int y, float m);
     
     /** Adds a person to the location.
+     
+     \param p Person to add to Location
      */
-	void addPerson();
+	void addPerson(Person *p);
+    
+    /** Add a Entire Family to Location.
+     
+     \param f Family to be added to location.
+     */
+    void addFamily(Family *f);
     
     /** Return the current number of people at location.
      
@@ -70,6 +83,8 @@ public:
      */
 	int* getCoordinates();
     
+    /** Copy Constructor
+     */
 	Location &operator=(const Location &p);
     
     /** Return the maximumn capacity for a location.
@@ -83,10 +98,11 @@ public:
      \return True if location is full, false if location is not.
      */
 	bool isFull();
-    
+
     /** Removes a person from location.
+     \param idNum ID Number of Person to Remove
      */
-	void removePerson();
+	void removePerson(int idNum);
     
     /**
      The destructor.
@@ -100,6 +116,7 @@ private:
 	int numberOfPeople;
 	int coordinates [2];
 	float maxPopulation;
+    std::unordered_map<int,Person*> people;
 
 };
 

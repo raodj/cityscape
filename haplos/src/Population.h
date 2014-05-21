@@ -37,6 +37,7 @@
 //
 //-----------------------------------------------------------
 #include "Person.h"
+#include "Family.h"
 #include <vector>
 
 class Population {
@@ -46,14 +47,22 @@ class Population {
         /** The default constructor for this class.
          
          \param[in] size Size of population to create.
-         \param[in] age2024Prob Probablity of someone being age 20-24
-         \param[in] age2534Prob Probablity of someone being age 25-34
-         \param[in] age3549Prob Probablity of someone being age 35-49
-         \param[in] age5064Prob Probablity of someone being age 50-64
-         \param[in] age65OlderProb Probablity of someone being age 65 or older
+         \param[in] age2024Prob Probablity of someone being age 20-24.
+         \param[in] age2534Prob Probablity of someone being age 25-34.
+         \param[in] age3549Prob Probablity of someone being age 35-49.
+         \param[in] age5064Prob Probablity of someone being age 50-64.
+         \param[in] age65OlderProb Probablity of someone being age 65 or older.
          \param[in] maleProb Probablity of a someone being a male.
+         \param[in] familysize1Prob Probably of creating a family of size 1.
+         \param[in] familysize1Prob Probably of creating a family of size 2.
+         \param[in] familysize1Prob Probably of creating a family of size 3.
+         \param[in] familysize1Prob Probably of creating a family of size 4.
+         \param[in] familysize1Prob Probably of creating a family of size 5.
+         \param[in] familysize1Prob Probably of creating a family of size 6.
+         \param[in] familysize1Prob Probably of creating a family of size 7.
+
          */
-    Population(int size, double age2024Prob, double age2534Prob, double age3549Prob, double age5064Prob,double age65OlderProb, double maleProb);
+    Population(int size, double ageProbablities[], double familySizeProbablities[], double maleProbablity);
     
         /** Display Statistics about population to Console.
          */
@@ -62,10 +71,18 @@ class Population {
         /** Set the location of a person to coordinate [x, y].
          \param[in] x Row of location.
          \param[in] y Col of location.
-         \param[in] person Person to assign location to.
+         \param[in] family Family to assign location to.
         */
-        void setLocationOfPerson(int x, int y, int person);
+        void setLocationOfFamily(int x, int y, int family);
+
+        /** Get a Specific Family
+          \param[in] family Family to retrive
+         */
+        Family* getFamily(int family);
     
+        /** Get Number of Families Created
+         */
+        int getNumberOfFamilies();
         /**
          The destructor.
          
@@ -75,24 +92,38 @@ class Population {
          */
         virtual ~Population();
     private:
-        /** Set gender for population.
+        /** Set gender for person in the population.
          */
         char determineGender();
     
-        /** Set age for population.
+        /** Set age for person in the population.
+         \param[in] forceAdult forces the creation of adult.
+         
          */
-        int determineAge();
+        int determineAge(bool forceAdult);
+    
+        /** Set age for population of person in population.
+         */
+        int generateFamilySize();
     
         int size;
-        double age2024Prob;
-        double age2534Prob;
-        double age3549Prob;
-        double age5064Prob;
-        double age65OlderProb;
-        double maleProb;
+        double age5To13Probablity;
+        double age14To17Probablity;
+        double age18To24Probablity;
+        double age25To44Probablity;
+        double age45To64Probablity;
+        double age65OrOlderProbablity;
+        double maleProbablity;
+        double familySize2Probablity;
+        double familySize3Probablity;
+        double familySize4Probablity;
+        double familySize5Probablity;
+        double familySize6Probablity;
+        double familySize7Probablity;
+        int numberOfFamilies;
 
     
-        std::vector< Person > population;
+        std::vector < Family > families;
 };
 
 
