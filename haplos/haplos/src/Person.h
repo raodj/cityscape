@@ -50,8 +50,9 @@ public:
      \param[in] gender Gender of person.
      \param[in] x Row of where person is assigned.
      \param[in] y Col of where person is assigned.
+     \param[in] id_num Unique ID of person.
      */
-	Person(int age , char gender, int x, int y);
+	Person(int age , char gender, int x, int y, int id_num);
     /** The copy constructor for this class.
      
      \param[in] p Another person.
@@ -91,6 +92,12 @@ public:
      */
 	int getAge(void);
     
+    /** Return the ID number of a person.
+     
+     \return ID Number of the person.
+     */
+    int getID(void);
+    
     /**
      The destructor.
      
@@ -100,8 +107,9 @@ public:
      */
     virtual ~Person();
 private:
-	int age;
-	int gender;
+	int age=0;
+	int gender=' ';
+    int id_num=0;
 	int location[2];
 };
 

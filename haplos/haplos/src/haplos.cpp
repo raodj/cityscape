@@ -50,34 +50,54 @@
 using namespace std;
 
 string const outputFolder="output/";
-string const configFile="examples/config/MicroworldData.hapl";
+string const configFile="examples/config/USAData.hapl";
 int main() {
     vector< vector < Location > > densityData;
     std::cout << "-----HAPLOS-----" << std::endl;
     ConfigFile configuration= ConfigFile(configFile);
     SedacReader sr = SedacReader();
     densityData = sr.readFile(configuration.getSedacFileLocation());
-    Population pop = Population(configuration["Total_Population"],
-                                configuration["Age_20-24_Probablity"],
-                                configuration["Age_25-34_Probablity"],
-                                configuration["Age_35-49_Probablity"],
-                                configuration["Age_50-64_Probablity"],
-                                configuration["Age_65-Older_Probablity"],
-                                configuration["Male_Probablity"]);
+    
+    //Age Probablities
+    double ageProbablities [6]={ configuration["Age_5-13_Probablity"],
+                                 configuration["Age_14-17_Probablity"],
+                                 configuration["Age_18-24_Probablity"],
+                                 configuration["Age_25-44_Probablity"],
+                                 configuration["Age_45-64_Probablity"],
+                                 configuration["Age_65-Older_Probablity"]};
+    
+    //Family Size Probablties
+    double familySizeProbablities [6]={ configuration["Family_Size_1_Probablity"],
+                                        configuration["Family_Size_2_Probablity"],
+                                        configuration["Family_Size_3_Probablity"],
+                                        configuration["Family_Size_4_Probablity"],
+                                        configuration["Family_Size_5_Probablity"],
+                                        configuration["Family_Size_6_Probablity"]};
+    
+    //Create Population
+    Population pop = Population(configuration["Total_Population"], ageProbablities, familySizeProbablities, configuration["Male_Probablity"]);
+   
+    //Assign Familes Locations
     int x=0;
     int y=0;
     int notAssigned=0;
+    float oldRatio=0;
     std::cout << "Assigning Locations to Population" << std::endl;
-    std::cout << densityData.size() << " " <<densityData[0].size() <<std::endl;
-    for (int i =0; i<configuration["Total_Population"];i++) {
+    printf("Percentage Complete: %3d%%", 0 );
+    fflush(stdout);
+    
+    for ( int i =0; i<pop.getNumberOfFamilies(); i++ ) {
         while (densityData.at(x).at(y).isFull()) {
+            //Move to Next Location in column
             x++;
             if(x>=densityData.size()&&y<densityData[0].size()){
+                //Move to next Row
                 x=0;
                 y++;
             }
             else{
                 if (y>=densityData[0].size()-1) {
+                    //No More Locations Avaliable
                     notAssigned++;
                     break;
                 }
@@ -85,14 +105,30 @@ int main() {
         }
         
         if (y>=densityData[0].size()-1) {
+            //No More Locations Avaliable
             break;
         }
-        pop.setLocationOfPerson(x, y, i);
-        densityData.at(x).at(y).addPerson();
+        //Set Location of Family
+        pop.setLocationOfFamily(x, y, i);
+        densityData.at(x).at(y).addFamily(pop.getFamily(i));
+        
+        //Calculate Percent Complete
+        float ratio = i/(float)pop.getNumberOfFamilies();
+        
+        if ( 100*(ratio-oldRatio) > 1 ) {
+            //Update Percent Complete Only if there is a Change
+            printf("\r");
+            printf("Percentage Complete: %3d%%", (int)(ratio*100) );
+            oldRatio=ratio;
+            fflush(stdout);
+        }
     }
+    //Print out 100% Complete
+    printf("\r");
+    printf("Percentage Complete: %3d%%", 100 );
+    fflush(stdout);
     
-    std::cout << "Not Assigned: " << notAssigned << std::endl;
-    std::cout << "Population Assigned Locations" << std::endl;
+    std::cout << "Population Successfully Assigned Locations" << std::endl;
 
     #ifdef HAVE_MAGICK
         ImageGen ig(outputFolder);

@@ -35,6 +35,9 @@
 
 #include "Location.h"
 #include <cstdlib>
+#include <iostream>
+
+
 
 using namespace std;
 
@@ -44,6 +47,7 @@ Location::Location(){
 	coordinates[0]=-1;
 	coordinates[1]=-1;
 }
+
 Location::Location(int x, int y, float m) {
 	// TODO Auto-generated constructor stub
 	numberOfPeople=0;
@@ -70,11 +74,22 @@ float Location::getMaxPopulation() const{
 int* Location::getCoordinates(){
 	return coordinates;
 }
-void Location::addPerson(){
-	numberOfPeople++;
+
+void Location::addFamily(Family *f){
+    Person* people =f->getAllPersons();
+    int numberOfPeople = f->getNumberOfPeople();
+    for(int p=0; p<numberOfPeople;p++){
+        this->addPerson(&people[p]);
+    }
+}
+void Location::addPerson(Person *p){
+    people[p->getID()]= p;
+    numberOfPeople++;
+    
 }
 
-void Location::removePerson(){
+void Location::removePerson(int idNum){
+    people.erase(idNum);
 	numberOfPeople--;
 }
 
