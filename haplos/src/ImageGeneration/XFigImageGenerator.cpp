@@ -46,9 +46,10 @@ const int BLUE_COLOR=35;
 const int GREEN_COLOR=36;
 const int YELLOW_COLOR=37;
 const int ORANGE_COLOR=38;
+
 void XFigImageGenerator::createImage(const std::string& outFileName,
-		const std::vector<std::vector<Location>>& data, const int rows,
-		const int cols) throw (std::exception) {
+		const std::vector<std::vector<int>>& data, const int rows,
+		const int cols, const double maxValue) throw (std::exception) {
 	// Create a XFigHelper to help generating an image.
 	XFigHelper xfig;
 
@@ -62,11 +63,11 @@ void XFigImageGenerator::createImage(const std::string& outFileName,
 	for (size_t r = 0; (r < rows); r++) {
 		for (size_t c = 0; (c < cols); c++) {
 			// Compute color code for
-			if (data[r][c].getCurrentPopulation() <= 0) {
-				if(data[r][c].getMaxPopulation()>0){
+			if (data[r][c] <= 0) {
+				if(data[r][c]==0){
 					//Land but Unpopulated
 					int colorCode = MIN_COLOR_CODE
-							+ data[r][c].getCurrentPopulation();
+							+ data[r][c];
 					colorCode = std::min(maxColors, colorCode);
 					xfig.drawRect(c * scale, r * scale, radius, radius, MIN_COLOR_CODE);
 				}
@@ -78,19 +79,19 @@ void XFigImageGenerator::createImage(const std::string& outFileName,
 			else {
 				//Populated
 				int colorCode=MIN_COLOR_CODE;
-				if((data[r][c].getCurrentPopulation()/500.0)<0.25){
+				if((data[r][c]/maxValue)<0.25){
 					colorCode=BLUE_COLOR;
 				}
-				if((data[r][c].getCurrentPopulation()/500.0)<1.0&&(data[r][c].getCurrentPopulation()/500.0)>=0.25){
+				if((data[r][c]/maxValue)<1.0&&(data[r][c]/maxValue)>=0.25){
 					colorCode=GREEN_COLOR;
 				}
-				if((data[r][c].getCurrentPopulation()/500.0)<10.0&&(data[r][c].getCurrentPopulation()/500.0)>=1.0){
+				if((data[r][c]/maxValue)<10.0&&(data[r][c]/maxValue)>=1.0){
 					colorCode=YELLOW_COLOR;
 				}
-				if((data[r][c].getCurrentPopulation()/500.0)<20.0&&(data[r][c].getCurrentPopulation()/500.0)>=10.0){
+				if((data[r][c]/maxValue)<20.0&&(data[r][c]/maxValue)>=10.0){
 					colorCode=ORANGE_COLOR;
 				}
-				if((data[r][c].getCurrentPopulation()/500.0)>=20.0){
+				if((data[r][c]/maxValue)>=20.0){
 					colorCode=RED_COLOR;
 				}
 				xfig.drawRect(c * scale, r * scale, radius, radius, colorCode);

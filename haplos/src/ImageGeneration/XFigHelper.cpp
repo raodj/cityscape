@@ -37,7 +37,7 @@
 //-----------------------------------------------------------
 
 #include "XFigHelper.h"
-#include "Assert.h"
+#include "../Assert.h"
 
 XFigHelper::XFigHelper() {
     vertexCount = 0;

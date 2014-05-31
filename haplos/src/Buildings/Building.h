@@ -34,53 +34,44 @@
 //
 //-----------------------------------------------------------
 
-#include "Family.h"
-#include <vector>
+#ifndef __haplos__Building__
+#define __haplos__Building__
 
-using namespace std;
+#include <iostream>
 
-Family::Family() {
-    hasAdult=false;
-    numberOfPeople=0;
-    homeNumber=-1;
-}
-
-Person* Family::getPerson(int id){
-    return &members[id];
+class Building {
+    /*Class for Representing a Unclassified Building*/
+    public:
+        /** The default constructor for this class.
+         
+         \param[in] type Type of Building ('H'= Home, 'B' = Business, 'S'=School)
+         \param[in] id ID number of Building
+         \param[in] x row number of building
+         \param[in] y col number of building
+         \param[in] capacity max capacity of building (not including visitorss)
+         */
+        Building(char type, int idNumber, int x, int y, int capacity);
     
-}
-
-int Family::getNumberOfPeople(){
-    return numberOfPeople;
+        /**Get ID of Building
+         \return ID of Building
+         */
+    int getID();
     
-}
-
-Person* Family::getAllPersons(){
-    return &members[0];
-}
-
-int Family::setHomeNumber(int n){
-    homeNumber=n;
-}
-
-void Family::addPerson(Person newPerson){
-    members.push_back(newPerson);
-    if(newPerson.getAge()>17){
-        hasAdult=true;
-    }
-    numberOfPeople++;
+        /**
+         The destructor.
+         
+         Currently the destructor does not have any specific task to
+         perform in this class.  However, it is defined for adherence
+         with conventions and for future extensions.
+         */
+        virtual ~Building();
+    private:
+        char type;
+        int maxCapacity;
+        int idNumber;
+        int x;
+        int y;
     
-}
+};
 
-void Family::setLocation(int x, int y){
-    for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){
-        it->setLocation(x, y);
-    }
-}
-
-bool Family::getHasAdult(){
-    return hasAdult;
-}
-Family::~Family() {
-	// TODO Auto-generated destructor stub
-}
+#endif /* defined(__haplos__Building__) */

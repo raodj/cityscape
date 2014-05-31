@@ -87,7 +87,11 @@ class ConfigFile {
     */
     friend std::ostream& operator<<(std::ostream& os, const ConfigFile& cf);
 public:
-    /** The default constructor for this class.
+     /** The default constructor for this class.
+      
+      */
+    ConfigFile();
+    /** Constructor with File Location Set
 	
 	\param[in] FileLocation Location of ConfigFile
     */

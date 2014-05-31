@@ -51,8 +51,8 @@ public:
     ~XFigImageGenerator() {}
     
     void createImage(const std::string& outFileName,
-		     const std::vector<std::vector<Location>>& data,
-		     const int rows, const int cols)
+		     const std::vector<std::vector<int>>& data,
+		     const int rows, const int cols, const double maxValue)
 	throw(std::exception);
 
 private:

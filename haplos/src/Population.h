@@ -39,7 +39,7 @@
 #include "Person.h"
 #include "Family.h"
 #include <vector>
-
+#include <random>
 class Population {
     /** A class specifically repersenting a population.
      */
@@ -62,7 +62,8 @@ class Population {
          \param[in] familysize1Prob Probably of creating a family of size 7.
 
          */
-    Population(int size, double ageProbablities[], double familySizeProbablities[], double maleProbablity);
+        Population(int size, double *ageProbablities, double *familySizeProbablities,
+                   double maleProbablity, double *scheduleProbablities);
     
         /** Display Statistics about population to Console.
          */
@@ -81,8 +82,17 @@ class Population {
         Family* getFamily(int family);
     
         /** Get Number of Families Created
+         
+         \return Number of Families in Population
          */
         int getNumberOfFamilies();
+    
+        /** Get Number of Employeed Adults Created
+         
+         \return Number of of Employeed Adults in Population
+         */
+        int getNumberOfEmployeedAdults();
+    
         /**
          The destructor.
          
@@ -93,37 +103,44 @@ class Population {
         virtual ~Population();
     private:
         /** Set gender for person in the population.
+         \return 'f' for female, 'm' for male.
          */
         char determineGender();
     
         /** Set age for person in the population.
          \param[in] forceAdult forces the creation of adult.
-         
+         \return an array consisting of the age of person and the agegroup the person falls into.
          */
-        int determineAge(bool forceAdult);
+        int* determineAge(bool forceAdult);
+    
+        /** Set Schedule Type for person in the population.
+            \param[in] ageGroup 0= 5 or younger, 1= 5-13, 2=14-17, 3=18-24, 4=25-44, 5=45-64, 6=65 or older
+            \return 'E'=Employeed Schedule, 'U'= Unemployeed Schedule, 'S' = School schedule,
+                    'Y'= Young Child Schedule
+         */
+        char determineScheduleType(int ageGroup);
     
         /** Set age for population of person in population.
          */
         int generateFamilySize();
     
-        int size;
-        double age5To13Probablity;
-        double age14To17Probablity;
-        double age18To24Probablity;
-        double age25To44Probablity;
-        double age45To64Probablity;
-        double age65OrOlderProbablity;
-        double maleProbablity;
-        double familySize2Probablity;
-        double familySize3Probablity;
-        double familySize4Probablity;
-        double familySize5Probablity;
-        double familySize6Probablity;
-        double familySize7Probablity;
-        int numberOfFamilies;
-
+        int size;   //Size of Population to Generate
     
-        std::vector < Family > families;
+        //Distributions
+        double *ageProbablities;    //Age Distribution
+        double *familySizeProbablites;  //Family Size Distrbution
+        double *scheduleProbablities;   //Schedule Type Distribution
+        double maleProbablity;
+        //Statistics Helpers
+        int numberOfPeopleAges[7];
+        int numberOfMales=0;
+        int numberOfFamiliesSizes[7];
+        int numberOfFamilies;
+        int numberOfPeopleAssignedSchedule[11];
+    
+        std::default_random_engine generator;   //Random Generator for Distributions
+    
+        std::vector < Family > families;    //Families in Population.
 };
 
 

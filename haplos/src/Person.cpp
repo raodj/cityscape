@@ -44,13 +44,14 @@ Person::Person(){
 	location[1]=-1;
 }
 
-Person::Person(int a, char g, int x, int y, int id_number) {
+Person::Person(int a, char g, int x, int y, int id_number, char scheduleType) {
 	// TODO Auto-generated constructor stub
 	age=a;
 	gender=g;
 	location[0]=x;
 	location[1]=y;
     id_num = id_number;
+    this->scheduleType=scheduleType;
 }
 
 void Person::setLocation(int x, int y){

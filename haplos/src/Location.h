@@ -39,6 +39,7 @@
 
 #include <unordered_map>
 #include "Person.h"
+#include "Buildings/Building.h"
 #include "Family.h"
 
 class Location {
@@ -55,9 +56,10 @@ public:
      \param[in] x Row location in grid.
      \param[in] y Col locaiton in grid.
      \param[in] m Max capacity of location.
+     \param[in] d Density of Locaiton
      
      */
-	Location(int x, int y, float m);
+	Location(int x, int y, float m, float d);
     
     /** Adds a person to the location.
      
@@ -70,6 +72,12 @@ public:
      \param f Family to be added to location.
      */
     void addFamily(Family *f);
+    
+    /** Add a Building to Location.
+     
+     \param b Building to be added to location.
+     */
+    void addBuilding(Building *b);
     
     /** Return the current number of people at location.
      
@@ -92,6 +100,18 @@ public:
      \return The maximumn copacity for a location.
      */
 	float getMaxPopulation() const;
+    
+    /** Return the density for a location.
+     
+     \return The density for a location.
+     */
+    float getDensity() const;
+    
+    /** Return the number of buildings in a location.
+     
+     \return The number of buildings in a location.
+     */
+    int getNumberOfBuildings() const;
     
     /** Check to see if location is currently full.
      
@@ -116,7 +136,9 @@ private:
 	int numberOfPeople;
 	int coordinates [2];
 	float maxPopulation;
+    float density;
     std::unordered_map<int,Person*> people;
+    std::unordered_map<int, Building*> buildings;
 
 };
 

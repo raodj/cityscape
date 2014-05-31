@@ -51,8 +51,10 @@ public:
      \param[in] x Row of where person is assigned.
      \param[in] y Col of where person is assigned.
      \param[in] id_num Unique ID of person.
+     \param[in] scheduleType Type of schedule assigned ('E'=Employeed, 'U' Unemployeed, 
+                             'S'=School Age, 'Y'= Young Child.
      */
-	Person(int age , char gender, int x, int y, int id_num);
+	Person(int age , char gender, int x, int y, int id_num, char scheduleType);
     /** The copy constructor for this class.
      
      \param[in] p Another person.
@@ -111,6 +113,7 @@ private:
 	int gender=' ';
     int id_num=0;
 	int location[2];
+    char scheduleType;
 };
 
 #endif /* PERSON_H_ */

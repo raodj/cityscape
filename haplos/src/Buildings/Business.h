@@ -34,53 +34,31 @@
 //
 //-----------------------------------------------------------
 
-#include "Family.h"
-#include <vector>
-
-using namespace std;
-
-Family::Family() {
-    hasAdult=false;
-    numberOfPeople=0;
-    homeNumber=-1;
-}
-
-Person* Family::getPerson(int id){
-    return &members[id];
-    
-}
-
-int Family::getNumberOfPeople(){
-    return numberOfPeople;
-    
-}
-
-Person* Family::getAllPersons(){
-    return &members[0];
-}
-
-int Family::setHomeNumber(int n){
-    homeNumber=n;
-}
-
-void Family::addPerson(Person newPerson){
-    members.push_back(newPerson);
-    if(newPerson.getAge()>17){
-        hasAdult=true;
-    }
-    numberOfPeople++;
-    
-}
-
-void Family::setLocation(int x, int y){
-    for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){
-        it->setLocation(x, y);
-    }
-}
-
-bool Family::getHasAdult(){
-    return hasAdult;
-}
-Family::~Family() {
-	// TODO Auto-generated destructor stub
-}
+#ifndef __haplos__Business__
+#define __haplos__Business__
+#include "Building.h"
+#include <iostream>
+class Business : public Building {
+    /*Class for Representing a Business Building*/
+    public:
+        /** The default constructor for this class.
+         
+         \param[in] id ID number of Building
+         \param[in] x row number of building
+         \param[in] y col number of building
+         \param[in] capacity max number of employees.
+         \param[in] visitorCapacity max number of visitors a business can have in a given hour.
+         */
+        Business(int id, int x, int y, int capacity, int visitorCapacity);
+        /**
+         The destructor.
+         
+         Currently the destructor does not have any specific task to
+         perform in this class.  However, it is defined for adherence
+         with conventions and for future extensions.
+         */
+        virtual ~Business();
+    private:
+        int maxVisitorCapacity;
+    };
+#endif /* defined(__haplos__Business__) */

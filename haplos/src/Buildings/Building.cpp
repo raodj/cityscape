@@ -1,10 +1,7 @@
-
-#ifndef IMAGEGEN_H_
-#define IMAGEGEN_H_
-
 //------------------------------------------------------------
 //
-// This file is part of HAPLOS <http://pc2lab.cec.miamiOH.edu/>
+// This file is part of HAPLOS availabe off the website at
+// <http://pc2lab.cec.miamiOH.edu/haplos>
 //
 // Human  Population  and   Location  Simulator (HAPLOS)  is
 // free software: you can  redistribute it and/or  modify it
@@ -37,21 +34,24 @@
 //
 //-----------------------------------------------------------
 
-#include <string>
-#include <vector>
-#include "Location.h"
+#include "Building.h"
 
+using namespace std;
 
-class ImageGen {
-	public:
-    ImageGen(std::string outputFolder);
-    void createSVGImage(std::vector<std::vector<Location> > data, int rows, int cols);
-    void createPNGImage(std::vector<std::vector<Location> > data, int rows, int cols);
-		virtual ~ImageGen();
-	private:
-		double*  hsv2rgb(double h, double s, double v);
-		void createPoint(float x, float y, float value);
+Building::Building(char t, int i, int x, int y, int capacity){
+    type=t;
+    idNumber = i;
+    this->x=x;
+    this->y=y;
+    this->maxCapacity=capacity;
+}
 
-};
+int Building::getID(){
+    return idNumber;
+}
 
-#endif /* IMAGEGEN_H_ */
+Building::~Building(){
+    
+    
+}
+

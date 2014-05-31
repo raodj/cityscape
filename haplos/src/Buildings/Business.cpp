@@ -33,54 +33,13 @@
 // from <http://www.gnu.org/licenses/>.
 //
 //-----------------------------------------------------------
+#include "Business.h"
+#include "Building.h"
 
-#include "Family.h"
-#include <vector>
-
-using namespace std;
-
-Family::Family() {
-    hasAdult=false;
-    numberOfPeople=0;
-    homeNumber=-1;
+Business::Business(int i, int x, int y, int capacity, int visitorCapacity) : Building('B', i, x, y, capacity){
+    this->maxVisitorCapacity= visitorCapacity;
 }
 
-Person* Family::getPerson(int id){
-    return &members[id];
+Business::~Business(){
     
-}
-
-int Family::getNumberOfPeople(){
-    return numberOfPeople;
-    
-}
-
-Person* Family::getAllPersons(){
-    return &members[0];
-}
-
-int Family::setHomeNumber(int n){
-    homeNumber=n;
-}
-
-void Family::addPerson(Person newPerson){
-    members.push_back(newPerson);
-    if(newPerson.getAge()>17){
-        hasAdult=true;
-    }
-    numberOfPeople++;
-    
-}
-
-void Family::setLocation(int x, int y){
-    for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){
-        it->setLocation(x, y);
-    }
-}
-
-bool Family::getHasAdult(){
-    return hasAdult;
-}
-Family::~Family() {
-	// TODO Auto-generated destructor stub
 }

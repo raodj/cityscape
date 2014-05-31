@@ -49,7 +49,13 @@ public:
     /** The default constructor for this class.s
      */
 	SedacReader();
-    std::vector<std::vector<Location> > readFile(std::string filename);
+    
+    /** Read in a SEDAC file and return a vector of locations.
+        \param[in] filename Location of SEDAC File to be read.
+        \param[in] sedacPopulationSize Size of total population in SEDAC File.
+        \param[in] actualPopulationSize Size of Population being Generated.
+     */
+    std::vector<std::vector<Location> > readFile(std::string filename, int sedacPopulationSize, int actualPopulationSize);
 	virtual ~SedacReader();
 };
 

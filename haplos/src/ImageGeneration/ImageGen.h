@@ -1,7 +1,10 @@
+
+#ifndef IMAGEGEN_H_
+#define IMAGEGEN_H_
+
 //------------------------------------------------------------
 //
-// This file is part of HAPLOS availabe off the website at
-// <http://pc2lab.cec.miamiOH.edu/haplos>
+// This file is part of HAPLOS <http://pc2lab.cec.miamiOH.edu/>
 //
 // Human  Population  and   Location  Simulator (HAPLOS)  is
 // free software: you can  redistribute it and/or  modify it
@@ -34,53 +37,21 @@
 //
 //-----------------------------------------------------------
 
-#include "Family.h"
+#include <string>
 #include <vector>
+#include "../Location.h"
 
-using namespace std;
 
-Family::Family() {
-    hasAdult=false;
-    numberOfPeople=0;
-    homeNumber=-1;
-}
+class ImageGen {
+	public:
+    ImageGen(std::string outputFolder);
+    void createSVGImage(std::vector<std::vector<Location> > data, int rows, int cols);
+    void createPNGImage(std::vector<std::vector<Location> > data, int rows, int cols);
+		virtual ~ImageGen();
+	private:
+		double*  hsv2rgb(double h, double s, double v);
+		void createPoint(float x, float y, float value);
 
-Person* Family::getPerson(int id){
-    return &members[id];
-    
-}
+};
 
-int Family::getNumberOfPeople(){
-    return numberOfPeople;
-    
-}
-
-Person* Family::getAllPersons(){
-    return &members[0];
-}
-
-int Family::setHomeNumber(int n){
-    homeNumber=n;
-}
-
-void Family::addPerson(Person newPerson){
-    members.push_back(newPerson);
-    if(newPerson.getAge()>17){
-        hasAdult=true;
-    }
-    numberOfPeople++;
-    
-}
-
-void Family::setLocation(int x, int y){
-    for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){
-        it->setLocation(x, y);
-    }
-}
-
-bool Family::getHasAdult(){
-    return hasAdult;
-}
-Family::~Family() {
-	// TODO Auto-generated destructor stub
-}
+#endif /* IMAGEGEN_H_ */
