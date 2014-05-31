@@ -40,7 +40,7 @@
 #include <vector>
 #include <exception>
 
-#include "Location.h"
+#include "../Location.h"
 
 /** Base class for image generation.
 
@@ -79,8 +79,8 @@ public:
 	errors.
     */
     virtual void createImage(const std::string& outFileName,
-			     const std::vector<std::vector<Location>>& data,
-			     const int rows, const int cols)
+			     const std::vector<std::vector<int>>& data,
+			     const int rows, const int cols, const double maxValue)
 	throw(std::exception) = 0;
     
 protected:

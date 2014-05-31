@@ -44,20 +44,30 @@ using namespace std;
 Location::Location(){
 	numberOfPeople=0;
 	maxPopulation=0;
+    density=0;
 	coordinates[0]=-1;
 	coordinates[1]=-1;
 }
 
-Location::Location(int x, int y, float m) {
+Location::Location(int x, int y, float m, float d) {
 	// TODO Auto-generated constructor stub
-	numberOfPeople=0;
+	if(m>=0){
+        numberOfPeople=0;
+    }else{
+        numberOfPeople=-1;
+    }
 	maxPopulation=m;
+    density=d;
 	coordinates[0]=x;
 	coordinates[1]=y;
 }
 
 int Location::getCurrentPopulation() const {
 	return numberOfPeople;
+}
+
+float Location::getDensity() const{
+    return density;
 }
 
 bool Location::isFull(){
@@ -71,8 +81,13 @@ bool Location::isFull(){
 float Location::getMaxPopulation() const{
 	return maxPopulation;
 }
+
 int* Location::getCoordinates(){
 	return coordinates;
+}
+
+int Location::getNumberOfBuildings() const{
+    return buildings.size();
 }
 
 void Location::addFamily(Family *f){
@@ -81,6 +96,10 @@ void Location::addFamily(Family *f){
     for(int p=0; p<numberOfPeople;p++){
         this->addPerson(&people[p]);
     }
+}
+
+void Location::addBuilding(Building *b){
+    buildings[b->getID()]=b;
 }
 void Location::addPerson(Person *p){
     people[p->getID()]= p;

@@ -41,6 +41,9 @@
 #include <fstream>
 #include <sstream>
 
+ConfigFile::ConfigFile(){
+
+}
 ConfigFile::ConfigFile(const std::string& fileLocation) :
     configFileLocation(fileLocation) {
     std::cout << "Loading config file: " << configFileLocation << std::endl;

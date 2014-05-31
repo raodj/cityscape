@@ -52,29 +52,28 @@ SedacReader::~SedacReader() {
 	// TODO Auto-generated destructor stub
 }
 
-vector<vector<Location> > SedacReader::readFile(string fileName){
-		vector<vector<Location> > densityData;
+std::vector<std::vector<Location> > SedacReader::readFile(std::string fileName, int sedacPopulationSize, int actualPopulationSize){
+        std::vector< std::vector<Location> > densityData;
 		int cols;
 		int rows;
-		cout<<fileName.c_str()<<endl;
-	    string line;
-		ifstream infile;
+        std::string line;
+        std::ifstream infile;
 		infile.open (fileName.c_str());
     
 		if (infile.fail()) {
-            std::cout << "Unable to Open SEDAC Data File." << std::endl;
+            std::cout << "Unable to Open SEDAC Data File at" << fileName.c_str() << std::endl;
 			return densityData;
 		}
 		//Get Number of Rows
 		getline(infile,line);
 		unsigned pos = line.find_last_of(" ");
 		cols = std::stoi(line.substr(pos+1).c_str());
-		//cols=2750; 	//Cut out Random Few islands off the coast of alaska
+    
 		//Get Number of cols
 		getline(infile,line);
 		pos = line.find_last_of(" ");
-		rows=std::atoi(line.substr(pos+1).c_str());
-		//cout<<"Number of Rows: "<<rows<<" Number of Columns: "<<cols<<endl;
+		rows= std::atoi(line.substr(pos+1).c_str());
+    
 		//Ignore These Lines
 		getline(infile,line);
 		getline(infile,line);
@@ -83,17 +82,14 @@ vector<vector<Location> > SedacReader::readFile(string fileName){
 		//Get No Data Value
 		getline(infile,line);
 		pos = line.find_last_of(" ");
-		int noDataValue=std::atoi(line.substr(pos+1).c_str());
-		cout<<"Starting Processing"<<endl;
+        std::cout << "Starting Processing" << std::endl;
 		densityData.resize(rows);
 		for(int i =0; i < rows; i++){
 			densityData.at(i).resize(cols);
 		}
 
-		cout<<"Data Allocated"<<endl;
+        std::cout << "Data Allocated" << std::endl;
 		int currentRow=0;
-		bool actualData=false;
-		float maxVal=0;
     
 		//Get all the Data
         densityData.resize(rows);
@@ -115,7 +111,11 @@ vector<vector<Location> > SedacReader::readFile(string fileName){
 		    int currentColumn=0;
 		    for (vector<std::string>::iterator i = tokens.begin();i != tokens.end();++i) {
 		    	if (currentColumn<cols) {
-					densityData.at(currentRow).at(currentColumn)= Location(currentRow, currentColumn, (std::atof((*i).c_str())));
+                    float density=((std::atof((*i).c_str()))/sedacPopulationSize);
+					densityData.at(currentRow).at(currentColumn) = Location(currentRow,
+                                                                            currentColumn,
+                                                                            density*actualPopulationSize,
+                                                                            density);
 		    		currentColumn++;
 		    	}
                 else {
