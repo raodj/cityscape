@@ -37,7 +37,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
-#include <random>
 #include "Person.h"
 #include "Family.h"
 #include <vector>
@@ -229,7 +228,7 @@ int* Population::determineAge(bool forceAdult){
                 //25-44
                 numberOfPeopleAges[4]++;
                 ageInformation[0]= (int)rand() % 19 + 25;
-                ageInformation[1]=5;
+                ageInformation[1]=4;
                 break;
             case 5:
                 //45-64
@@ -369,7 +368,26 @@ void Population::displayStatistics(){
 
     //Display Schedule Information
     std::cout <<"--------Schedules--------" << std::endl;
-    std::cout << "Young Child: \t"<< numberOfPeopleAssignedSchedule[0] << " \t" << (numberOfPeopleAssignedSchedule[0]/(double)numberOfPeopleAges[0]) <<"\t(Expected " <<scheduleProbablities[0] <<")" <<endl;
+     std::cout << "Young Child: \t"<< numberOfPeopleAssignedSchedule[0] << " \t" << (numberOfPeopleAssignedSchedule[0]/(double)numberOfPeopleAges[0]) <<"\t(Expected " <<scheduleProbablities[0] <<")" <<endl;
+    double expected=(ageProbablities[1]*scheduleProbablities[1])+(ageProbablities[2]*scheduleProbablities[2]);
+    std::cout << "School Schedule: \t"<< numberOfPeopleAssignedSchedule[1]+numberOfPeopleAssignedSchedule[2] << " \t"<< ((numberOfPeopleAssignedSchedule[1]+numberOfPeopleAssignedSchedule[2])/(double)numberOfPeopleAges[1]+numberOfPeopleAges[2]) <<"\t(Expected " <<expected <<")" <<endl;
+    
+    expected=(ageProbablities[3]*scheduleProbablities[3])+
+                           (ageProbablities[4]*scheduleProbablities[5])+
+                           (ageProbablities[5]*scheduleProbablities[7])+
+                           (ageProbablities[6]*scheduleProbablities[9]);
+    
+    std::cout << "Employeed Schedule: \t"<< numberOfPeopleAssignedSchedule[3]+numberOfPeopleAssignedSchedule[5]+numberOfPeopleAssignedSchedule[7]+numberOfPeopleAssignedSchedule[9] << " \t"<< ((numberOfPeopleAssignedSchedule[3]+numberOfPeopleAssignedSchedule[5]+numberOfPeopleAssignedSchedule[7]+numberOfPeopleAssignedSchedule[9])/((double)numberOfPeopleAges[3]+numberOfPeopleAges[4]+numberOfPeopleAges[5]+numberOfPeopleAges[6])) <<"\t(Expected " <<expected <<")" <<endl;
+   
+    expected=(ageProbablities[3]*scheduleProbablities[4])+
+             (ageProbablities[4]*scheduleProbablities[6])+
+             (ageProbablities[5]*scheduleProbablities[8])+
+             (ageProbablities[6]*scheduleProbablities[10]);
+    
+    std::cout << "Unemployeed Schedule: \t"<< numberOfPeopleAssignedSchedule[4]+numberOfPeopleAssignedSchedule[6]+numberOfPeopleAssignedSchedule[8]+numberOfPeopleAssignedSchedule[10] << " \t"<< ((numberOfPeopleAssignedSchedule[4]+numberOfPeopleAssignedSchedule[6]+numberOfPeopleAssignedSchedule[8]+numberOfPeopleAssignedSchedule[10])/((double)numberOfPeopleAges[3]+numberOfPeopleAges[4]+numberOfPeopleAges[5]+numberOfPeopleAges[6])) <<"\t(Expected " <<expected <<")" <<endl;
+    
+    std::cout << "----Schedule Break Down----" << std::endl;
+    std::cout << "Young Child (0-4): \t"<< numberOfPeopleAssignedSchedule[0] << " \t" << (numberOfPeopleAssignedSchedule[0]/(double)numberOfPeopleAges[0]) <<"\t(Expected " <<scheduleProbablities[0] <<")" <<endl;
     std::cout << "School Schedule (5-13): \t"<< numberOfPeopleAssignedSchedule[1] << " \t"<< (numberOfPeopleAssignedSchedule[1]/(double)numberOfPeopleAges[1]) <<"\t(Expected " <<scheduleProbablities[1] <<")" <<endl;
     std::cout << "School Schedule (14-17): \t"<< numberOfPeopleAssignedSchedule[2] << " \t"<< (numberOfPeopleAssignedSchedule[2]/(double)numberOfPeopleAges[2]) <<"\t(Expected " <<scheduleProbablities[2] <<")" <<endl;
     std::cout << "Employeed Schedule (18-24): \t"<< numberOfPeopleAssignedSchedule[3] << " \t"<< (numberOfPeopleAssignedSchedule[3]/(double)numberOfPeopleAges[3]) <<"\t(Expected " <<scheduleProbablities[3] <<")" <<endl;

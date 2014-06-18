@@ -42,7 +42,10 @@
 class Building {
     /*Class for Representing a Unclassified Building*/
     public:
-        /** The default constructor for this class.
+        /** The default constructor for this class. All values would have to be manually set.
+         */
+        Building();
+        /** Class with All main Paramaters
          
          \param[in] type Type of Building ('H'= Home, 'B' = Business, 'S'=School)
          \param[in] id ID number of Building

@@ -46,6 +46,8 @@
 #include "Population.h"
 #include "ImageGeneration/XFigImageGenerator.h"
 #include "ConfigFile.h"
+#include "Buildings/Medical.h"
+#include "Buildings/School.h"
 #include "Buildings/Business.h"
 using namespace std;
 
@@ -56,12 +58,11 @@ std::vector< std::vector < Location > > densityData;
 std::default_random_engine generator;
 ConfigFile configuration;
 
-int totalBusinessSize0=0;
-int totalBusinessSize1=0;
-int totalBusinessSize2=0;
-int totalBusinessSize3=0;
-int totalBusinessSize4=0;
-int totalBusinessSize5=0;
+int totalBusinessSize[6];
+int totalHospitalSize[6];
+int totalSchoolSize[6];
+int totalSchools=0;
+int totalHospitals=0;
 int totalBusinesses=0;
 int numberOfBuildings=0;
 
@@ -128,66 +129,198 @@ void placeLocation(){
     
 }
 
-void generateBuildings(double businessSizeProbablities[6], std::vector<double> locationProbablties, int const width, int const numberOfEmployeedAdults){
+void generateBuildings(double businessSizeProbablities[6], double hospitalSizeProbablities[6], double schoolSizeProbablities[6], std::vector<double> locationProbablties, int const width, int const numberOfEmployeedAdults){
     //Set Random Generator Seed
     generator.seed(time(0));
     //Set Distribution
-    std::discrete_distribution<int> sizeDistribution{ businessSizeProbablities[0],
+    std::discrete_distribution<int> businessSizeDistribution{ businessSizeProbablities[0],
                                                   businessSizeProbablities[1],
                                                   businessSizeProbablities[2],
                                                   businessSizeProbablities[3],
                                                   businessSizeProbablities[4],
                                                   businessSizeProbablities[5]};
     std::discrete_distribution<int> locationDistribution(locationProbablties.begin(), locationProbablties.end());
+    
     //Set Tailies for Print out
     int totalBuinessPopulation=0;
     while(numberOfEmployeedAdults>totalBuinessPopulation){
         int capacity = -1;
-        switch(sizeDistribution(generator)){
-            case 0:
+        bool hospital=false;
+        bool school=false;
+        switch(businessSizeDistribution(generator)){
+            case 0:{
+                std::discrete_distribution<int> hospitalSizeDistribution0{1-hospitalSizeProbablities[0],hospitalSizeProbablities[0]};
                 capacity = (int)rand() % 4 + 1;
-                totalBusinessSize0++;
+                if(hospitalSizeDistribution0(generator)){
+                    totalHospitals++;
+                    totalHospitalSize[0]++;
+                    hospital=true;
+                }
+                else{
+                    std::discrete_distribution<int> schoolSizeDistribution0{ 1-schoolSizeProbablities[0], schoolSizeProbablities[0]};
+                    if(schoolSizeDistribution0(generator)){
+                        totalSchools++;
+                        totalSchoolSize[0]++;
+                        school=true;
+                    }else{
+                        totalBusinesses++;
+                        totalBusinessSize[0]++;
+                    }
+                }
                 break;
-            case 1:
+            }
+            case 1:{
+                std::discrete_distribution<int> hospitalSizeDistribution1{1-hospitalSizeProbablities[1],hospitalSizeProbablities[1]};
                 capacity = (int)rand() % 4 + 5;
-                totalBusinessSize1++;
+                if(hospitalSizeDistribution1(generator)){
+                    totalHospitals++;
+                    totalHospitalSize[1]++;
+                    hospital=true;
+                }
+                else{
+                    std::discrete_distribution<int> schoolSizeDistribution1{1-schoolSizeProbablities[1],schoolSizeProbablities[1]};
+                    if(schoolSizeDistribution1(generator)){
+                        totalSchools++;
+                        totalSchoolSize[1]++;
+                        school=true;
+                    }else{
+                        totalBusinesses++;
+                        totalBusinessSize[1]++;
+                    }
+                }
                 break;
-            case 2:
+            }
+            case 2:{
+                std::discrete_distribution<int> hospitalSizeDistribution2{1-hospitalSizeProbablities[2],hospitalSizeProbablities[2]};
                 capacity = (int)rand() % 9 + 10;
-                totalBusinessSize2++;
+                if(hospitalSizeDistribution2(generator)){
+                    totalHospitals++;
+                    totalHospitalSize[2]++;
+                    hospital=true;
+                }
+                else{
+                    std::discrete_distribution<int> schoolSizeDistribution2{1-schoolSizeProbablities[2],schoolSizeProbablities[2]};
+                    if(schoolSizeDistribution2(generator)){
+                        totalSchools++;
+                        totalSchoolSize[2]++;
+                        school=true;
+                    }else{
+                        totalBusinesses++;
+                        totalBusinessSize[2]++;
+                    }
+                }
                 break;
-            case 3:
+            }
+            case 3:{
+                std::discrete_distribution<int> hospitalSizeDistribution3{1-hospitalSizeProbablities[3],hospitalSizeProbablities[3]};
                 capacity = (int)rand() % 79 + 20;
-                totalBusinessSize3++;
+                if(hospitalSizeDistribution3(generator)){
+                    totalHospitals++;
+                    totalHospitalSize[3]++;
+                    hospital=true;
+                }
+                else{
+                    std::discrete_distribution<int> schoolSizeDistribution3{1-schoolSizeProbablities[3],schoolSizeProbablities[3]};
+                    if(schoolSizeDistribution3(generator)){
+                        totalSchools++;
+                        totalSchoolSize[3]++;
+                        school=true;
+                    }else{
+                        totalBusinesses++;
+                        totalBusinessSize[3]++;
+                    }
+                }
                 break;
-            case 4:
+            }
+            case 4:{
+                std::discrete_distribution<int> hospitalSizeDistribution4{1-hospitalSizeProbablities[4],hospitalSizeProbablities[4]};
                 capacity = (int)rand() % 399 + 100;
-                totalBusinessSize4++;
+                if(hospitalSizeDistribution4(generator)){
+                    totalHospitals++;
+                    totalHospitalSize[4]++;
+                    hospital=true;
+                }
+                else{
+                    std::discrete_distribution<int> schoolSizeDistribution4{1-schoolSizeProbablities[4],schoolSizeProbablities[4]};
+                    if(schoolSizeDistribution4(generator)){
+                        totalSchools++;
+                        totalSchoolSize[4]++;
+                        school=true;
+                    }else{
+                        totalBusinesses++;
+                        totalBusinessSize[4]++;
+                    }
+                }
                 break;
-            case 5:
-                totalBusinessSize5++;
+            }
+            case 5:{
+                std::discrete_distribution<int> hospitalSizeDistribution5{1-hospitalSizeProbablities[5],hospitalSizeProbablities[5]};
                 capacity = 500;
+                if(hospitalSizeDistribution5(generator)){
+                    totalHospitals++;
+                    totalHospitalSize[5]++;
+                    hospital=true;
+                }
+                else{
+                    std::discrete_distribution<int> schoolSizeDistribution5{1-schoolSizeProbablities[5],schoolSizeProbablities[5]};
+                    if(schoolSizeDistribution5(generator)){
+                        totalSchools++;
+                        totalSchoolSize[5]++;
+                        school=true;
+                    }else{
+                        totalBusinesses++;
+                        totalBusinessSize[5]++;
+                    }
+                }
                 break;
+            }
         }
         int location = locationDistribution(generator);
-        Business newBusiness= Business(numberOfBuildings,location%width, location/width, capacity, 0);
-        densityData.at(location%width).at(location/width).addBuilding(&newBusiness);
+        Building newBuilding;
+        if(school){
+            newBuilding = School(numberOfBuildings, location%width, location/width, capacity, 0, NULL);
+        }else{
+            if(hospital){
+                newBuilding = Medical(numberOfBuildings, location%width, location/width, capacity, 0, 0);
+            }else{
+                newBuilding=Business(numberOfBuildings,location%width, location/width, capacity, 0);
+            }
+        }
+        densityData.at(location%width).at(location/width).addBuilding(&newBuilding);
         totalBuinessPopulation+=capacity;
-        totalBusinesses++;
         numberOfBuildings++;
     }
 }
 
-void displayBuildingStatistics(double businessSizeProbablities[6]){
+void displayBuildingStatistics(double businessSizeProbablities[6], double hospitalSizeProbablities[6], double schoolSizeProbablities[6]){
     std::cout << "--------Buildings--------" << std::endl;
+    std::cout << "Total Buildings Generated: " << numberOfBuildings << std::endl;
     std::cout << "----Businesses----" << std::endl;
     std::cout <<"Total Generated: " << totalBusinesses << std::endl;
-	std::cout << "Employee Capacity 1-4:     \t" << totalBusinessSize0 << " \t"<<(totalBusinessSize0/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[0] << ")" << std::endl;
-    std::cout << "Employee Capacity 5-9:     \t" << totalBusinessSize1 << " \t"<<(totalBusinessSize1/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[1] << ")" << std::endl;
-    std::cout << "Employee Capacity 10-19:   \t" << totalBusinessSize2 << " \t"<<(totalBusinessSize2/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[2] << ")" << std::endl;
-    std::cout << "Employee Capacity 20-99:   \t" << totalBusinessSize3 << " \t"<<(totalBusinessSize3/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[3] << ")" << std::endl;
-    std::cout << "Employee Capacity 100-499: \t" << totalBusinessSize4 << " \t"<<(totalBusinessSize4/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[4] << ")" << std::endl;
-    std::cout << "Employee Capacity 500:     \t" << totalBusinessSize5 << " \t"<<(totalBusinessSize5/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[5] << ")" << std::endl;
+	std::cout << "Employee Capacity 1-4:     \t" << totalBusinessSize[0] << " \t"<<(totalBusinessSize[0]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[0] << ")" << std::endl;
+    std::cout << "Employee Capacity 5-9:     \t" << totalBusinessSize[1] << " \t"<<(totalBusinessSize[1]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[1] << ")" << std::endl;
+    std::cout << "Employee Capacity 10-19:   \t" << totalBusinessSize[2] << " \t"<<(totalBusinessSize[2]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[2] << ")" << std::endl;
+    std::cout << "Employee Capacity 20-99:   \t" << totalBusinessSize[3] << " \t"<<(totalBusinessSize[3]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[3] << ")" << std::endl;
+    std::cout << "Employee Capacity 100-499: \t" << totalBusinessSize[4] << " \t"<<(totalBusinessSize[4]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[4] << ")" << std::endl;
+    std::cout << "Employee Capacity 500:     \t" << totalBusinessSize[5] << " \t"<<(totalBusinessSize[5]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[5] << ")" << std::endl;
+    
+    std::cout << "----Hospitals----" << std::endl;
+    std::cout <<"Total Generated: " << totalHospitals << std::endl;
+	std::cout << "Employee Capacity 1-4:     \t" << totalHospitalSize[0] << " \t"<<(totalHospitalSize[0]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[0] << ")" << std::endl;
+    std::cout << "Employee Capacity 5-9:     \t" << totalHospitalSize[1] << " \t"<<(totalHospitalSize[1]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[1] << ")" << std::endl;
+    std::cout << "Employee Capacity 10-19:   \t" << totalHospitalSize[2] << " \t"<<(totalHospitalSize[2]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[2] << ")" << std::endl;
+    std::cout << "Employee Capacity 20-99:   \t" << totalHospitalSize[3] << " \t"<<(totalHospitalSize[3]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[3] << ")" << std::endl;
+    std::cout << "Employee Capacity 100-499: \t" << totalHospitalSize[4] << " \t"<<(totalHospitalSize[4]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[4] << ")" << std::endl;
+    std::cout << "Employee Capacity 500:     \t" << totalHospitalSize[5] << " \t"<<(totalHospitalSize[5]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[5] << ")" << std::endl;
+    
+    std::cout << "----Schools----" << std::endl;
+    std::cout <<"Total Generated: " << totalSchools << std::endl;
+	std::cout << "Employee Capacity 1-4:     \t" << totalSchoolSize[0] << " \t"<<(totalSchoolSize[0]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[0] << ")" << std::endl;
+    std::cout << "Employee Capacity 5-9:     \t" << totalSchoolSize[1] << " \t"<<(totalSchoolSize[1]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[1] << ")" << std::endl;
+    std::cout << "Employee Capacity 10-19:   \t" << totalSchoolSize[2] << " \t"<<(totalSchoolSize[2]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[2] << ")" << std::endl;
+    std::cout << "Employee Capacity 20-99:   \t" << totalSchoolSize[3] << " \t"<<(totalSchoolSize[3]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[3] << ")" << std::endl;
+    std::cout << "Employee Capacity 100-499: \t" << totalSchoolSize[4] << " \t"<<(totalSchoolSize[4]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[4] << ")" << std::endl;
+    std::cout << "Employee Capacity 500:     \t" << totalSchoolSize[5] << " \t"<<(totalSchoolSize[5]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[5] << ")" << std::endl;
 }
 
 int main() {
@@ -247,6 +380,20 @@ int main() {
                                          configuration["Business_Size_100-499_Probablity"],
                                          configuration["Business_Size_500_Probablity"]};
     
+    double hospitalSizeProbablities[6]={ configuration["Hospital_Size_0-4_Probablity"],
+                                         configuration["Hospital_Size_5-9_Probablity"],
+                                         configuration["Hospital_Size_10-19_Probablity"],
+                                         configuration["Hospital_Size_20-99_Probablity"],
+                                         configuration["Hospital_Size_100-499_Probablity"],
+                                         configuration["Hospital_Size_500_Probablity"]};
+    
+    double schoolSizeProbablities[6]={ configuration["School_Size_0-4_Probablity"],
+                                       configuration["School_Size_5-9_Probablity"],
+                                       configuration["School_Size_10-19_Probablity"],
+                                       configuration["School_Size_20-99_Probablity"],
+                                       configuration["School_Size_100-499_Probablity"],
+                                       configuration["School_Size_500_Probablity"]};
+    
     double scheduleTypeProbablities[11]={ configuration["Schedule_Young_Children_5-Younger_Probablity"],
                                           configuration["Schedule_School_Children_5-13_Probablity"],
                                           configuration["Schedule_School_Children_14-17_Probablity"],
@@ -266,7 +413,7 @@ int main() {
    
     //Assign Locations to Population
     assignHomes(pop);
-    generateBuildings(businessSizeProbablities, pureDensity, densityData.size(), pop.getNumberOfEmployeedAdults());
+    generateBuildings(businessSizeProbablities, hospitalSizeProbablities, schoolSizeProbablities, pureDensity, densityData.size(), pop.getNumberOfEmployeedAdults());
 
     #ifdef HAVE_MAGICK
         ImageGen ig(outputFolder);
@@ -308,7 +455,7 @@ int main() {
     xfig.createImage(outputFolder + "haplos_building.fig", buildingData,
                      buildingData.size(), buildingData[0].size(), 100);
     pop.displayStatistics();
-    displayBuildingStatistics(businessSizeProbablities);
+    displayBuildingStatistics(businessSizeProbablities, hospitalSizeProbablities, schoolSizeProbablities);
     return 0;
 }
 

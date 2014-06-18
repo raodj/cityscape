@@ -38,6 +38,13 @@
 
 using namespace std;
 
+Building:: Building(){
+    type='U';
+    idNumber=-1;
+    x=-1;
+    y=-1;
+    maxCapacity=-1;
+}
 Building::Building(char t, int i, int x, int y, int capacity){
     type=t;
     idNumber = i;
