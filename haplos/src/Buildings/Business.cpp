@@ -37,6 +37,7 @@
 #include "Building.h"
 
 Business::Business(int i, int x, int y, int capacity, int visitorCapacity) : Building('B', i, x, y, capacity){
+    //Create Distribution
     this->maxVisitorCapacity= visitorCapacity;
 }
 

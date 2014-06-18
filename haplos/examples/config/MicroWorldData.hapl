@@ -37,6 +37,18 @@ Business_Size_20-99_Probablity=0
 Business_Size_100-499_Probablity=0
 Business_Size_500_Probablity=0
 
+Business_Max_Visitor_Per_Employeee_0-4=
+Business_Max_Visitor_Per_Employeee_5-9=
+Business_Max_Visitor_Per_Employeee_10-19=
+Business_Max_Visitor_Per_Employeee_20-99=
+Business_Max_Visitor_Per_Employeee_100-499=
+Business_Max_Visitor_Per_Employeee_500=
+
+#Schools
+
+#Hospitals
+
+
 ####Schedules####
 #Adult Schedules
 Schedule_Employeed_Adults_18-24_Probablity=0.80
