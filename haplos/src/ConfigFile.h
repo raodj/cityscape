@@ -114,7 +114,7 @@ public:
 	\return value of variable.
     */    
     double operator[](const std::string& variableName) const {
-	return variables.at(variableName);
+        return variables.at(variableName);
     }
     
     /** Helper Method to display variables set.

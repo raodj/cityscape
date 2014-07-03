@@ -48,7 +48,7 @@ const int YELLOW_COLOR=37;
 const int ORANGE_COLOR=38;
 
 void XFigImageGenerator::createImage(const std::string& outFileName,
-		const std::vector<std::vector<int>>& data, const int rows,
+		const std::vector< std::vector<int> >& data, const int rows,
 		const int cols, const double maxValue) throw (std::exception) {
 	// Create a XFigHelper to help generating an image.
 	XFigHelper xfig;

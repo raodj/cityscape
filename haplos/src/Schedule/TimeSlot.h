@@ -1,3 +1,7 @@
+
+
+#ifndef __haplos__TimeSlot__
+#define __haplos__TimeSlot__
 //------------------------------------------------------------
 //
 // This file is part of HAPLOS <http://pc2lab.cec.miamiOH.edu/>
@@ -32,76 +36,41 @@
 // from <http://www.gnu.org/licenses/>.
 //
 //-----------------------------------------------------------
+#include <iostream>
 
-#include "Person.h"
-#include "Schedule/Schedule.h"
-
-
-Person::Person(){
-	age=-1;
-	gender='n';
-	location[0]=-1;
-	location[1]=-1;
-    schedule = Schedule();
-}
-
-Person::Person(int a, char g, int x, int y, int id_number, int scheduleType) {
-	// TODO Auto-generated constructor stub
-	age=a;
-	gender=g;
-	location[0]=x;
-	location[1]=y;
-    id_num = id_number;
-    schedule = Schedule(scheduleType);
-}
-
-void Person::setLocation(int x, int y){
-
-	location[0]=x;
-	location[1]=y;
-}
-Person::Person(const Person &p){
-	age=0;
-	gender=' ';
-	age=p.age;
-	gender=p.gender;
-	location[0]=p.location[0];
-	location[1]=p.location[1];
-}
-
-Person &Person::operator = (const Person &p){
-	if (this!=&p) {
-		age=0;
-		gender=' ';
-		age=p.age;
-		gender=p.gender;
-        id_num=p.id_num;
-	}
-	return *this;
-}
-
-char Person::getGender(){
-	return gender;
-}
-
-void Person::setGender(char g){
-	gender=g;
-}
-
-int Person::getAge(){
-	return age;
-}
-
-int* Person::getLocation(){
-	return location;
-}
-
-int Person::getID(){
-    return id_num;
+class TimeSlot{
+    public:
+        /** The default constructor for this class
+         */
+        TimeSlot();
     
-}
-Person::~Person() {
-	// TODO Auto-generated destructor stub
-}
+        /** Alternative constructor for this class with specific type
+         param[in] locaitonID ID of Location person will be at at this given time slot.
+         param[in] endTime time where person will move to next location.
+         */
+        TimeSlot(int locationID, int endTime);
+    
+        /** Get End Time for given Time Slot
+            return end time.
+         */
+        int getEndTime();
+    
+        /** Get Location ID where person should be in given time slot.
+            return Locaiton ID of place person should be.
+         */
+        int getLocationID();
+        
+        /**
+         The destructor.
+         
+         Currently the destructor does not have any specific task to
+         perform in this class.  However, it is defined for adherence
+         with conventions and for future extensions.
+         */
+        virtual ~TimeSlot();
+    private:
+        int locationID;
+        int endTime;
+};
 
-
+#endif /* defined(__haplos__TimeSlot__) */

@@ -1,7 +1,7 @@
 
-#ifndef FAMILY_H_
-#define FAMILY_H_
 
+#ifndef __haplos__Schedule__
+#define __haplos__Schedule__
 //------------------------------------------------------------
 //
 // This file is part of HAPLOS <http://pc2lab.cec.miamiOH.edu/>
@@ -36,51 +36,45 @@
 // from <http://www.gnu.org/licenses/>.
 //
 //-----------------------------------------------------------
-
+#include <iostream>
 #include <vector>
-#include "Person.h"
-class Family {
-    /** A class specifically for repersenting a family of indviduals. */
+#include "TimeSlot.h"
+
+class Schedule {
     public:
-        /** The default constructor for this class.
-         
-         \param[in] size Size of family.
+        /** The default constructor for this class
          */
-        Family();
+        Schedule();
         
-        /** Get a member of a family.
-         \param id  id of family memember to retrive.
-         \return An array of memembers in the family.
+        /** Alternative constructor for this class with specific type
+         param[in] type type of schedule to create (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
          */
-        Person* getPerson(int id);
+        Schedule(int type);
         
-        int getNumberOfPeople();
-        
-        /** Get All memembers of the family
-         \return Vector of all family memembers
+        /**Return integer representing the schedule type.
+         return type of schedule (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
          */
-        Person* getAllPersons();
+        int getScheduleType();
         
-        /**Add new Person to Family
-         \param newPerson Person to be added
+        /**Change the schedule type (this will remake schedule).
+         param[in] type type to change to (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
          */
-        void addPerson(Person newPerson);
+        void setScheduleType(int type);
         
-        /**Sets starting location for family
-         \param x X Location of Family.
-         \param y Y Location of family.
+        /**Advance current time step and Get Location for Next Time Step
+            return building ID or transport ID for next timestep
          */
-        void setLocation(int x, int y);
+        int getNextLocation();
+        
+        /**Peek Location for Next Time Step, without advancing currentTimeStep
+         return building ID or transport ID for next timestep
+         */
+        int peekNextLocation();
+        
+        /**Modify schedule to accomidate taking a young child to a daycare
+         */
+        void modifyForYoungChild();
     
-        /**Assign a Home Number to a Family
-          \param[in] n Number of Home Building.
-         */
-        int setHomeNumber(int n);
-    
-        /** Get if Family has an Adult.
-         \return True if family has at least 1 adult in it, false if otherwise.
-         */
-        bool getHasAdult();
         /**
          The destructor.
          
@@ -88,15 +82,19 @@ class Family {
          perform in this class.  However, it is defined for adherence
          with conventions and for future extensions.
          */
-        virtual ~Family();
-        
+        virtual ~Schedule();
+    
     private:
-        std::vector < Person > members;
-        int numberOfPeople;
-        bool hasAdult;
-        int homeNumber;
+        int type;
     
-    
+        /**Change the schedule type (this will remake schedule).
+         param[in] type type of schedule to generate (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
+         */
+        static const int MAXTIMESTEPS=2016;
+        void generateSchedule(int type);
+        std::vector<TimeSlot> plan;
+        int currentTimeStep;
+        int currentTimeSlot;
+        int numberOfTimeSlots;
 };
-
-#endif /* FAMILY_H_ */
+#endif /* defined(__haplos__Schedule__) */
