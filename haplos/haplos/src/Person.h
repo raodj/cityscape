@@ -36,6 +36,7 @@
 // from <http://www.gnu.org/licenses/>.
 //
 //-----------------------------------------------------------
+#include "Schedule/Schedule.h"
 
 class Person {
     /** A class specifically repersenting a single person.
@@ -51,10 +52,9 @@ public:
      \param[in] x Row of where person is assigned.
      \param[in] y Col of where person is assigned.
      \param[in] id_num Unique ID of person.
-     \param[in] scheduleType Type of schedule assigned ('E'=Employeed, 'U' Unemployeed, 
-                             'S'=School Age, 'Y'= Young Child.
+     \param[in] scheduleType Type of schedule assigned (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
      */
-	Person(int age , char gender, int x, int y, int id_num, char scheduleType);
+	Person(int age , char gender, int x, int y, int id_num, int scheduleType);
     /** The copy constructor for this class.
      
      \param[in] p Another person.
@@ -109,11 +109,11 @@ public:
      */
     virtual ~Person();
 private:
-	int age=0;
-	int gender=' ';
-    int id_num=0;
+	int age;
+	char gender;
+    int id_num;
 	int location[2];
-    char scheduleType;
+    Schedule schedule;
 };
 
 #endif /* PERSON_H_ */

@@ -32,76 +32,26 @@
 // from <http://www.gnu.org/licenses/>.
 //
 //-----------------------------------------------------------
+#include "TimeSlot.h"
 
-#include "Person.h"
-#include "Schedule/Schedule.h"
-
-
-Person::Person(){
-	age=-1;
-	gender='n';
-	location[0]=-1;
-	location[1]=-1;
-    schedule = Schedule();
+TimeSlot::TimeSlot(){
+    locationID=0;
+    endTime=0;
 }
 
-Person::Person(int a, char g, int x, int y, int id_number, int scheduleType) {
-	// TODO Auto-generated constructor stub
-	age=a;
-	gender=g;
-	location[0]=x;
-	location[1]=y;
-    id_num = id_number;
-    schedule = Schedule(scheduleType);
+TimeSlot::TimeSlot(int locationID, int endTime){
+    this->locationID=locationID;
+    this->endTime=endTime;
 }
 
-void Person::setLocation(int x, int y){
-
-	location[0]=x;
-	location[1]=y;
-}
-Person::Person(const Person &p){
-	age=0;
-	gender=' ';
-	age=p.age;
-	gender=p.gender;
-	location[0]=p.location[0];
-	location[1]=p.location[1];
+int TimeSlot::getLocationID(){
+    return locationID;
 }
 
-Person &Person::operator = (const Person &p){
-	if (this!=&p) {
-		age=0;
-		gender=' ';
-		age=p.age;
-		gender=p.gender;
-        id_num=p.id_num;
-	}
-	return *this;
+int TimeSlot::getEndTime(){
+    return endTime;
 }
 
-char Person::getGender(){
-	return gender;
-}
-
-void Person::setGender(char g){
-	gender=g;
-}
-
-int Person::getAge(){
-	return age;
-}
-
-int* Person::getLocation(){
-	return location;
-}
-
-int Person::getID(){
-    return id_num;
+TimeSlot::~TimeSlot(){
     
 }
-Person::~Person() {
-	// TODO Auto-generated destructor stub
-}
-
-

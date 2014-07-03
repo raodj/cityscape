@@ -44,7 +44,10 @@
 
 using namespace std;
 
-Population::Population(int s, double *ageProbablities, double *familySizeProbablites, double mProb, double *scheduleProbablities) {
+Population::Population(int s, double *ageProbablities, double *familySizeProbablites, double mProb, double
+    *scheduleProbablities) {
+    numberOfMales=0;
+    
 	size=s;
     generator.seed(time(0));
     //Set Age Probablities
@@ -253,17 +256,17 @@ char Population::determineScheduleType(int ageGroup){
         case 0:
             //Young Child Schedule
             numberOfPeopleAssignedSchedule[0]++;
-            return 'Y';
+            return 0;
             break;
         case 1:
             //School Aged Child Schedule
             numberOfPeopleAssignedSchedule[1]++;
-            return 'S';
+            return 1;
             break;
         case 2:
             //School Aged Child Schedule
             numberOfPeopleAssignedSchedule[2]++;
-            return 'S';
+            return 2;
             break;
         case 3:
             //Adult Schedule (18-24)
@@ -313,7 +316,7 @@ char Population::determineScheduleType(int ageGroup){
                 numberOfPeopleAssignedSchedule[10]++;
                 break;
         }
-        return 'U';
+        return 5;
     }
     else{
         //Employeed
@@ -335,7 +338,7 @@ char Population::determineScheduleType(int ageGroup){
                 numberOfPeopleAssignedSchedule[9]++;
                 break;
         }
-        return 'E';
+        return 4;
     }
 }
 

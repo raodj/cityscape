@@ -52,8 +52,9 @@
 using namespace std;
 
 std::string const outputFolder="output/";
-std::string const configFile="examples/config/USAData.hapl";
-//std::string const configFile="examples/config/MicroWorldData.hapl";
+//std::string const configFile="examples/config/VirginaData.hapl";
+//std::string const configFile="examples/config/USAData.hapl";
+std::string const configFile="examples/config/MicroWorldData.hapl";
 std::vector< std::vector < Location > > densityData;
 std::default_random_engine generator;
 ConfigFile configuration;

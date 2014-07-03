@@ -131,9 +131,10 @@ class Population {
         double *familySizeProbablites;  //Family Size Distrbution
         double *scheduleProbablities;   //Schedule Type Distribution
         double maleProbablity;
+    
         //Statistics Helpers
         int numberOfPeopleAges[7];
-        int numberOfMales=0;
+        int numberOfMales;
         int numberOfFamiliesSizes[7];
         int numberOfFamilies;
         int numberOfPeopleAssignedSchedule[11];
