@@ -136,7 +136,6 @@ class Population {
         int numberOfPeopleAges[7];
         int numberOfMales;
         int numberOfFamiliesSizes[7];
-        int numberOfFamilies;
         int numberOfPeopleAssignedSchedule[11];
     
         std::default_random_engine generator;   //Random Generator for Distributions

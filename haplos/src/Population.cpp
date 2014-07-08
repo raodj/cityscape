@@ -106,8 +106,6 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
             oldRatio=ratio;
             fflush(stdout);
         }
-
-        numberOfFamilies++;
     }
     printf("\r");
     printf("Percentage Complete: %3d%%", 100 );
@@ -116,7 +114,7 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
 }
 
 int Population::getNumberOfFamilies(){
-    return numberOfFamilies;
+    return families.size();
     
 }
 void Population::setLocationOfFamily(int x, int y, int family){
@@ -346,14 +344,14 @@ void Population::displayStatistics(){
     //Display Family Information
     cout<< std::fixed<< std::setprecision(5);
     std::cout <<"--------Family--------" << std::endl;
-    std::cout << "Total Number of Families: " << numberOfFamilies << std::endl;
-    std::cout << "Size 1:  \t" << numberOfFamiliesSizes[0] << " \t" << (numberOfFamiliesSizes[0]/(double)numberOfFamilies) << "\t(Expected " << familySizeProbablites[0] << ")" << std::endl;
-    std::cout << "Size 2:  \t" << numberOfFamiliesSizes[1] << " \t" << (numberOfFamiliesSizes[1]/(double)numberOfFamilies) << "\t(Expected " <<familySizeProbablites[1] << ")" << std::endl;
-    std::cout << "Size 3:  \t" << numberOfFamiliesSizes[2] << " \t" << (numberOfFamiliesSizes[2]/(double)numberOfFamilies) << "\t(Expected " << familySizeProbablites[2] << ")" << std::endl;
-    std::cout << "Size 4:  \t" << numberOfFamiliesSizes[3] << " \t" << (numberOfFamiliesSizes[3]/(double)numberOfFamilies) << "\t(Expected " << familySizeProbablites[3] << ")" << std::endl;
-    std::cout << "Size 5:  \t" << numberOfFamiliesSizes[4] << " \t" << (numberOfFamiliesSizes[4]/(double)numberOfFamilies) << "\t(Expected " << familySizeProbablites[4] << ")" << std::endl;
-    std::cout << "Size 6:  \t" << numberOfFamiliesSizes[5] << " \t" << (numberOfFamiliesSizes[5]/(double)numberOfFamilies) << "\t(Expected " << familySizeProbablites[5] << ")" << std::endl;
-    std::cout << "Size 7:  \t" << numberOfFamiliesSizes[6] << " \t" << (numberOfFamiliesSizes[6]/(double)numberOfFamilies) << "\t(Expected " << familySizeProbablites[6] << ")" << std::endl;
+    std::cout << "Total Number of Families: " << getNumberOfFamilies() << std::endl;
+    std::cout << "Size 1:  \t" << numberOfFamiliesSizes[0] << " \t" << (numberOfFamiliesSizes[0]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[0] << ")" << std::endl;
+    std::cout << "Size 2:  \t" << numberOfFamiliesSizes[1] << " \t" << (numberOfFamiliesSizes[1]/(double)getNumberOfFamilies()) << "\t(Expected " <<familySizeProbablites[1] << ")" << std::endl;
+    std::cout << "Size 3:  \t" << numberOfFamiliesSizes[2] << " \t" << (numberOfFamiliesSizes[2]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[2] << ")" << std::endl;
+    std::cout << "Size 4:  \t" << numberOfFamiliesSizes[3] << " \t" << (numberOfFamiliesSizes[3]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[3] << ")" << std::endl;
+    std::cout << "Size 5:  \t" << numberOfFamiliesSizes[4] << " \t" << (numberOfFamiliesSizes[4]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[4] << ")" << std::endl;
+    std::cout << "Size 6:  \t" << numberOfFamiliesSizes[5] << " \t" << (numberOfFamiliesSizes[5]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[5] << ")" << std::endl;
+    std::cout << "Size 7:  \t" << numberOfFamiliesSizes[6] << " \t" << (numberOfFamiliesSizes[6]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[6] << ")" << std::endl;
     
     //Display Population Information
     std::cout <<"--------Population--------" << std::endl;
