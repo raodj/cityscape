@@ -41,7 +41,8 @@
 #include "Person.h"
 #include "Buildings/Building.h"
 #include "Family.h"
-
+class Person;
+class Family;
 class Location {
     /** A class specifically for handeling set area of land.
      */

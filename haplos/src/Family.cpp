@@ -59,7 +59,7 @@ Person* Family::getAllPersons(){
     return &members[0];
 }
 
-int Family::setHomeNumber(int n){
+void Family::setHomeNumber(int n){
     homeNumber=n;
 }
 
@@ -80,6 +80,16 @@ void Family::setLocation(int x, int y){
 
 bool Family::getHasAdult(){
     return hasAdult;
+}
+
+std::string Family::toString(){
+    std::string returnString="---------------\nFamily Home Number: "+std::to_string(homeNumber)+"\n";
+    returnString+="Number of People: "+std::to_string(numberOfPeople)+"\n";
+    returnString+="Detail Information: \n";
+    for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){
+        returnString+=it->toString();
+    }
+    return returnString;
 }
 Family::~Family() {
 	// TODO Auto-generated destructor stub

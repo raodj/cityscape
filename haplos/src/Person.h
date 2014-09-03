@@ -100,6 +100,19 @@ public:
      */
     int getID(void);
     
+    /** Returns a Human Readable Version on Information about the Person and Schedule.
+     
+     \return Human Readable String of Information about the Person
+     */
+    std::string toString();
+    
+    /** Returns a CSV version of Informationabout the Person. This inclues ID number, 
+        Age, Gender and Schedule Type.
+     
+     \return A CSV string containg information about the person.
+     */
+    std::string toCSV();
+
     /**
      The destructor.
      

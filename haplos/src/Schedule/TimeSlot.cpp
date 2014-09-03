@@ -44,12 +44,16 @@ TimeSlot::TimeSlot(int locationID, int endTime){
     this->endTime=endTime;
 }
 
-int TimeSlot::getLocationID(){
+int TimeSlot::getLocation(){
     return locationID;
 }
 
 int TimeSlot::getEndTime(){
     return endTime;
+}
+
+std::string TimeSlot::toString(){
+    return "\t\t\t\t"+std::to_string(locationID)+"\t"+std::to_string(endTime)+"\n";
 }
 
 TimeSlot::~TimeSlot(){

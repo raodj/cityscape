@@ -39,13 +39,14 @@
 #include <iomanip>
 #include "Person.h"
 #include "Family.h"
+#include "Buildings/Building.h"
 #include <vector>
 #include <ctime>
 
 using namespace std;
 
 Population::Population(int s, double *ageProbablities, double *familySizeProbablites, double mProb, double
-    *scheduleProbablities) {
+    *scheduleProbablities, bool progressDisplay) {
     numberOfMales=0;
     
 	size=s;
@@ -69,8 +70,10 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
     //Reserve Space for Familes to prevent space resassignment midway (Avg Family size is 3)
     families.reserve(size/3);
     
-    printf("Percentage Complete: %3d%%", 0 );
-    fflush(stdout);
+    if(progressDisplay){
+        printf("Percentage Complete: %3d%%", 0 );
+        fflush(stdout);
+    }
    
     while( i < size ){
         //Create A New Family
@@ -78,38 +81,41 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
         Family newFamily = Family();
         for( int b = 0; b<familySize-1; b++ ){
             int *ageInformation=determineAge(false);
-            Person newPerson= Person(ageInformation[0], determineGender(), -1, -1, i, determineScheduleType(ageInformation[1]));
+            Person newPerson= Person(ageInformation[0], determineGender(), -1, -1, i++, determineScheduleType(ageInformation[1]));
             newFamily.addPerson(newPerson);
         }
         
         //Check that family has an Adult, if not create one.
         if(!newFamily.getHasAdult()){
             int *ageInformation=determineAge(true);
-            Person newPerson= Person(ageInformation[0], determineGender(), -1, -1, i, determineScheduleType(ageInformation[1]));
+            Person newPerson= Person(ageInformation[0], determineGender(), -1, -1, i++, determineScheduleType(ageInformation[1]));
             newFamily.addPerson(newPerson);
 
         }
         else{
             int *ageInformation=determineAge(true);
-            Person newPerson= Person(ageInformation[0], determineGender(), -1, -1, i, determineScheduleType(ageInformation[1]));
+            Person newPerson= Person(ageInformation[0], determineGender(), -1, -1, i++, determineScheduleType(ageInformation[1]));
             newFamily.addPerson(newPerson);
         }
         
-        families.push_back(newFamily);
-        i+=familySize;
         
-        float ratio = i/(float)size;
-        if(100*(ratio-oldRatio)>1){
-            // Show the percentage complete.
-            printf("\r");
-            printf("Percentage Complete: %3d%%", (int)(ratio*100) );
-            oldRatio=ratio;
-            fflush(stdout);
+        families.push_back(newFamily);
+        if(progressDisplay){
+            float ratio = i/(float)size;
+            if(100*(ratio-oldRatio)>1){
+                // Show the percentage complete.
+                printf("\r");
+                printf("Percentage Complete: %3d%%", (int)(ratio*100) );
+                oldRatio=ratio;
+                fflush(stdout);
+            }
         }
     }
-    printf("\r");
-    printf("Percentage Complete: %3d%%", 100 );
-    fflush(stdout);
+    if(progressDisplay){
+        printf("\r");
+        printf("Percentage Complete: %3d%%", 100 );
+        fflush(stdout);
+    }
     std::cout<< std::endl;
 }
 
@@ -117,8 +123,10 @@ int Population::getNumberOfFamilies(){
     return families.size();
     
 }
-void Population::setLocationOfFamily(int x, int y, int family){
-    families.at(family).setLocation(x, y);
+void Population::setHomeLocationOfFamily(Building *home, int family){
+    families.at(family).setHomeNumber(home->getID());
+    int* location = home->getLocation();
+    families.at(family).setLocation(location[0], location[1]);
 }
 
 Family* Population::getFamily(int family){
@@ -159,9 +167,9 @@ int Population::generateFamilySize(){
 }
 
 
-int* Population::determineAge(bool forceAdult){
+int *Population::determineAge(bool forceAdult){
     int ageGroup=-1;
-    int ageInformation[2];
+    int *ageInformation=new int[2];
     if(forceAdult){
         //Adult Only (Using Uniform Distribution for Now)
         int age=(int)rand() % 82 + 18;
@@ -245,6 +253,12 @@ int* Population::determineAge(bool forceAdult){
                 break;
         }
     }
+    if(ageInformation[0]>100){
+        std::cout<<"TOO OLD: "+std::to_string(ageInformation[0])+" "+std::to_string(ageInformation[1])<<std::endl;
+    }
+    if(ageInformation[0]<0){
+        std::cout<<"TOO YOUNG: "+std::to_string(ageInformation[0])+" "+std::to_string(ageInformation[1])<<std::endl;
+    }
     return ageInformation;
 }
 
@@ -257,12 +271,12 @@ char Population::determineScheduleType(int ageGroup){
             return 0;
             break;
         case 1:
-            //School Aged Child Schedule
+            //School Aged Child Schedule (5-13)
             numberOfPeopleAssignedSchedule[1]++;
             return 1;
             break;
         case 2:
-            //School Aged Child Schedule
+            //School Aged Child Schedule (14-17)
             numberOfPeopleAssignedSchedule[2]++;
             return 2;
             break;
@@ -314,7 +328,7 @@ char Population::determineScheduleType(int ageGroup){
                 numberOfPeopleAssignedSchedule[10]++;
                 break;
         }
-        return 5;
+        return 4;
     }
     else{
         //Employeed
@@ -336,7 +350,7 @@ char Population::determineScheduleType(int ageGroup){
                 numberOfPeopleAssignedSchedule[9]++;
                 break;
         }
-        return 4;
+        return 3;
     }
 }
 
@@ -400,6 +414,19 @@ void Population::displayStatistics(){
     std::cout << "Employeed Schedule (65-Older): \t"<< numberOfPeopleAssignedSchedule[9] << " \t"<< (numberOfPeopleAssignedSchedule[9]/(double)numberOfPeopleAges[6]) <<"\t(Expected " <<scheduleProbablities[9] <<")" <<endl;
     std::cout << "Unemployeed Schedule (65-Older): \t"<< numberOfPeopleAssignedSchedule[10] << " \t"<< (numberOfPeopleAssignedSchedule[10]/(double)numberOfPeopleAges[6]) <<"\t(Expected " <<scheduleProbablities[10] <<")" <<endl;
 }
+
+std::string Population::returnFirstTenFamiliesInfo(){
+    std::string returnString="FIRST 10 FAMILY INFORMATION\n";
+    int n=10;
+    if(getNumberOfFamilies()<10){
+        n=getNumberOfFamilies();
+    }
+    for(int i=0; i<n; i++){
+        returnString+=getFamily(i)->toString();
+    }
+    return returnString;
+}
+
 Population::~Population() {
 	// TODO Auto-generated destructor stub
 }

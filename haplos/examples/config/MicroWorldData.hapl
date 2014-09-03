@@ -2,7 +2,7 @@
 
 #####Population####
 #Data File Paths
-Density_File=examples/data/Microworld.asc
+Density_File=examples/data/MicroWorld.asc
 Density_File_Total_Population=104
 Max_Population_In_Area=10
 

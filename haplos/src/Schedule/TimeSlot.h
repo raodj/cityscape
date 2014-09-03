@@ -45,7 +45,7 @@ class TimeSlot{
         TimeSlot();
     
         /** Alternative constructor for this class with specific type
-         param[in] locaitonID ID of Location person will be at at this given time slot.
+         param[in] location Pointer to location person will be at during time slot.
          param[in] endTime time where person will move to next location.
          */
         TimeSlot(int locationID, int endTime);
@@ -58,8 +58,10 @@ class TimeSlot{
         /** Get Location ID where person should be in given time slot.
             return Locaiton ID of place person should be.
          */
-        int getLocationID();
-        
+        int getLocation();
+    
+        std::string toString();
+    
         /**
          The destructor.
          

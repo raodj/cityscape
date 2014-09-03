@@ -45,16 +45,24 @@ Schedule::Schedule() {
 Schedule::Schedule(int type){
     this->type=type;
     currentTimeStep=0;
-    generateSchedule(type);
 }
 
-int Schedule::getScheduleType(){
-    return type;
+Schedule::Schedule(Schedule &s){
+    type=s.type;
+    currentTimeStep=s.currentTimeStep;
+    plan = s.plan;
+}
+
+void Schedule::addTimeSlot(int locationID, int endTime){
+    plan.push_back(TimeSlot(locationID, endTime));
 }
 
 void Schedule::setScheduleType(int type){
     this->type=type;
-    generateSchedule(type);
+}
+
+int Schedule::getScheduleType(){
+    return type;
 }
 
 int Schedule::getNextLocation(){
@@ -66,28 +74,30 @@ int Schedule::getNextLocation(){
     }
     if(plan[currentTimeSlot].getEndTime()<currentTimeStep){
         //Stay in Current Time Slot
-        return plan[currentTimeSlot].getLocationID();
+        return plan[currentTimeSlot].getLocation();
     }else{
         //Move to Next Time Slot
         currentTimeSlot++;
-        return plan[currentTimeSlot].getLocationID();
+        return plan[currentTimeSlot].getLocation();
         
     }
     
 }
 
 int Schedule::peekNextLocation(){
-    return plan[currentTimeSlot].getLocationID();
+    return plan[currentTimeSlot].getLocation();
+}
+
+std::string Schedule::toString(){
+    std::string returnString= "\t\t\tType: "+std::to_string(type)+"\n";
+    for(std::vector< TimeSlot >::iterator it = plan.begin(); it!= plan.end(); ++it){
+        returnString+=it->toString();
+    }
+    return returnString;
 }
 
 
-void Schedule::modifyForYoungChild(){
-    
-}
 
-void Schedule::generateSchedule(int type){
-    
-}
 
 Schedule::~Schedule(){
     
