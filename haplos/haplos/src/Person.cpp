@@ -61,12 +61,14 @@ void Person::setLocation(int x, int y){
 	location[1]=y;
 }
 Person::Person(const Person &p){
+    id_num=p.id_num;
 	age=0;
 	gender=' ';
 	age=p.age;
 	gender=p.gender;
 	location[0]=p.location[0];
 	location[1]=p.location[1];
+    schedule= p.schedule;
 }
 
 Person &Person::operator = (const Person &p){
@@ -99,6 +101,18 @@ int* Person::getLocation(){
 int Person::getID(){
     return id_num;
     
+}
+std::string Person::toString(){
+    std::string returnString = "\tPerson: "+std::to_string(this->id_num)+"\n";
+    returnString+="\t\tAge: "+std::to_string(age);
+    returnString+="\n\t\tSchedule: \n"+schedule.toString();
+    return returnString;
+}
+
+std::string Person::toCSV(){
+    std::string returnString=std::to_string(this->id_num)+","+std::to_string(age)+","+gender+","
+                             +std::to_string(schedule.getScheduleType())+"\n";
+    return returnString;
 }
 Person::~Person() {
 	// TODO Auto-generated destructor stub

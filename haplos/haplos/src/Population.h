@@ -38,6 +38,7 @@
 //-----------------------------------------------------------
 #include "Person.h"
 #include "Family.h"
+#include "Buildings/Building.h"
 #include <vector>
 #include <random>
 class Population {
@@ -60,21 +61,21 @@ class Population {
          \param[in] familysize1Prob Probably of creating a family of size 5.
          \param[in] familysize1Prob Probably of creating a family of size 6.
          \param[in] familysize1Prob Probably of creating a family of size 7.
+         \param[in] progressDisplay Display progress of creating population.
 
          */
         Population(int size, double *ageProbablities, double *familySizeProbablities,
-                   double maleProbablity, double *scheduleProbablities);
+                   double maleProbablity, double *scheduleProbablities, bool progressDisplay);
     
         /** Display Statistics about population to Console.
          */
         void displayStatistics();
     
-        /** Set the location of a person to coordinate [x, y].
-         \param[in] x Row of location.
-         \param[in] y Col of location.
+        /** Set the home location of a family and move all members to that location.
+         \param[in] home Location family should be set to.
          \param[in] family Family to assign location to.
         */
-        void setLocationOfFamily(int x, int y, int family);
+        void setHomeLocationOfFamily(Building *home, int family);
 
         /** Get a Specific Family
           \param[in] family Family to retrive
@@ -93,6 +94,7 @@ class Population {
          */
         int getNumberOfEmployeedAdults();
     
+        std::string returnFirstTenFamiliesInfo();
         /**
          The destructor.
          
@@ -133,10 +135,10 @@ class Population {
         double maleProbablity;
     
         //Statistics Helpers
-        int numberOfPeopleAges[7];
-        int numberOfMales;
-        int numberOfFamiliesSizes[7];
-        int numberOfPeopleAssignedSchedule[11];
+        int numberOfPeopleAges[7]={};
+        int numberOfMales=0;
+        int numberOfFamiliesSizes[7]={};
+        int numberOfPeopleAssignedSchedule[11]={};
     
         std::default_random_engine generator;   //Random Generator for Distributions
     

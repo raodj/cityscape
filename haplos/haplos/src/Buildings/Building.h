@@ -58,7 +58,13 @@ class Building {
         /**Get ID of Building
          \return ID of Building
          */
-    int getID();
+        int getID();
+    
+        /** Return the coordinates of the current location of entity
+         
+         \return An array consisting of [rows, cols]
+         */
+        int* getLocation();
     
         /**
          The destructor.
@@ -72,8 +78,7 @@ class Building {
         char type;
         int maxCapacity;
         int idNumber;
-        int x;
-        int y;
+        int location[2];
     
 };
 

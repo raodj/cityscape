@@ -52,12 +52,13 @@
 using namespace std;
 
 std::string const outputFolder="output/";
-//std::string const configFile="examples/config/VirginaData.hapl";
-//std::string const configFile="examples/config/USAData.hapl";
-std::string const configFile="examples/config/MicroWorldData.hapl";
+//std::string configFile="examples/config/VirginaData.hapl";
+//std::string configFile="examples/config/USAData.hapl";
+std::string configFile="examples/config/MicroWorldData.hapl";
 std::vector< std::vector < Location > > densityData;
 std::default_random_engine generator;
 ConfigFile configuration;
+bool progressDisplay=true;
 
 int totalBusinessSize[6];
 int totalHospitalSize[6];
@@ -74,7 +75,9 @@ void assignHomes(Population &pop){
     int notAssigned=0;
     float oldRatio=0;
     std::cout << "Assigning Locations to Population" << std::endl;
-    printf("Percentage Complete: %3d%%", 0 );
+    if(progressDisplay){
+        printf("Percentage Complete: %3d%%", 0 );
+    }
     fflush(stdout);
     
     for ( int i =0; i<pop.getNumberOfFamilies(); i++ ) {
@@ -101,32 +104,30 @@ void assignHomes(Population &pop){
         }
         //Set Location of Family
         Building home= Building('H', numberOfBuildings, x, y, pop.getFamily(i)->getNumberOfPeople());
-        pop.setLocationOfFamily(x, y, i);
+        pop.setHomeLocationOfFamily(&home, i);
         densityData.at(x).at(y).addFamily(pop.getFamily(i));
         densityData.at(x).at(y).addBuilding(&home);
         numberOfBuildings++;
         
         //Calculate Percent Complete
-        float ratio = i/(float)pop.getNumberOfFamilies();
-        
-        if ( 100*(ratio-oldRatio) > 1 ) {
-            //Update Percent Complete Only if there is a Change
-            printf("\r");
-            printf("Percentage Complete: %3d%%", (int)(ratio*100) );
-            oldRatio=ratio;
-            fflush(stdout);
+        if(progressDisplay){
+            float ratio = i/(float)pop.getNumberOfFamilies();
+            if ( 100*(ratio-oldRatio) > 1 ) {
+                //Update Percent Complete Only if there is a Change
+                printf("\r");
+                printf("Percentage Complete: %3d%%", (int)(ratio*100) );
+                oldRatio=ratio;
+                fflush(stdout);
+            }
         }
     }
     //Print out 100% Complete
-    printf("\r");
-    printf("Percentage Complete: %3d%%", 100 );
-    fflush(stdout);
-    
+    if(progressDisplay){
+        printf("\r");
+        printf("Percentage Complete: %3d%%", 100 );
+        fflush(stdout);
+    }
     std::cout << std::endl <<"Population Successfully Assigned Locations" << std::endl;
-    
-}
-
-void placeLocation(){
     
 }
 
@@ -324,7 +325,7 @@ void displayBuildingStatistics(double businessSizeProbablities[6], double hospit
     std::cout << "Employee Capacity 500:     \t" << totalSchoolSize[5] << " \t"<<(totalSchoolSize[5]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[5] << ")" << std::endl;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     //Display Awesome Logo
     std::cout << " _    _          _____  _      ____   _____" <<std::endl;
     std::cout << "| |  | |   /\\   |  __ \\| |    / __ \\ / ____|" <<std::endl;
@@ -332,6 +333,30 @@ int main() {
     std::cout << "|  __  | / /\\ \\ |  ___/| |   | |  | |\\___ \\" << std::endl;
     std::cout << "| |  | |/ ____ \\| |    | |___| |__| |____) |" << std::endl;
     std::cout << "|_|  |_/_/    \\_\\_|    |______\\____/|_____/" <<std::endl;
+    bool produceImages=true;
+    //Command Line Paramaters
+    if(argc>0){
+        //Do Not Use Default
+        for (int i = 1; i < argc; ++i) {
+            std::string arg = argv[i];
+            if ((arg == "--configFile") || (arg=="-c")) {
+                //Configuration File Path
+                 if (i + 1 < argc) {
+                     configFile=argv[++i];
+                 }else{
+                     std::cerr << "--configFile option requires one argument." << std::endl;
+                 }
+            }else{
+                if((arg=="--noImages")||(arg=="-ni")){
+                    //No Images Produced
+                    produceImages=false;
+                }
+                if((arg=="--noProgressDisplay")|| (arg=="-npd")){
+                    progressDisplay=false;
+                }
+            }
+        }
+    }
     
     //Read in Configuration File
     configuration= ConfigFile(configFile);
@@ -410,53 +435,59 @@ int main() {
         
         
     //Create Population
-    Population pop = Population(configuration["Total_Population"], ageProbablities, familySizeProbablities, configuration["Male_Probablity"], scheduleTypeProbablities);
+    Population pop = Population(configuration["Total_Population"], ageProbablities, familySizeProbablities, configuration["Male_Probablity"], scheduleTypeProbablities, progressDisplay);
    
     //Assign Locations to Population
     assignHomes(pop);
     generateBuildings(businessSizeProbablities, hospitalSizeProbablities, schoolSizeProbablities, pureDensity, densityData.size(), pop.getNumberOfEmployeedAdults());
 
-    #ifdef HAVE_MAGICK
-        ImageGen ig(outputFolder);
-        ig.createPNGImage(densityData, densityData.size(),
-                      densityData[0].size());
-    #endif
-    // Generate image in XFig file format. This should be an
-    // option indicated by the user.
+    if(produceImages){
+        #ifdef HAVE_MAGICK
+            ImageGen ig(outputFolder);
+            ig.createPNGImage(densityData, densityData.size(),
+                          densityData[0].size());
+        #endif
+        
+        // Generate image in XFig file format. This should be an
+        // option indicated by the user.
 
-    std::vector< std::vector < int > > imageData;
-    std::vector< std::vector < int > > buildingData;
-    imageData.resize(densityData.size());
-    buildingData.resize(densityData.size());
-    for(int i = 0; i<densityData.size(); i++){
-        imageData.at(i).resize(densityData[0].size());
-        buildingData.at(i).resize(densityData[0].size());
-    }
-    for( int x=0; x < densityData.size(); x++ ){
-        for( int y=0; y < densityData[0].size(); y++ ){
-            if(densityData.at(x).at(y).getMaxPopulation()==0){
-                imageData.at(x).at(y)=-1;
-                buildingData.at(x).at(y)=-1;
+        std::vector< std::vector < int > > imageData;
+        std::vector< std::vector < int > > buildingData;
+        imageData.resize(densityData.size());
+        buildingData.resize(densityData.size());
+        for(int i = 0; i<densityData.size(); i++){
+            imageData.at(i).resize(densityData[0].size());
+            buildingData.at(i).resize(densityData[0].size());
+        }
+        for( int x=0; x < densityData.size(); x++ ){
+            for( int y=0; y < densityData[0].size(); y++ ){
+                if(densityData.at(x).at(y).getMaxPopulation()==0){
+                    imageData.at(x).at(y)=-1;
+                    buildingData.at(x).at(y)=-1;
 
 
-            }else{
-                imageData.at(x).at(y)=densityData.at(x).at(y).getCurrentPopulation();
-                buildingData.at(x).at(y)=densityData.at(x).at(y).getNumberOfBuildings();
+                }else{
+                    imageData.at(x).at(y)=densityData.at(x).at(y).getCurrentPopulation();
+                    buildingData.at(x).at(y)=densityData.at(x).at(y).getNumberOfBuildings();
 
+                }
             }
         }
+        XFigImageGenerator xfig;
+        std::cout<<"Generating Population Image" << std::endl;
+        xfig.createImage(outputFolder + "haplos_population.fig", imageData,
+                 imageData.size(), imageData[0].size(), configuration["Max_Population_In_Area"]);
+        
+        std::cout<<"Generating Building Image" << std::endl;
+        xfig.createImage(outputFolder + "haplos_building.fig", buildingData,
+                         buildingData.size(), buildingData[0].size(), 100);
     }
-    XFigImageGenerator xfig;
-    
-    std::cout<<"Generating Population Image" << std::endl;
-    xfig.createImage(outputFolder + "haplos_population.fig", imageData,
-		     imageData.size(), imageData[0].size(), configuration["Max_Population_In_Area"]);
-    
-    std::cout<<"Generating Building Image" << std::endl;
-    xfig.createImage(outputFolder + "haplos_building.fig", buildingData,
-                     buildingData.size(), buildingData[0].size(), 100);
     pop.displayStatistics();
+
     displayBuildingStatistics(businessSizeProbablities, hospitalSizeProbablities, schoolSizeProbablities);
+    
+    //Display 10 Families Entirely (Useful for Schedule Testing).
+    // std::cout<<pop.returnFirstTenFamiliesInfo()<<std::endl;
     return 0;
 }
 

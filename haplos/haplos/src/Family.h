@@ -39,6 +39,8 @@
 
 #include <vector>
 #include "Person.h"
+
+class Person;
 class Family {
     /** A class specifically for repersenting a family of indviduals. */
     public:
@@ -75,12 +77,14 @@ class Family {
         /**Assign a Home Number to a Family
           \param[in] n Number of Home Building.
          */
-        int setHomeNumber(int n);
+        void setHomeNumber(int n);
     
         /** Get if Family has an Adult.
          \return True if family has at least 1 adult in it, false if otherwise.
          */
         bool getHasAdult();
+    
+        std::string toString();
         /**
          The destructor.
          
