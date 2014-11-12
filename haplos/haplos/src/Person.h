@@ -38,6 +38,9 @@
 //-----------------------------------------------------------
 #include "Schedule/Schedule.h"
 
+
+#include <vector>
+class Schedule;
 class Person {
     /** A class specifically repersenting a single person.
      */
@@ -99,6 +102,8 @@ public:
      \return ID Number of the person.
      */
     int getID(void);
+    
+    Schedule* getSchedule();
     
     /** Returns a Human Readable Version on Information about the Person and Schedule.
      

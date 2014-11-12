@@ -50,6 +50,7 @@ class Business : public Building {
          \param[in] visitorCapacity max number of visitors a business can have in a given hour.
          */
         Business(int id, int x, int y, int capacity, int visitorCapacity);
+    
         /**
          The destructor.
          
@@ -60,5 +61,6 @@ class Business : public Building {
         virtual ~Business();
     private:
         int maxVisitorCapacity;
+        int currentVisitorCapacity;
     };
 #endif /* defined(__haplos__Business__) */

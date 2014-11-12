@@ -44,21 +44,69 @@ Building:: Building(){
     location[0]=-1;
     location[1]=-1;
     maxCapacity=-1;
+    currentCapacity=0;
+    visitorCapacity=0;
 }
-Building::Building(char t, int i, int x, int y, int capacity){
-    type=t;
-    idNumber = i;
+
+Building::Building(char t, int i, int x, int y, int capacity, int visitorCapacity){
+    this->type=t;
+    this->idNumber = i;
     this->location[0]=x;
     this->location[1]=y;
     this->maxCapacity=capacity;
+    this->currentCapacity=0;
+    this->visitorCapacity=visitorCapacity;
+    
+}
+
+Building::Building(const Building &b){
+    this->type=b.type;
+    this->idNumber=b.idNumber;
+    this->location[0]=b.location[0];
+    this->location[1]=b.location[1];
+    this->maxCapacity=b.maxCapacity;
+    this->currentCapacity=b.currentCapacity;
+    this->visitorCapacity=b.visitorCapacity;
 }
 
 int Building::getID(){
     return idNumber;
 }
 
+int Building::getMaxCapacity(){
+    return maxCapacity;
+}
+
+int Building::getCurrentCapacity(){
+    return currentCapacity;
+}
+
+void Building::setCurrentCapacity(int c){
+    currentCapacity=c;
+}
+
+int Building::getMaxVisitorCapacity(){
+    return visitorCapacity;
+}
+int Building::getCurrentVisitorCapacity(int time){
+    return currentVisitorCapacity[time];
+}
+
+void Building::setCurrentVisitorCapacity(int time, int c){
+    currentVisitorCapacity[time]=c;
+}
+
 int* Building::getLocation(){
 	return location;
+}
+
+char Building::getType(){
+    return type;
+}
+std::string Building::toString(){
+    std::string returnString=std::to_string(this->idNumber)+", "+std::string(1, this->type)+
+    ", "+std::to_string(this->maxCapacity)+","+std::to_string(this->visitorCapacity)+","+std::to_string(this->location[0])+","+std::to_string(this->location[1]);
+    return returnString;
 }
 
 Building::~Building(){

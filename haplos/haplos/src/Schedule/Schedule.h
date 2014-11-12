@@ -38,8 +38,9 @@
 //-----------------------------------------------------------
 #include <iostream>
 #include <vector>
-#include "TimeSlot.h"
 
+#include "TimeSlot.h"
+class TimeSlot;
 class Schedule {
     public:
         /** The default constructor for this class
@@ -54,7 +55,7 @@ class Schedule {
         /**Copy Constructor for Schedule
             param[in] s schedule to copy.
          */
-        Schedule(Schedule &s);
+        Schedule(const Schedule &s);
     
         /**Return integer representing the schedule type.
          return type of schedule (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
@@ -62,10 +63,10 @@ class Schedule {
         int getScheduleType();
     
         /**Create a new timeslot in the Schedule
-            param[in] locaionID  ID of location of where person should be during time slot.
+            param[in] building  pointer to location of where person should be during time slot.
             param[in] endtime end time of time slot.
          */
-        void addTimeSlot(int locationID, int endtime);
+        void addTimeSlot(TimeSlot t);
     
         /**Change the schedule type (this will remake schedule).
          param[in] type type to change to (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
@@ -75,12 +76,12 @@ class Schedule {
         /**Advance current time step and Get Location for Next Time Step
             return building ID or transport ID for next timestep
          */
-        int getNextLocation();
+        TimeSlot* getNextLocation();
         
         /**Peek Location for Next Time Step, without advancing currentTimeStep
          return building ID or transport ID for next timestep
          */
-        int peekNextLocation();
+        TimeSlot* peekNextLocation();
     
         std::string toString();
         /**
@@ -98,7 +99,7 @@ class Schedule {
         /**Change the schedule type (this will remake schedule).
          param[in] type type of schedule to generate (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
          */
-        static const int MAXTIMESTEPS=2016;
+        static const int MAXTIMESTEPS=1008;   //10 minute intervals
         void generateSchedule(int type);
         std::vector<TimeSlot> plan;
         int currentTimeStep;

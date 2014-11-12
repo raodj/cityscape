@@ -9,8 +9,7 @@
 #include "School.h"
 #include "Building.h"
 
-School::School(int i, int x, int y, int capacity, int visitorCapacity, int *gradeCapacity) : Building('S', i, x, y, capacity){
-    this->maxVisitorCapacity= visitorCapacity;
+School::School(int i, int x, int y, int capacity, int visitorCapacity, int *gradeCapacity) : Building('S', i, x, y, capacity, visitorCapacity){
     this->gradeCapacity= gradeCapacity;
 }
 

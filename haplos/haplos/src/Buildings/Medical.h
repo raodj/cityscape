@@ -26,6 +26,27 @@ class Medical : public Building {
          */
         Medical(int i, int x, int y, int capacity, int visitorCapcity, int patientCapcity);
     
+        /** Return the Max Capacity for Patients 
+         \return max capacity for patients
+         */
+        int getMaxPatientCapacity();
+    
+        /** Return current number of Patients at Medical Building
+         \return current number of visitors at Medical Building.
+         */
+        int getCurrentPatientCapacity();
+    
+        /** Set the value for Current Patient Capacity
+         \param[in] p new current patient capacity
+         */
+        void setCurrentPatientCapacity(int p);
+    
+        /** Returns a Human Readable Version on Information about the building.
+         
+         \return Human Readable String of Information about the Person
+         */
+        std::string toString();
+    
         /**
          The destructor.
          
@@ -35,8 +56,9 @@ class Medical : public Building {
          */
         virtual ~Medical();
     private:
-        int maxVisitorCapacity;
         int maxPatientCapacity;
+        int currentPatientCapacity;
+
 };
 
 #endif /* defined(__haplos__Medical__) */

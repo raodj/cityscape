@@ -37,8 +37,14 @@
 #ifndef __haplos__Building__
 #define __haplos__Building__
 
-#include <iostream>
+#include "../Person.h"
 
+#include <iostream>
+#include <vector>
+
+
+class Person;
+class Schedule;
 class Building {
     /*Class for Representing a Unclassified Building*/
     public:
@@ -51,20 +57,67 @@ class Building {
          \param[in] id ID number of Building
          \param[in] x row number of building
          \param[in] y col number of building
-         \param[in] capacity max capacity of building (not including visitorss)
+         \param[in] capacity max capacity of building (not including visitors)
+         \param[in] number of visitors allowed in building (not including those in capacity)
          */
-        Building(char type, int idNumber, int x, int y, int capacity);
+        Building(char type, int idNumber, int x, int y, int capacity, int visitorCapacity);
     
+        /** Copy Constructor
+         \param[in] b building to copy.
+         */
+        Building(const Building &b);
         /**Get ID of Building
          \return ID of Building
          */
         int getID();
     
+        /**Get max capacity of Building
+         \return max capacity of Building
+         */
+        int getMaxCapacity();
+    
+        /**Get current capacity of Building
+         \return current capacity of Building
+         */
+        int getCurrentCapacity();
+    
+        /**Set Current Capacity to c
+         \param[in] c new current capacity;
+         */
+        void setCurrentCapacity(int c);
+    
+        /**Get max visitor capacity of Building
+         \return max visitor capacity of Building
+         */
+        int getMaxVisitorCapacity();
+    
+        /**Get current visitor capacity of Building at a specific timeslot
+         \param[in] time  time slot to get visitor capacity
+         \return current visitor capacity of Building
+         */
+        int getCurrentVisitorCapacity(int time);
+    
+        /**Set current visitor capacity of Building
+         \param[in] time time slot to set visitor capacity
+         \param[in] c new visitor capacity to change to.
+         */
+        void setCurrentVisitorCapacity(int time, int c);
         /** Return the coordinates of the current location of entity
          
          \return An array consisting of [rows, cols]
          */
         int* getLocation();
+    
+        /**Return the Char representing the type of building
+         \return the Char repreenting the type of building
+         */
+        char getType();
+    
+        /** Returns a Human Readable Version on Information about the building.
+         
+         \return Human Readable String of Information about the Person
+         */
+        std::string toString();
     
         /**
          The destructor.
@@ -77,6 +130,11 @@ class Building {
     private:
         char type;
         int maxCapacity;
+        int currentCapacity;
+        int visitorCapacity;
+        int currentVisitorCapacity[1008];
+        std::vector<Person *>currentEmployees[336];
+        std::vector<Person *>currentVisitors;
         int idNumber;
         int location[2];
     

@@ -39,6 +39,7 @@
 Schedule::Schedule() {
     type=0;
     currentTimeStep=0;
+
 }
 
 
@@ -47,14 +48,21 @@ Schedule::Schedule(int type){
     currentTimeStep=0;
 }
 
-Schedule::Schedule(Schedule &s){
+Schedule::Schedule(const Schedule &s){
     type=s.type;
     currentTimeStep=s.currentTimeStep;
-    plan = s.plan;
+    
+    plan.resize(s.plan.size());
+    
+    for(int i=0; i< s.plan.size(); i++)
+    {
+        plan[i] = s.plan[i];
+    }
+
 }
 
-void Schedule::addTimeSlot(int locationID, int endTime){
-    plan.push_back(TimeSlot(locationID, endTime));
+void Schedule::addTimeSlot(TimeSlot t){
+    plan.push_back(t);
 }
 
 void Schedule::setScheduleType(int type){
@@ -65,7 +73,7 @@ int Schedule::getScheduleType(){
     return type;
 }
 
-int Schedule::getNextLocation(){
+TimeSlot* Schedule::getNextLocation(){
     currentTimeStep++;
     if( currentTimeStep==MAXTIMESTEPS-1 ){
         currentTimeStep=0;
@@ -74,18 +82,18 @@ int Schedule::getNextLocation(){
     }
     if(plan[currentTimeSlot].getEndTime()<currentTimeStep){
         //Stay in Current Time Slot
-        return plan[currentTimeSlot].getLocation();
+        return &plan[currentTimeSlot];
     }else{
         //Move to Next Time Slot
         currentTimeSlot++;
-        return plan[currentTimeSlot].getLocation();
+        return &plan[currentTimeSlot];
         
     }
     
 }
 
-int Schedule::peekNextLocation(){
-    return plan[currentTimeSlot].getLocation();
+TimeSlot* Schedule::peekNextLocation(){
+    return &plan[currentTimeSlot];
 }
 
 std::string Schedule::toString(){

@@ -37,7 +37,6 @@
 //
 //-----------------------------------------------------------
 #include <iostream>
-
 class TimeSlot{
     public:
         /** The default constructor for this class
@@ -45,10 +44,10 @@ class TimeSlot{
         TimeSlot();
     
         /** Alternative constructor for this class with specific type
-         param[in] location Pointer to location person will be at during time slot.
+         param[in] building Pointer to location person will be at during time slot.
          param[in] endTime time where person will move to next location.
          */
-        TimeSlot(int locationID, int endTime);
+        TimeSlot(int buildingID, int endTime);
     
         /** Get End Time for given Time Slot
             return end time.
@@ -71,7 +70,7 @@ class TimeSlot{
          */
         virtual ~TimeSlot();
     private:
-        int locationID;
+        int buildingID;
         int endTime;
 };
 

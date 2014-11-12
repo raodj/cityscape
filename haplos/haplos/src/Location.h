@@ -40,6 +40,7 @@
 #include <unordered_map>
 #include "Person.h"
 #include "Buildings/Building.h"
+#include "Buildings/Medical.h"
 #include "Family.h"
 class Person;
 class Family;
@@ -78,7 +79,7 @@ public:
      
      \param b Building to be added to location.
      */
-    void addBuilding(Building *b);
+    Building* addBuilding(Building *b);
     
     /** Return the current number of people at location.
      
@@ -119,11 +120,22 @@ public:
      \return True if location is full, false if location is not.
      */
 	bool isFull();
-
+    
+    /** Checks to see if a there exist a building has a avalible slot for person in a given visitor type.
+     \param[in] vistorType type of visitor (E=Employee, V=Standard Visitor, P=Patient)
+     \param[in] startTime start time of slot (required for standard visitor)
+     \param[in] endTime end time of slot (required for standard visitor
+     \return pointer to building that has avaliable visitor slot
+     */
+    Building* hasAvaliableBuilding(char visitorType, int startTime, int endTime);
+    
+    
     /** Removes a person from location.
      \param idNum ID Number of Person to Remove
      */
 	void removePerson(int idNum);
+    
+    void printTemp();
     
     /**
      The destructor.
@@ -140,6 +152,7 @@ private:
     float density;
     std::unordered_map<int,Person*> people;
     std::unordered_map<int, Building*> buildings;
+    Building *tmp;
 
 };
 
