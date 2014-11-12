@@ -39,6 +39,7 @@
 #include "Person.h"
 #include "Family.h"
 #include "Buildings/Building.h"
+#include "Schedule/Schedule.h"
 #include <vector>
 #include <random>
 class Population {
@@ -120,7 +121,7 @@ class Population {
             \return 'E'=Employeed Schedule, 'U'= Unemployeed Schedule, 'S' = School schedule,
                     'Y'= Young Child Schedule
          */
-        char determineScheduleType(int ageGroup);
+        Schedule determineScheduleType(int ageGroup);
     
         /** Set age for population of person in population.
          */

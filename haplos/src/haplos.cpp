@@ -55,7 +55,10 @@ std::string const outputFolder="output/";
 //std::string configFile="examples/config/VirginaData.hapl";
 //std::string configFile="examples/config/USAData.hapl";
 std::string configFile="examples/config/MicroWorldData.hapl";
+std::unordered_map<int, Building> buildings;
+
 std::vector< std::vector < Location > > densityData;
+
 std::default_random_engine generator;
 ConfigFile configuration;
 bool progressDisplay=true;
@@ -103,10 +106,11 @@ void assignHomes(Population &pop){
             break;
         }
         //Set Location of Family
-        Building home= Building('H', numberOfBuildings, x, y, pop.getFamily(i)->getNumberOfPeople());
-        pop.setHomeLocationOfFamily(&home, i);
+        buildings.insert({ numberOfBuildings, Building('H', numberOfBuildings, x, y, pop.getFamily(i)->getNumberOfPeople(), 0)});
+        Building *tmp=densityData.at(x).at(y).addBuilding(&buildings[numberOfBuildings]);
         densityData.at(x).at(y).addFamily(pop.getFamily(i));
-        densityData.at(x).at(y).addBuilding(&home);
+        pop.setHomeLocationOfFamily(tmp, i);
+    
         numberOfBuildings++;
         
         //Calculate Percent Complete
@@ -121,13 +125,15 @@ void assignHomes(Population &pop){
             }
         }
     }
+    
+
     //Print out 100% Complete
     if(progressDisplay){
         printf("\r");
         printf("Percentage Complete: %3d%%", 100 );
         fflush(stdout);
     }
-    std::cout << std::endl <<"Population Successfully Assigned Locations" << std::endl;
+    std::cout << std::endl <<"Population Successfully Assigned Locations " << std::endl;
     
 }
 
@@ -143,6 +149,7 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
                                                   businessSizeProbablities[5]};
     std::discrete_distribution<int> locationDistribution(locationProbablties.begin(), locationProbablties.end());
     
+    std::vector<double> stuff=locationDistribution.probabilities();
     //Set Tailies for Print out
     int totalBuinessPopulation=0;
     while(numberOfEmployeedAdults>totalBuinessPopulation){
@@ -278,20 +285,24 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
             }
         }
         int location = locationDistribution(generator);
-        Building newBuilding;
         if(school){
-            newBuilding = School(numberOfBuildings, location%width, location/width, capacity, 0, NULL);
+            School tmp = School(numberOfBuildings, location%width, location/width, capacity, 0, NULL);
+            buildings.insert({numberOfBuildings, tmp});
         }else{
             if(hospital){
-                newBuilding = Medical(numberOfBuildings, location%width, location/width, capacity, 0, 0);
+                Medical tmp = Medical(numberOfBuildings, location%width, location/width, capacity, 0, 0);
+                buildings.insert({numberOfBuildings, tmp});
             }else{
-                newBuilding=Business(numberOfBuildings,location%width, location/width, capacity, 0);
+                Business tmp = Business(numberOfBuildings,location%width, location/width, capacity, 0);
+                buildings.insert({numberOfBuildings, tmp});
+                //std::cout<<numberOfBuildings<<": "<<newBuilding.getLocation()[0]<<" "<<newBuilding.getLocation()[1]<<std::endl;
             }
         }
-        densityData.at(location%width).at(location/width).addBuilding(&newBuilding);
+        densityData.at(location%width).at(location/width).addBuilding(&buildings[numberOfBuildings]);
         totalBuinessPopulation+=capacity;
         numberOfBuildings++;
     }
+
 }
 
 void displayBuildingStatistics(double businessSizeProbablities[6], double hospitalSizeProbablities[6], double schoolSizeProbablities[6]){
@@ -325,6 +336,165 @@ void displayBuildingStatistics(double businessSizeProbablities[6], double hospit
     std::cout << "Employee Capacity 500:     \t" << totalSchoolSize[5] << " \t"<<(totalSchoolSize[5]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[5] << ")" << std::endl;
 }
 
+Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int startTime, int endTime){
+    int maxX=densityData.size()-1;
+    int maxY=densityData[0].size()-1;
+    int r=0; //Radius
+    //Adjusted Radius range for X,Y Values (Never go beyond or below Grid)
+    int adjusted_actual_radMinY=y;
+    int adjusted_actual_radMaxY=y;
+    int adjusted_actual_radMinX=x;
+    int adjusted_actual_radMaxX=x;
+    //Actual Radius Range Values (Can go Beyond Grid)
+    int actual_radMinY=y;
+    int actual_radMaxY=y;
+    int actual_radMinX=x;
+    int actual_radMaxX=x;
+    Building* b=densityData.at(x).at(y).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
+
+    if(b!=NULL){
+        // Found
+        return b;
+    }else{
+        while(actual_radMaxY<maxY||actual_radMaxX<maxX||actual_radMinY>0||actual_radMinX>0) {
+            r++;
+            //Update Radius ranges
+            adjusted_actual_radMinY=(y-r>0)?y-r:0;
+            adjusted_actual_radMaxY=(y+r<maxY)?y+r:maxY;
+            adjusted_actual_radMinX=(x-r>0)?x-r:0;
+            adjusted_actual_radMaxX=(x+r<maxX)?x+r:maxX;
+            actual_radMinY=y-r;
+            actual_radMaxY=y+r;
+            actual_radMinX=x-r;
+            actual_radMaxX=x+r;
+            
+            for(int j=adjusted_actual_radMinY+1; j<adjusted_actual_radMaxY; j++){
+                //Check Bottom
+                if(actual_radMaxX<=maxX){
+                    //Actual is Still in Grid and has not gone off Edge
+                    b=densityData.at(actual_radMaxX).at(j).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
+                
+                    if(b!=NULL){
+                        // Found
+                        return b;
+                    }
+                }else{
+                    //Gone Off Bottom Edge of Grid
+                    //std::cout<<"-Off Bottom Side: "<<actual_radMaxX<<std::endl;
+                }
+                // Check Top
+                if(actual_radMinX>=0){
+                    //Actual is Still in Grid and has not gone off Edge
+
+                    b=densityData.at(actual_radMinX).at(j).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
+
+                    if(b!=NULL){
+                        // Found
+                        return b;
+                    }
+                }else{
+                    //Gone Off Top Edge of Grid
+                    //std::cout<<"-Off Top Side "<<actual_radMinX<<std::endl;
+                }
+            }
+
+            for(int i=adjusted_actual_radMinX; i<=adjusted_actual_radMaxX;i++){
+                //Right
+                if(actual_radMaxY<=maxY){
+                    //Actual is Still in Grid and has not gone off Edge
+
+                    b=densityData.at(i).at(actual_radMaxY).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
+
+                    if(b!=NULL){
+                        // Found
+                        return b;
+                    }
+                }else{
+                    //Gone Off Right Side of Grid
+                   // std::cout<<"-Off Right Side "<<actual_radMaxY<<std::endl;
+                }
+                //Left
+                if(actual_radMinY>=0){
+                    //Actual is Still in Grid and has not gone off Edge
+
+                    b=densityData.at(i).at(actual_radMinY).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
+
+                    if(b!=NULL){
+                        // Found
+                        return b;
+                    }
+                }else{
+                    //Gone Off Left Side of Grid
+                    //::cout<<"-Off Left Side "<<actual_radMinY<<std::endl;
+                }
+            }
+        }
+        //std::cout<<actual_radMinX<<"-"<<actual_radMaxX<<" "<<actual_radMinY<<"-"<<actual_radMaxY<<std::endl;
+
+    }
+    return NULL;
+}
+
+void generateSchedules(Population &pop) {
+    //Creating Schedules for Families
+    float oldRatio=0;
+    std::cout << "Generating Schedules for Population" << std::endl;
+    if(progressDisplay){
+        printf("Percentage Complete: %3d%%", 0 );
+    }
+    fflush(stdout);
+    for ( int i =0; i<pop.getNumberOfFamilies(); i++ ) {
+        Family *currentFamily = pop.getFamily(i);
+        Building *home =currentFamily->getHome();
+        for(int p=0; p<currentFamily->getNumberOfPeople(); p++){
+            Person *p1 = currentFamily->getPerson(p);
+            Schedule *currentSchedule = p1->getSchedule();
+            switch(currentSchedule->getScheduleType()){
+               // (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
+                case 3:{
+                    //Working Adult
+                    Building *workLocation=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'E', 0, 0);
+                    if(workLocation==NULL){
+                        std::cout<<"No Work Location Found"<<std::endl;
+                    }else{
+                        workLocation->setCurrentCapacity(workLocation->getCurrentCapacity()+1);
+                        //Set To Work Location Forever (Temp For Now)
+                        currentSchedule->addTimeSlot(TimeSlot(workLocation->getID(), 1008));
+                    }
+                    break;
+                }
+                default:{
+                    //Set to Home Forever (Temp For Now)
+                    currentSchedule->addTimeSlot(TimeSlot(home->getID(), 1008));
+                }
+            }
+            
+            
+            //TO DO: Assign Free Time Location and Hours
+        }
+        
+        
+        //Calculate Percent Complete
+        if(progressDisplay){
+            float ratio = i/(float)pop.getNumberOfFamilies();
+            if ( 100*(ratio-oldRatio) > 1 ) {
+                //Update Percent Complete Only if there is a Change
+                printf("\r");
+                printf("Percentage Complete: %3d%%", (int)(ratio*100) );
+                oldRatio=ratio;
+                fflush(stdout);
+            }
+        }
+    }
+    //Print out 100% Complete
+    if(progressDisplay){
+        printf("\r");
+        printf("Percentage Complete: %3d%%", 100 );
+        fflush(stdout);
+    }
+    std::cout << std::endl <<"Population Successfully Assigned Locations" << std::endl;
+
+}
 int main(int argc, char* argv[]) {
     //Display Awesome Logo
     std::cout << " _    _          _____  _      ____   _____" <<std::endl;
@@ -441,6 +611,13 @@ int main(int argc, char* argv[]) {
     assignHomes(pop);
     generateBuildings(businessSizeProbablities, hospitalSizeProbablities, schoolSizeProbablities, pureDensity, densityData.size(), pop.getNumberOfEmployeedAdults());
 
+    generateSchedules(pop);
+    int allBuildings=0;
+    for(int i=0;i<densityData.size();i++){
+        for(int j=0;j<densityData[0].size();j++){
+            allBuildings+=densityData.at(i).at(j).getNumberOfBuildings();
+        }
+    }
     if(produceImages){
         #ifdef HAVE_MAGICK
             ImageGen ig(outputFolder);
@@ -487,7 +664,7 @@ int main(int argc, char* argv[]) {
     displayBuildingStatistics(businessSizeProbablities, hospitalSizeProbablities, schoolSizeProbablities);
     
     //Display 10 Families Entirely (Useful for Schedule Testing).
-    // std::cout<<pop.returnFirstTenFamiliesInfo()<<std::endl;
+     //std::cout<<pop.returnFirstTenFamiliesInfo()<<std::endl;
     return 0;
 }
 

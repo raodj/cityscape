@@ -60,6 +60,7 @@ Location::Location(int x, int y, float m, float d) {
     density=d;
 	coordinates[0]=x;
 	coordinates[1]=y;
+
 }
 
 int Location::getCurrentPopulation() const {
@@ -98,9 +99,12 @@ void Location::addFamily(Family *f){
     }
 }
 
-void Location::addBuilding(Building *b){
-    buildings[b->getID()]=b;
+Building* Location::addBuilding(Building *b){
+    
+    buildings.insert({b->getID(), b});
+    return buildings[b->getID()];
 }
+
 void Location::addPerson(Person *p){
     people[p->getID()]= p;
     numberOfPeople++;
@@ -112,12 +116,60 @@ void Location::removePerson(int idNum){
 	numberOfPeople--;
 }
 
+Building* Location::hasAvaliableBuilding(char visitorType, int startTime, int endTime){
+    for ( auto it = buildings.begin(); it != buildings.end(); ++it ){
+        switch(visitorType){
+            case 'E':
+                if(it->second->getType()=='B' || it->second->getType()=='M' || it->second->getType()=='S'){
+                    if(it->second->getCurrentCapacity()<it->second->getMaxCapacity()){
+                       // std::cout<<"FOUND Employeer"<<std::endl;
+                        return it->second;
+                    }
+                }
+                break;
+            case 'V':
+                for(int i = startTime; i<endTime; i++){
+                    if(it->second->getCurrentVisitorCapacity(i)>=it->second->getMaxVisitorCapacity()){
+                        return NULL;
+                    }
+                }
+                //std::cout<<"FOUND Visitor"<<std::endl;
+                return it->second;
+                break;
+            case 'P':
+                if(it->second->getType()=='M'){
+                    Medical* b = static_cast<Medical* >(it->second);
+                    if(b->getCurrentPatientCapacity()<b->getMaxPatientCapacity()){
+                       // std::cout<<"FOUND Patient"<<std::endl;
+                        return it->second;
+                    }
+                }
+                break;
+                
+        }
+    }
+    return NULL;
+}
+
+
+void Location::printTemp(){
+    std::cout<<"Print Temp"<<std::endl;
+    std::cout<<tmp<<std::endl;
+    Medical *m = static_cast<Medical *>(tmp);
+    std::cout<<m<<std::endl;
+    std::cout<<m->toString()<<std::endl;
+    m->setCurrentPatientCapacity(m->getCurrentPatientCapacity()+20);
+    std::cout<<m->toString()<<std::endl;
+
+}
+
 Location &Location::operator = (const Location &p){
 	if (this!=&p) {
 		numberOfPeople=p.numberOfPeople;
 		maxPopulation=p.maxPopulation;
 		coordinates[0]=p.coordinates[0];
 		coordinates[1]=p.coordinates[1];
+        density=p.density;
 	}
 	return *this;
 }

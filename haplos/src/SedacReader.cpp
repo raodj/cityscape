@@ -116,6 +116,8 @@ std::vector<std::vector<Location> > SedacReader::readFile(std::string fileName, 
                                                                             currentColumn,
                                                                             density*actualPopulationSize,
                                                                             density);
+                    densityData.at(currentRow).at(currentColumn).getDensity();
+
 		    		currentColumn++;
 		    	}
                 else {

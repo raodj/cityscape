@@ -39,7 +39,9 @@
 
 #include <vector>
 #include "Person.h"
+#include "Buildings/Building.h"
 
+class Building;
 class Person;
 class Family {
     /** A class specifically for repersenting a family of indviduals. */
@@ -75,14 +77,24 @@ class Family {
         void setLocation(int x, int y);
     
         /**Assign a Home Number to a Family
-          \param[in] n Number of Home Building.
+          \param[in] n pointer of new Home Building.
          */
-        void setHomeNumber(int n);
+        void setHome(Building *n);
+    
+        /** Get home number
+         \return pointer of home location.
+         */
+        Building* getHome();
     
         /** Get if Family has an Adult.
          \return True if family has at least 1 adult in it, false if otherwise.
          */
         bool getHasAdult();
+    
+        /** Get if Family has an Child.
+         \return True if family has at least 1 child in it, false if otherwise.
+         */
+        bool getHasYoungChild();
     
         std::string toString();
         /**
@@ -95,10 +107,11 @@ class Family {
         virtual ~Family();
         
     private:
-        std::vector < Person > members;
-        int numberOfPeople;
-        bool hasAdult;
-        int homeNumber;
+        std::vector < Person > members; //Vector containing all members in the family
+        int numberOfPeople; //Number of People in the Family
+        bool hasAdult;  //Has an person 18 and older in the family
+        bool hasYoungChild; //Has Child that is under the age of 14 and needs to have adult supervision
+        Building *homeNumber; //Pointer toHome Building.
     
     
 };

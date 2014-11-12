@@ -36,7 +36,6 @@
 #include "Person.h"
 #include "Schedule/Schedule.h"
 
-
 Person::Person(){
 	age=-1;
 	gender='n';
@@ -46,7 +45,6 @@ Person::Person(){
 }
 
 Person::Person(int a, char g, int x, int y, int id_number, int scheduleType) {
-	// TODO Auto-generated constructor stub
 	age=a;
 	gender=g;
 	location[0]=x;
@@ -100,7 +98,10 @@ int* Person::getLocation(){
 
 int Person::getID(){
     return id_num;
-    
+}
+
+Schedule* Person::getSchedule(){
+    return &schedule;
 }
 std::string Person::toString(){
     std::string returnString = "\tPerson: "+std::to_string(this->id_num)+"\n";
@@ -109,13 +110,9 @@ std::string Person::toString(){
     return returnString;
 }
 
-std::string Person::toCSV(){
-    std::string returnString=std::to_string(this->id_num)+","+std::to_string(age)+","+gender+","
-                             +std::to_string(schedule.getScheduleType())+"\n";
-    return returnString;
-}
 Person::~Person() {
 	// TODO Auto-generated destructor stub
+    
 }
 
 

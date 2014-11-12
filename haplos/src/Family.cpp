@@ -42,7 +42,7 @@ using namespace std;
 Family::Family() {
     hasAdult=false;
     numberOfPeople=0;
-    homeNumber=-1;
+    homeNumber=NULL;
 }
 
 Person* Family::getPerson(int id){
@@ -59,14 +59,24 @@ Person* Family::getAllPersons(){
     return &members[0];
 }
 
-void Family::setHomeNumber(int n){
+void Family::setHome(Building *n){
     homeNumber=n;
+
+}
+
+Building* Family::getHome(){
+    return homeNumber;
 }
 
 void Family::addPerson(Person newPerson){
     members.push_back(newPerson);
     if(newPerson.getAge()>17){
         hasAdult=true;
+    }else{
+        if(newPerson.getAge()<14){
+            //Has Child that Needs to be Supervised by Parent
+            hasYoungChild=true;
+        }
     }
     numberOfPeople++;
     
@@ -82,8 +92,11 @@ bool Family::getHasAdult(){
     return hasAdult;
 }
 
+bool Family::getHasYoungChild(){
+    return hasYoungChild;
+}
 std::string Family::toString(){
-    std::string returnString="---------------\nFamily Home Number: "+std::to_string(homeNumber)+"\n";
+    std::string returnString="---------------\nFamily Home Number: "+std::to_string(homeNumber->getID())+"\n";
     returnString+="Number of People: "+std::to_string(numberOfPeople)+"\n";
     returnString+="Detail Information: \n";
     for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){

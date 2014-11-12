@@ -35,17 +35,17 @@
 #include "TimeSlot.h"
 
 TimeSlot::TimeSlot(){
-    locationID=0;
+    buildingID=-1;
     endTime=0;
 }
 
-TimeSlot::TimeSlot(int locationID, int endTime){
-    this->locationID=locationID;
+TimeSlot::TimeSlot(int buildingID, int endTime){
+    this->buildingID=buildingID;
     this->endTime=endTime;
 }
 
 int TimeSlot::getLocation(){
-    return locationID;
+    return buildingID;
 }
 
 int TimeSlot::getEndTime(){
@@ -53,7 +53,7 @@ int TimeSlot::getEndTime(){
 }
 
 std::string TimeSlot::toString(){
-    return "\t\t\t\t"+std::to_string(locationID)+"\t"+std::to_string(endTime)+"\n";
+    return "\t\t\t\t"+std::to_string(buildingID)+"\t"+std::to_string(endTime)+"\n";
 }
 
 TimeSlot::~TimeSlot(){
