@@ -53,18 +53,31 @@ class Schedule {
         Schedule(int type);
     
         /**Copy Constructor for Schedule
-            param[in] s schedule to copy.
+        param[in] s schedule to copy.
          */
         Schedule(const Schedule &s);
+    
+        void setScheduleType();
     
         /**Return integer representing the schedule type.
          return type of schedule (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
          */
         int getScheduleType();
     
+        /** Set the Location of Job
+         param[in] jobLocationID id of job location
+         */
+         
+        void setJobLocation(int jobLocationID);
+    
+        /**Return the ID of the location of Job
+        return ID of Job Location
+         */
+        int getJobLocation();
+    
         /**Create a new timeslot in the Schedule
-            param[in] building  pointer to location of where person should be during time slot.
-            param[in] endtime end time of time slot.
+         param[in] building  pointer to location of where person should be during time slot.
+         param[in] endtime end time of time slot.
          */
         void addTimeSlot(TimeSlot t);
     
@@ -105,5 +118,6 @@ class Schedule {
         int currentTimeStep;
         int currentTimeSlot;
         int numberOfTimeSlots;
+        int jobLocationID;
 };
 #endif /* defined(__haplos__Schedule__) */

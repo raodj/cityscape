@@ -39,6 +39,8 @@
 Schedule::Schedule() {
     type=0;
     currentTimeStep=0;
+    this->jobLocationID=-1;
+    
 
 }
 
@@ -46,12 +48,21 @@ Schedule::Schedule() {
 Schedule::Schedule(int type){
     this->type=type;
     currentTimeStep=0;
+    this->jobLocationID=-1;
+}
+
+void Schedule::setJobLocation(int jobLocationID){
+    this->jobLocationID=jobLocationID;
+}
+
+int Schedule::getJobLocation(){
+    return jobLocationID;
 }
 
 Schedule::Schedule(const Schedule &s){
     type=s.type;
     currentTimeStep=s.currentTimeStep;
-    
+    jobLocationID=s.jobLocationID;
     plan.resize(s.plan.size());
     
     for(int i=0; i< s.plan.size(); i++)
@@ -97,9 +108,10 @@ TimeSlot* Schedule::peekNextLocation(){
 }
 
 std::string Schedule::toString(){
-    std::string returnString= "\t\t\tType: "+std::to_string(type)+"\n";
+    std::string returnString= "\"Type:\",\""+std::to_string(type)+"\"\n\n";
+    returnString+="\"ID\",\"Visitor Type\",\"End Time\"\n";
     for(std::vector< TimeSlot >::iterator it = plan.begin(); it!= plan.end(); ++it){
-        returnString+=it->toString();
+        returnString+=it->toString()+"\n";
     }
     return returnString;
 }

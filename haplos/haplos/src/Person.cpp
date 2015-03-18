@@ -32,7 +32,7 @@
 // from <http://www.gnu.org/licenses/>.
 //
 //-----------------------------------------------------------
-
+#include <sstream>
 #include "Person.h"
 #include "Schedule/Schedule.h"
 
@@ -104,10 +104,11 @@ Schedule* Person::getSchedule(){
     return &schedule;
 }
 std::string Person::toString(){
-    std::string returnString = "\tPerson: "+std::to_string(this->id_num)+"\n";
-    returnString+="\t\tAge: "+std::to_string(age);
-    returnString+="\n\t\tSchedule: \n"+schedule.toString();
-    return returnString;
+    std::ostringstream outputString;
+    outputString << "\n\n\"Person ID:\",\"" << this->id_num << '"' << std::endl;
+    outputString << "\"Age:\",\"" << this->age <<'"' << std::endl;
+    outputString << "\"Schedule:\"" << std::endl << schedule.toString() << std::endl;
+    return outputString.str();
 }
 
 Person::~Person() {

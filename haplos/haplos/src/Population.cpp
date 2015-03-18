@@ -37,6 +37,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
+#include <sstream>
 #include "Person.h"
 #include "Family.h"
 #include "Buildings/Building.h"
@@ -45,12 +47,25 @@
 
 using namespace std;
 
+static std::default_random_engine generator;   //Random Generator for Distributions
+
+
 Population::Population(int s, double *ageProbablities, double *familySizeProbablites, double mProb, double
-    *scheduleProbablities, bool progressDisplay) {
+    *scheduleProbablities, bool progressDisplay, int popSeed) {
     numberOfMales=0;
     
 	size=s;
-    generator.seed(time(0));
+    //Initalize random number generator
+   // std::default_random_engine generator;   //Random Generator for Distributions
+    int seed = time(0);
+    
+    //Forcing Population Seed for Stable Population for Testing
+    if(popSeed!=-1){
+        seed = popSeed;
+    }
+    
+    generator.seed(seed);
+    std::cout<< "Population Seed: " << seed << std::endl;
     //Set Age Probablities
     this->ageProbablities=ageProbablities;
 
@@ -60,6 +75,8 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
     //Set Schedule Probablities
     this->scheduleProbablities=scheduleProbablities;
     
+    
+
     //Set Probablity of Male (It is Assumed Probablity of Female is 1-MaleProbablity)
     maleProbablity=mProb;
     
@@ -74,34 +91,35 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
         printf("Percentage Complete: %3d%%", 0 );
         fflush(stdout);
     }
-   
+    
+    //Initialize Arrays
+    for(int i = 0; i < 13;i++){
+        numberOfStudentsAssignedGrade[i]=0;
+
+    }
+    
     while( i < size ){
-        //Create A std::cout<<<<std::endl;Family
         int familySize= generateFamilySize();
+       // std::cout<< "Family Size: "<< familySize << std::endl;
+
         Family newFamily = Family();
-        for( int b = 0; b<familySize-1; b++ ){
-            int *ageInformation=determineAge(false);
+        for( int b = 0; b<familySize; b++ ){
+            //Always first Person in Family must be an Adult
+            int *ageInformation=determineAge(((b == 0) ? true : false ));
             Person newPerson= Person(ageInformation[0], determineGender(), -1, -1, i++, determineScheduleType(ageInformation[1]).getScheduleType());
+            if(ageInformation[0]<18){
+                numberOfStudentsAssignedGrade[ageInformation[0]-5]++;
+            }
             newFamily.addPerson(newPerson);
         }
-        
-        //Check that family has an Adult, if not create one.
-        if(!newFamily.getHasAdult()){
-            int *ageInformation=determineAge(true);
-
-            Person newPerson= Person(ageInformation[0], determineGender(), -1, -1, i++, determineScheduleType(ageInformation[1]).getScheduleType());
-            newFamily.addPerson(newPerson);
-
+  
+        if(newFamily.getHasYoungChild() && newFamily.getNonWorkingAdult()==nullptr){
+            std::cout<<"Family Needs Day Care"<<std::endl;
+            numberOfChildrenDaycare++;
         }
-        else{
-            int *ageInformation=determineAge(true);
-
-            Person newPerson= Person(ageInformation[0], determineGender(), -1, -1, i++, determineScheduleType(ageInformation[1]).getScheduleType());
-            newFamily.addPerson(newPerson);
-        }
-        
         
         families.push_back(newFamily);
+
         if(progressDisplay){
             float ratio = i/(float)size;
             if(100*(ratio-oldRatio)>1){
@@ -112,6 +130,7 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
                 fflush(stdout);
             }
         }
+
     }
     if(progressDisplay){
         printf("\r");
@@ -125,9 +144,10 @@ int Population::getNumberOfFamilies(){
     return families.size();
     
 }
+
 void Population::setHomeLocationOfFamily(Building *home, int family){
     families.at(family).setHome(home);
-    int* location = home->getLocation();
+    int* location = families.at(family).getHome()->getLocation();
     families.at(family).setLocation(location[0], location[1]);
 }
 
@@ -140,6 +160,15 @@ int Population::getNumberOfEmployeedAdults(){
            +numberOfPeopleAssignedSchedule[7]+numberOfPeopleAssignedSchedule[9];
 }
 
+int* Population::getNumberOfStudentsPerGrade(){
+    return numberOfStudentsAssignedGrade;
+}
+
+
+int Population::getNumberOfChildrenDaycare(){
+    return numberOfChildrenDaycare;
+    
+}
 char Population::determineGender(){
 	//Generate random number
 	double x = 1.0*rand()/RAND_MAX;
@@ -164,6 +193,7 @@ int Population::generateFamilySize(){
                                                  familySizeProbablites[5],
                                                  familySizeProbablites[6]};
     int size=distribution(generator);
+   // std::cout<< "Family Size (In Generator): "<< size << std::endl;
     numberOfFamiliesSizes[size]++;
     return size+1;
 }
@@ -209,6 +239,7 @@ int *Population::determineAge(bool forceAdult){
             ageProbablities[4],
             ageProbablities[5],
             ageProbablities[6]};
+
         
         switch(distribution(generator)){
             case 0:
@@ -249,6 +280,7 @@ int *Population::determineAge(bool forceAdult){
                 break;
             case 6:
                 //65-Older
+            
                 numberOfPeopleAges[6]++;
                 ageInformation[0]= (int)rand() % 35 +65;
                 ageInformation[1]=6;
@@ -362,82 +394,109 @@ Schedule Population::determineScheduleType(int ageGroup){
     return tmp;
 }
 
-void Population::displayStatistics(){
+void Population::displayStatistics(std::string fileLocation){
+    std::ostringstream outputString;
+
     //Display Family Information
     cout<< std::fixed<< std::setprecision(5);
-    std::cout <<"--------Family--------" << std::endl;
-    std::cout << "Total Number of Families: " << getNumberOfFamilies() << std::endl;
-    std::cout << "Size 1:  \t" << numberOfFamiliesSizes[0] << " \t" << (numberOfFamiliesSizes[0]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[0] << ")" << std::endl;
-    std::cout << "Size 2:  \t" << numberOfFamiliesSizes[1] << " \t" << (numberOfFamiliesSizes[1]/(double)getNumberOfFamilies()) << "\t(Expected " <<familySizeProbablites[1] << ")" << std::endl;
-    std::cout << "Size 3:  \t" << numberOfFamiliesSizes[2] << " \t" << (numberOfFamiliesSizes[2]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[2] << ")" << std::endl;
-    std::cout << "Size 4:  \t" << numberOfFamiliesSizes[3] << " \t" << (numberOfFamiliesSizes[3]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[3] << ")" << std::endl;
-    std::cout << "Size 5:  \t" << numberOfFamiliesSizes[4] << " \t" << (numberOfFamiliesSizes[4]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[4] << ")" << std::endl;
-    std::cout << "Size 6:  \t" << numberOfFamiliesSizes[5] << " \t" << (numberOfFamiliesSizes[5]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[5] << ")" << std::endl;
-    std::cout << "Size 7:  \t" << numberOfFamiliesSizes[6] << " \t" << (numberOfFamiliesSizes[6]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[6] << ")" << std::endl;
+    outputString<< std::fixed << std::setprecision(5);
+    
+    outputString <<"--------Family--------" << std::endl;
+    outputString << "Total Number of Families: " << getNumberOfFamilies() << std::endl;
+    outputString << "Size 1:  \t" << numberOfFamiliesSizes[0] << " \t" << (numberOfFamiliesSizes[0]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[0] << ")" << std::endl;
+    outputString<< "Size 2:  \t" << numberOfFamiliesSizes[1] << " \t" << (numberOfFamiliesSizes[1]/(double)getNumberOfFamilies()) << "\t(Expected " <<familySizeProbablites[1] << ")" << std::endl;
+    outputString << "Size 3:  \t" << numberOfFamiliesSizes[2] << " \t" << (numberOfFamiliesSizes[2]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[2] << ")" << std::endl;
+    outputString << "Size 4:  \t" << numberOfFamiliesSizes[3] << " \t" << (numberOfFamiliesSizes[3]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[3] << ")" << std::endl;
+    outputString << "Size 5:  \t" << numberOfFamiliesSizes[4] << " \t" << (numberOfFamiliesSizes[4]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[4] << ")" << std::endl;
+    outputString << "Size 6:  \t" << numberOfFamiliesSizes[5] << " \t" << (numberOfFamiliesSizes[5]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[5] << ")" << std::endl;
+    outputString << "Size 7:  \t" << numberOfFamiliesSizes[6] << " \t" << (numberOfFamiliesSizes[6]/(double)getNumberOfFamilies()) << "\t(Expected " << familySizeProbablites[6] << ")" << std::endl;
     
     //Display Population Information
-    std::cout <<"--------Population--------" << std::endl;
-	std::cout << "----Gender----" << std::endl;
-	std::cout << "Males:   \t" << numberOfMales <<" \t" << (numberOfMales/(double)size) << "\t(Expected " << maleProbablity << ")" <<std::endl;
-	std::cout << "Females: \t" << size-numberOfMales <<" \t" << ((size-numberOfMales)/(double)size) << "\t(Expected " << 1-maleProbablity << ")" << std::endl;
-	std::cout << "----Age----"<<endl;
-	std::cout << "Under Age 5: \t" <<numberOfPeopleAges[0]<< " \t"<<(numberOfPeopleAges[0]/(double)size) << "\t(Expected " << ageProbablities[0] << ")" << std::endl;
-	std::cout << "Age 5-13:    \t" <<numberOfPeopleAges[1]<< " \t"<< (numberOfPeopleAges[1]/(double)size) << "\t(Expected " << ageProbablities[1] << ")" << std::endl;
-	std::cout << "Age 14-17:   \t" <<numberOfPeopleAges[2]<< " \t"<< (numberOfPeopleAges[2]/(double)size) << "\t(Expected " << ageProbablities[2] << ")" << std::endl;
-	std::cout << "Age 18-24:   \t" <<numberOfPeopleAges[3]<< " \t"<< (numberOfPeopleAges[3]/(double)size) << "\t(Expected " << ageProbablities[3] << ")" << std::endl;
-	std::cout << "Age 25-44:   \t" <<numberOfPeopleAges[4]<< " \t"<< (numberOfPeopleAges[4]/(double)size) << "\t(Expected " << ageProbablities[4] << ")" << std::endl;
-	std::cout << "Age 45-64:   \t" <<numberOfPeopleAges[5] << " \t" << (numberOfPeopleAges[5]/(double)size) << "\t(Expected " << ageProbablities[5] << ")" << std::endl;
-	std::cout << "Over Age 65: \t" <<numberOfPeopleAges[6] << " \t" << (numberOfPeopleAges[6]/(double)size) << "\t(Expected " << ageProbablities[6] << ")" << std::endl;
-    std::cout << "Total:       \t" <<to_string(numberOfPeopleAges[0]+numberOfPeopleAges[1]+
+    outputString <<"--------Population--------" << std::endl;
+	outputString << "----Gender----" << std::endl;
+	outputString << "Males:   \t" << numberOfMales <<" \t" << (numberOfMales/(double)size) << "\t(Expected " << maleProbablity << ")" <<std::endl;
+	outputString << "Females: \t" << size-numberOfMales <<" \t" << ((size-numberOfMales)/(double)size) << "\t(Expected " << 1-maleProbablity << ")" << std::endl;
+	outputString << "----Age----"<<endl;
+	outputString << "Under Age 5: \t" <<numberOfPeopleAges[0]<< " \t"<<(numberOfPeopleAges[0]/(double)size) << "\t(Expected " << ageProbablities[0] << ")" << std::endl;
+	outputString << "Age 5-13:    \t" <<numberOfPeopleAges[1]<< " \t"<< (numberOfPeopleAges[1]/(double)size) << "\t(Expected " << ageProbablities[1] << ")" << std::endl;
+	outputString << "Age 14-17:   \t" <<numberOfPeopleAges[2]<< " \t"<< (numberOfPeopleAges[2]/(double)size) << "\t(Expected " << ageProbablities[2] << ")" << std::endl;
+	outputString << "Age 18-24:   \t" <<numberOfPeopleAges[3]<< " \t"<< (numberOfPeopleAges[3]/(double)size) << "\t(Expected " << ageProbablities[3] << ")" << std::endl;
+	outputString << "Age 25-44:   \t" <<numberOfPeopleAges[4]<< " \t"<< (numberOfPeopleAges[4]/(double)size) << "\t(Expected " << ageProbablities[4] << ")" << std::endl;
+	outputString << "Age 45-64:   \t" <<numberOfPeopleAges[5] << " \t" << (numberOfPeopleAges[5]/(double)size) << "\t(Expected " << ageProbablities[5] << ")" << std::endl;
+	outputString << "Over Age 65: \t" <<numberOfPeopleAges[6] << " \t" << (numberOfPeopleAges[6]/(double)size) << "\t(Expected " << ageProbablities[6] << ")" << std::endl;
+    outputString << "Total:       \t" <<to_string(numberOfPeopleAges[0]+numberOfPeopleAges[1]+
                                       numberOfPeopleAges[2]+numberOfPeopleAges[3]+
                                       numberOfPeopleAges[4]+numberOfPeopleAges[5]+
                                       numberOfPeopleAges[6]) << std::endl;
     //Display Schedule Information
-    std::cout <<"--------Schedules--------" << std::endl;
-     std::cout << "Young Child: \t"<< numberOfPeopleAssignedSchedule[0] << " \t" << (numberOfPeopleAssignedSchedule[0]/(double)numberOfPeopleAges[0]) <<"\t(Expected " <<scheduleProbablities[0] <<")" <<endl;
+    outputString <<"--------Schedules--------" << std::endl;
+    outputString << "Young Child: \t"<< numberOfPeopleAssignedSchedule[0] << " \t" << (numberOfPeopleAssignedSchedule[0]/(double)numberOfPeopleAges[0]) <<"\t(Expected " <<scheduleProbablities[0] <<")" <<endl;
     double expected=(ageProbablities[1]*scheduleProbablities[1])+(ageProbablities[2]*scheduleProbablities[2]);
-    std::cout << "School Schedule: \t"<< numberOfPeopleAssignedSchedule[1]+numberOfPeopleAssignedSchedule[2] << " \t"<< ((numberOfPeopleAssignedSchedule[1]+numberOfPeopleAssignedSchedule[2])/(double)numberOfPeopleAges[1]+numberOfPeopleAges[2]) <<"\t(Expected " <<expected <<")" <<endl;
+    outputString << "School Schedule: \t"<< numberOfPeopleAssignedSchedule[1]+numberOfPeopleAssignedSchedule[2] << " \t"<< ((numberOfPeopleAssignedSchedule[1]+numberOfPeopleAssignedSchedule[2])/(double)numberOfPeopleAges[1]+numberOfPeopleAges[2]) <<"\t(Expected " <<expected <<")" <<endl;
     
     expected=(ageProbablities[3]*scheduleProbablities[3])+
                            (ageProbablities[4]*scheduleProbablities[5])+
                            (ageProbablities[5]*scheduleProbablities[7])+
                            (ageProbablities[6]*scheduleProbablities[9]);
     
-    std::cout << "Employeed Schedule: \t"<< numberOfPeopleAssignedSchedule[3]+numberOfPeopleAssignedSchedule[5]+numberOfPeopleAssignedSchedule[7]+numberOfPeopleAssignedSchedule[9] << " \t"<< ((numberOfPeopleAssignedSchedule[3]+numberOfPeopleAssignedSchedule[5]+numberOfPeopleAssignedSchedule[7]+numberOfPeopleAssignedSchedule[9])/((double)numberOfPeopleAges[3]+numberOfPeopleAges[4]+numberOfPeopleAges[5]+numberOfPeopleAges[6])) <<"\t(Expected " <<expected <<")" <<endl;
+    outputString << "Employeed Schedule: \t"<< numberOfPeopleAssignedSchedule[3]+numberOfPeopleAssignedSchedule[5]+numberOfPeopleAssignedSchedule[7]+numberOfPeopleAssignedSchedule[9] << " \t"<< ((numberOfPeopleAssignedSchedule[3]+numberOfPeopleAssignedSchedule[5]+numberOfPeopleAssignedSchedule[7]+numberOfPeopleAssignedSchedule[9])/((double)numberOfPeopleAges[3]+numberOfPeopleAges[4]+numberOfPeopleAges[5]+numberOfPeopleAges[6])) <<"\t(Expected " <<expected <<")" <<endl;
    
     expected=(ageProbablities[3]*scheduleProbablities[4])+
              (ageProbablities[4]*scheduleProbablities[6])+
              (ageProbablities[5]*scheduleProbablities[8])+
              (ageProbablities[6]*scheduleProbablities[10]);
     
-    std::cout << "Unemployeed Schedule: \t"<< numberOfPeopleAssignedSchedule[4]+numberOfPeopleAssignedSchedule[6]+numberOfPeopleAssignedSchedule[8]+numberOfPeopleAssignedSchedule[10] << " \t"<< ((numberOfPeopleAssignedSchedule[4]+numberOfPeopleAssignedSchedule[6]+numberOfPeopleAssignedSchedule[8]+numberOfPeopleAssignedSchedule[10])/((double)numberOfPeopleAges[3]+numberOfPeopleAges[4]+numberOfPeopleAges[5]+numberOfPeopleAges[6])) <<"\t(Expected " <<expected <<")" <<endl;
+    outputString << "Unemployeed Schedule: \t"<< numberOfPeopleAssignedSchedule[4]+numberOfPeopleAssignedSchedule[6]+numberOfPeopleAssignedSchedule[8]+numberOfPeopleAssignedSchedule[10] << " \t"<< ((numberOfPeopleAssignedSchedule[4]+numberOfPeopleAssignedSchedule[6]+numberOfPeopleAssignedSchedule[8]+numberOfPeopleAssignedSchedule[10])/((double)numberOfPeopleAges[3]+numberOfPeopleAges[4]+numberOfPeopleAges[5]+numberOfPeopleAges[6])) <<"\t(Expected " <<expected <<")" <<endl;
     
-    std::cout << "----Schedule Break Down----" << std::endl;
-    std::cout << "Young Child (0-4): \t"<< numberOfPeopleAssignedSchedule[0] << " \t" << (numberOfPeopleAssignedSchedule[0]/(double)numberOfPeopleAges[0]) <<"\t(Expected " <<scheduleProbablities[0] <<")" <<endl;
-    std::cout << "School Schedule (5-13): \t"<< numberOfPeopleAssignedSchedule[1] << " \t"<< (numberOfPeopleAssignedSchedule[1]/(double)numberOfPeopleAges[1]) <<"\t(Expected " <<scheduleProbablities[1] <<")" <<std::endl;
-    std::cout << "School Schedule (14-17): \t"<< numberOfPeopleAssignedSchedule[2] << " \t"<< (numberOfPeopleAssignedSchedule[2]/(double)numberOfPeopleAges[2]) <<"\t(Expected " <<scheduleProbablities[2] <<")" <<std::endl;
-    std::cout << "Employeed Schedule (18-24): \t"<< numberOfPeopleAssignedSchedule[3] << " \t"<< (numberOfPeopleAssignedSchedule[3]/(double)numberOfPeopleAges[3]) <<"\t(Expected " <<scheduleProbablities[3] <<")" <<std::endl;
-    std::cout << "Unemployeed Schedule (18-24): \t"<< numberOfPeopleAssignedSchedule[4] << " \t"<< (numberOfPeopleAssignedSchedule[4]/(double)numberOfPeopleAges[3]) <<"\t(Expected " <<scheduleProbablities[4] <<")" <<std::endl;
-    std::cout << "Employeed Schedule (25-44): \t"<< numberOfPeopleAssignedSchedule[5] << " \t"<< (numberOfPeopleAssignedSchedule[5]/(double)numberOfPeopleAges[4]) <<"\t(Expected " <<scheduleProbablities[5] <<")" <<std::endl;
-    std::cout << "Unemployeed Schedule (25-44): \t"<< numberOfPeopleAssignedSchedule[6] << " \t"<< (numberOfPeopleAssignedSchedule[6]/(double)numberOfPeopleAges[4]) <<"\t(Expected " <<scheduleProbablities[6] <<")" <<std::endl;
-    std::cout << "Employeed Schedule (45-64): \t"<< numberOfPeopleAssignedSchedule[7] << " \t"<< (numberOfPeopleAssignedSchedule[7]/(double)numberOfPeopleAges[5]) <<"\t(Expected " <<scheduleProbablities[7] <<")" <<std::endl;
-    std::cout << "Unemployeed Schedule (45-64): \t"<< numberOfPeopleAssignedSchedule[8] << " \t"<< (numberOfPeopleAssignedSchedule[8]/(double)numberOfPeopleAges[5]) <<"\t(Expected " <<scheduleProbablities[8] <<")" <<std::endl;
-    std::cout << "Employeed Schedule (65-Older): \t"<< numberOfPeopleAssignedSchedule[9] << " \t"<< (numberOfPeopleAssignedSchedule[9]/(double)numberOfPeopleAges[6]) <<"\t(Expected " <<scheduleProbablities[9] <<")" <<std::endl;
-    std::cout << "Unemployeed Schedule (65-Older): \t"<< numberOfPeopleAssignedSchedule[10] << " \t"<< (numberOfPeopleAssignedSchedule[10]/(double)numberOfPeopleAges[6]) <<"\t(Expected " <<scheduleProbablities[10] <<")" <<std::endl;
-    std::cout << "Total:                           \t"<<numberOfPeopleAssignedSchedule[0]+numberOfPeopleAssignedSchedule[2]+numberOfPeopleAssignedSchedule[3]+numberOfPeopleAssignedSchedule[4]+
+    outputString << "----Schedule Break Down----" << std::endl;
+    outputString << "Young Child (0-4): \t"<< numberOfPeopleAssignedSchedule[0] << " \t" << (numberOfPeopleAssignedSchedule[0]/(double)numberOfPeopleAges[0]) <<"\t(Expected " <<scheduleProbablities[0] <<")" <<endl;
+    outputString << "School Schedule (5-13): \t"<< numberOfPeopleAssignedSchedule[1] << " \t"<< (numberOfPeopleAssignedSchedule[1]/(double)numberOfPeopleAges[1]) <<"\t(Expected " <<scheduleProbablities[1] <<")" <<std::endl;
+    outputString << "School Schedule (14-17): \t"<< numberOfPeopleAssignedSchedule[2] << " \t"<< (numberOfPeopleAssignedSchedule[2]/(double)numberOfPeopleAges[2]) <<"\t(Expected " <<scheduleProbablities[2] <<")" <<std::endl;
+    outputString << "Employeed Schedule (18-24): \t"<< numberOfPeopleAssignedSchedule[3] << " \t"<< (numberOfPeopleAssignedSchedule[3]/(double)numberOfPeopleAges[3]) <<"\t(Expected " <<scheduleProbablities[3] <<")" <<std::endl;
+    outputString << "Unemployeed Schedule (18-24): \t"<< numberOfPeopleAssignedSchedule[4] << " \t"<< (numberOfPeopleAssignedSchedule[4]/(double)numberOfPeopleAges[3]) <<"\t(Expected " <<scheduleProbablities[4] <<")" <<std::endl;
+    outputString << "Employeed Schedule (25-44): \t"<< numberOfPeopleAssignedSchedule[5] << " \t"<< (numberOfPeopleAssignedSchedule[5]/(double)numberOfPeopleAges[4]) <<"\t(Expected " <<scheduleProbablities[5] <<")" <<std::endl;
+    outputString << "Unemployeed Schedule (25-44): \t"<< numberOfPeopleAssignedSchedule[6] << " \t"<< (numberOfPeopleAssignedSchedule[6]/(double)numberOfPeopleAges[4]) <<"\t(Expected " <<scheduleProbablities[6] <<")" <<std::endl;
+    outputString << "Employeed Schedule (45-64): \t"<< numberOfPeopleAssignedSchedule[7] << " \t"<< (numberOfPeopleAssignedSchedule[7]/(double)numberOfPeopleAges[5]) <<"\t(Expected " <<scheduleProbablities[7] <<")" <<std::endl;
+    outputString << "Unemployeed Schedule (45-64): \t"<< numberOfPeopleAssignedSchedule[8] << " \t"<< (numberOfPeopleAssignedSchedule[8]/(double)numberOfPeopleAges[5]) <<"\t(Expected " <<scheduleProbablities[8] <<")" <<std::endl;
+    outputString << "Employeed Schedule (65-Older): \t"<< numberOfPeopleAssignedSchedule[9] << " \t"<< (numberOfPeopleAssignedSchedule[9]/(double)numberOfPeopleAges[6]) <<"\t(Expected " <<scheduleProbablities[9] <<")" <<std::endl;
+    outputString << "Unemployeed Schedule (65-Older): \t"<< numberOfPeopleAssignedSchedule[10] << " \t"<< (numberOfPeopleAssignedSchedule[10]/(double)numberOfPeopleAges[6]) <<"\t(Expected " <<scheduleProbablities[10] <<")" <<std::endl;
+    outputString << "Total:                           \t"<<numberOfPeopleAssignedSchedule[0]+numberOfPeopleAssignedSchedule[2]+numberOfPeopleAssignedSchedule[3]+numberOfPeopleAssignedSchedule[4]+
                                                         numberOfPeopleAssignedSchedule[5]+numberOfPeopleAssignedSchedule[6]+numberOfPeopleAssignedSchedule[7]+numberOfPeopleAssignedSchedule[8]+
                                                         numberOfPeopleAssignedSchedule[9]+numberOfPeopleAssignedSchedule[10]+numberOfPeopleAssignedSchedule[1] << std::endl;
+    
+     if(fileLocation!=""){
+         ofstream buildingStatsFile;
+         buildingStatsFile.open(fileLocation+"/populationStatistics.txt");
+         buildingStatsFile << outputString.str();
+         buildingStatsFile.close();
+     }
+    
+    //std::cout<< outputString.str();
 }
 
-std::string Population::returnFirstTenFamiliesInfo(){
+std::string Population::returnFirstTenFamiliesInfo(std::string fileLocation){
+    
     std::string returnString="FIRST 10 FAMILY INFORMATION\n";
     int n=10;
     if(getNumberOfFamilies()<10){
         n=getNumberOfFamilies();
     }
     for(int i=0; i<n; i++){
-        returnString+=getFamily(i)->toString();
+        std::ostringstream outputString;
+        outputString << getFamily(i)->toString();
+        returnString+=outputString.str();
+
+        if(fileLocation!=""){
+            ofstream buildingStatsFile;
+            buildingStatsFile.open(fileLocation+"/Family_"+std::to_string(i)+".csv");
+            buildingStatsFile << outputString.str();
+            buildingStatsFile.close();
+            
+        }
+        
     }
+    
+   
     return returnString;
 }
 

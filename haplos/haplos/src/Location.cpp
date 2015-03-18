@@ -122,29 +122,46 @@ Building* Location::hasAvaliableBuilding(char visitorType, int startTime, int en
             case 'E':
                 if(it->second->getType()=='B' || it->second->getType()=='M' || it->second->getType()=='S'){
                     if(it->second->getCurrentCapacity()<it->second->getMaxCapacity()){
-                       // std::cout<<"FOUND Employeer"<<std::endl;
+                        //std::cout<<"FOUND Employeer"<<std::endl;
                         return it->second;
                     }
                 }
                 break;
             case 'V':
+            {
+                int invalid=false;
                 for(int i = startTime; i<endTime; i++){
                     if(it->second->getCurrentVisitorCapacity(i)>=it->second->getMaxVisitorCapacity()){
-                        return NULL;
+                        invalid=true;
+                        break;
                     }
                 }
-                //std::cout<<"FOUND Visitor"<<std::endl;
-                return it->second;
+               // std::cout<<"FOUND Visitor"<<std::endl;
+                if(!invalid){
+                    return it->second;
+                }
                 break;
+            }
             case 'P':
                 if(it->second->getType()=='M'){
                     Medical* b = static_cast<Medical* >(it->second);
                     if(b->getCurrentPatientCapacity()<b->getMaxPatientCapacity()){
-                       // std::cout<<"FOUND Patient"<<std::endl;
+                      //  std::cout<<"FOUND Patient"<<std::endl;
                         return it->second;
                     }
                 }
                 break;
+            case 'S':
+                //Student
+                if(it->second->getType()=='S'){
+                    School* b = static_cast<School* >(it->second);
+                    if(b->hasGradeAvaliable(startTime)){
+                        //std::cout<<"FOUND Student"<<std::endl;
+                        return it->second;
+                    }
+
+                }
+
                 
         }
     }

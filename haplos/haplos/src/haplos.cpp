@@ -39,6 +39,9 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <ctime>
 
 #include "SedacReader.h"
 #include "ImageGeneration/ImageGen.h"
@@ -49,17 +52,25 @@
 #include "Buildings/Medical.h"
 #include "Buildings/School.h"
 #include "Buildings/Business.h"
+#include "Buildings/Daycare.h"
+
 using namespace std;
 
 std::string const outputFolder="output/";
 //std::string configFile="examples/config/VirginaData.hapl";
 //std::string configFile="examples/config/USAData.hapl";
 std::string configFile="examples/config/MicroWorldData.hapl";
-std::unordered_map<int, Building> buildings;
+std::vector< School > schoolBuildings;
+std::vector< Business > businessBuildings;
+std::vector< Daycare > daycareBuildings;
+std::vector< Medical > medicalBuildings;
+std::vector< Building > otherBuildings;
+std::unordered_map<int, Building*> allBuildings;
 
 std::vector< std::vector < Location > > densityData;
 
 std::default_random_engine generator;
+
 ConfigFile configuration;
 bool progressDisplay=true;
 
@@ -71,430 +82,12 @@ int totalHospitals=0;
 int totalBusinesses=0;
 int numberOfBuildings=0;
 
-void assignHomes(Population &pop){
-    //Assign Families Locations
-    int x=0;
-    int y=0;
-    int notAssigned=0;
-    float oldRatio=0;
-    std::cout << "Assigning Locations to Population" << std::endl;
-    if(progressDisplay){
-        printf("Percentage Complete: %3d%%", 0 );
-    }
-    fflush(stdout);
-    
-    for ( int i =0; i<pop.getNumberOfFamilies(); i++ ) {
-        while (densityData.at(x).at(y).isFull()) {
-            //Move to Next Location in column
-            x++;
-            if(x>=densityData.size()&&y<densityData[0].size()){
-                //Move to next Row
-                x=0;
-                y++;
-            }
-            else{
-                if (y>=densityData[0].size()-1) {
-                    //No More Locations Avaliable
-                    notAssigned++;
-                    break;
-                }
-            }
-        }
-        
-        if (y>=densityData[0].size()-1) {
-            //No More Locations Avaliable
-            break;
-        }
-        //Set Location of Family
-        buildings.insert({ numberOfBuildings, Building('H', numberOfBuildings, x, y, pop.getFamily(i)->getNumberOfPeople(), 0)});
-        Building *tmp=densityData.at(x).at(y).addBuilding(&buildings[numberOfBuildings]);
-        densityData.at(x).at(y).addFamily(pop.getFamily(i));
-        pop.setHomeLocationOfFamily(tmp, i);
-    
-        numberOfBuildings++;
-        
-        //Calculate Percent Complete
-        if(progressDisplay){
-            float ratio = i/(float)pop.getNumberOfFamilies();
-            if ( 100*(ratio-oldRatio) > 1 ) {
-                //Update Percent Complete Only if there is a Change
-                printf("\r");
-                printf("Percentage Complete: %3d%%", (int)(ratio*100) );
-                oldRatio=ratio;
-                fflush(stdout);
-            }
-        }
-    }
-    
+#include "buildingHelper.pcpp"
+#include "buildingGeneratorHelper.pcpp"
+#include "scheduleGeneratorHelper.pcpp"
 
-    //Print out 100% Complete
-    if(progressDisplay){
-        printf("\r");
-        printf("Percentage Complete: %3d%%", 100 );
-        fflush(stdout);
-    }
-    std::cout << std::endl <<"Population Successfully Assigned Locations " << std::endl;
-    
-}
 
-void generateBuildings(double businessSizeProbablities[6], double hospitalSizeProbablities[6], double schoolSizeProbablities[6], std::vector<double> locationProbablties, int const width, int const numberOfEmployeedAdults){
-    //Set Random Generator Seed
-    generator.seed(time(0));
-    //Set Distribution
-    std::discrete_distribution<int> businessSizeDistribution{ businessSizeProbablities[0],
-                                                  businessSizeProbablities[1],
-                                                  businessSizeProbablities[2],
-                                                  businessSizeProbablities[3],
-                                                  businessSizeProbablities[4],
-                                                  businessSizeProbablities[5]};
-    std::discrete_distribution<int> locationDistribution(locationProbablties.begin(), locationProbablties.end());
-    
-    std::vector<double> stuff=locationDistribution.probabilities();
-    //Set Tailies for Print out
-    int totalBuinessPopulation=0;
-    while(numberOfEmployeedAdults>totalBuinessPopulation){
-        int capacity = -1;
-        bool hospital=false;
-        bool school=false;
-        switch(businessSizeDistribution(generator)){
-            case 0:{
-                std::discrete_distribution<int> hospitalSizeDistribution0{1-hospitalSizeProbablities[0],hospitalSizeProbablities[0]};
-                capacity = (int)rand() % 4 + 1;
-                if(hospitalSizeDistribution0(generator)){
-                    totalHospitals++;
-                    totalHospitalSize[0]++;
-                    hospital=true;
-                }
-                else{
-                    std::discrete_distribution<int> schoolSizeDistribution0{ 1-schoolSizeProbablities[0], schoolSizeProbablities[0]};
-                    if(schoolSizeDistribution0(generator)){
-                        totalSchools++;
-                        totalSchoolSize[0]++;
-                        school=true;
-                    }else{
-                        totalBusinesses++;
-                        totalBusinessSize[0]++;
-                    }
-                }
-                break;
-            }
-            case 1:{
-                std::discrete_distribution<int> hospitalSizeDistribution1{1-hospitalSizeProbablities[1],hospitalSizeProbablities[1]};
-                capacity = (int)rand() % 4 + 5;
-                if(hospitalSizeDistribution1(generator)){
-                    totalHospitals++;
-                    totalHospitalSize[1]++;
-                    hospital=true;
-                }
-                else{
-                    std::discrete_distribution<int> schoolSizeDistribution1{1-schoolSizeProbablities[1],schoolSizeProbablities[1]};
-                    if(schoolSizeDistribution1(generator)){
-                        totalSchools++;
-                        totalSchoolSize[1]++;
-                        school=true;
-                    }else{
-                        totalBusinesses++;
-                        totalBusinessSize[1]++;
-                    }
-                }
-                break;
-            }
-            case 2:{
-                std::discrete_distribution<int> hospitalSizeDistribution2{1-hospitalSizeProbablities[2],hospitalSizeProbablities[2]};
-                capacity = (int)rand() % 9 + 10;
-                if(hospitalSizeDistribution2(generator)){
-                    totalHospitals++;
-                    totalHospitalSize[2]++;
-                    hospital=true;
-                }
-                else{
-                    std::discrete_distribution<int> schoolSizeDistribution2{1-schoolSizeProbablities[2],schoolSizeProbablities[2]};
-                    if(schoolSizeDistribution2(generator)){
-                        totalSchools++;
-                        totalSchoolSize[2]++;
-                        school=true;
-                    }else{
-                        totalBusinesses++;
-                        totalBusinessSize[2]++;
-                    }
-                }
-                break;
-            }
-            case 3:{
-                std::discrete_distribution<int> hospitalSizeDistribution3{1-hospitalSizeProbablities[3],hospitalSizeProbablities[3]};
-                capacity = (int)rand() % 79 + 20;
-                if(hospitalSizeDistribution3(generator)){
-                    totalHospitals++;
-                    totalHospitalSize[3]++;
-                    hospital=true;
-                }
-                else{
-                    std::discrete_distribution<int> schoolSizeDistribution3{1-schoolSizeProbablities[3],schoolSizeProbablities[3]};
-                    if(schoolSizeDistribution3(generator)){
-                        totalSchools++;
-                        totalSchoolSize[3]++;
-                        school=true;
-                    }else{
-                        totalBusinesses++;
-                        totalBusinessSize[3]++;
-                    }
-                }
-                break;
-            }
-            case 4:{
-                std::discrete_distribution<int> hospitalSizeDistribution4{1-hospitalSizeProbablities[4],hospitalSizeProbablities[4]};
-                capacity = (int)rand() % 399 + 100;
-                if(hospitalSizeDistribution4(generator)){
-                    totalHospitals++;
-                    totalHospitalSize[4]++;
-                    hospital=true;
-                }
-                else{
-                    std::discrete_distribution<int> schoolSizeDistribution4{1-schoolSizeProbablities[4],schoolSizeProbablities[4]};
-                    if(schoolSizeDistribution4(generator)){
-                        totalSchools++;
-                        totalSchoolSize[4]++;
-                        school=true;
-                    }else{
-                        totalBusinesses++;
-                        totalBusinessSize[4]++;
-                    }
-                }
-                break;
-            }
-            case 5:{
-                std::discrete_distribution<int> hospitalSizeDistribution5{1-hospitalSizeProbablities[5],hospitalSizeProbablities[5]};
-                capacity = 500;
-                if(hospitalSizeDistribution5(generator)){
-                    totalHospitals++;
-                    totalHospitalSize[5]++;
-                    hospital=true;
-                }
-                else{
-                    std::discrete_distribution<int> schoolSizeDistribution5{1-schoolSizeProbablities[5],schoolSizeProbablities[5]};
-                    if(schoolSizeDistribution5(generator)){
-                        totalSchools++;
-                        totalSchoolSize[5]++;
-                        school=true;
-                    }else{
-                        totalBusinesses++;
-                        totalBusinessSize[5]++;
-                    }
-                }
-                break;
-            }
-        }
-        int location = locationDistribution(generator);
-        if(school){
-            School tmp = School(numberOfBuildings, location%width, location/width, capacity, 0, NULL);
-            buildings.insert({numberOfBuildings, tmp});
-        }else{
-            if(hospital){
-                Medical tmp = Medical(numberOfBuildings, location%width, location/width, capacity, 0, 0);
-                buildings.insert({numberOfBuildings, tmp});
-            }else{
-                Business tmp = Business(numberOfBuildings,location%width, location/width, capacity, 0);
-                buildings.insert({numberOfBuildings, tmp});
-                //std::cout<<numberOfBuildings<<": "<<newBuilding.getLocation()[0]<<" "<<newBuilding.getLocation()[1]<<std::endl;
-            }
-        }
-        densityData.at(location%width).at(location/width).addBuilding(&buildings[numberOfBuildings]);
-        totalBuinessPopulation+=capacity;
-        numberOfBuildings++;
-    }
 
-}
-
-void displayBuildingStatistics(double businessSizeProbablities[6], double hospitalSizeProbablities[6], double schoolSizeProbablities[6]){
-    std::cout << "--------Buildings--------" << std::endl;
-    std::cout << "Total Buildings Generated: " << numberOfBuildings << std::endl;
-    std::cout << "----Businesses----" << std::endl;
-    std::cout <<"Total Generated: " << totalBusinesses << std::endl;
-	std::cout << "Employee Capacity 1-4:     \t" << totalBusinessSize[0] << " \t"<<(totalBusinessSize[0]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[0] << ")" << std::endl;
-    std::cout << "Employee Capacity 5-9:     \t" << totalBusinessSize[1] << " \t"<<(totalBusinessSize[1]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[1] << ")" << std::endl;
-    std::cout << "Employee Capacity 10-19:   \t" << totalBusinessSize[2] << " \t"<<(totalBusinessSize[2]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[2] << ")" << std::endl;
-    std::cout << "Employee Capacity 20-99:   \t" << totalBusinessSize[3] << " \t"<<(totalBusinessSize[3]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[3] << ")" << std::endl;
-    std::cout << "Employee Capacity 100-499: \t" << totalBusinessSize[4] << " \t"<<(totalBusinessSize[4]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[4] << ")" << std::endl;
-    std::cout << "Employee Capacity 500:     \t" << totalBusinessSize[5] << " \t"<<(totalBusinessSize[5]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[5] << ")" << std::endl;
-    
-    std::cout << "----Hospitals----" << std::endl;
-    std::cout <<"Total Generated: " << totalHospitals << std::endl;
-	std::cout << "Employee Capacity 1-4:     \t" << totalHospitalSize[0] << " \t"<<(totalHospitalSize[0]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[0] << ")" << std::endl;
-    std::cout << "Employee Capacity 5-9:     \t" << totalHospitalSize[1] << " \t"<<(totalHospitalSize[1]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[1] << ")" << std::endl;
-    std::cout << "Employee Capacity 10-19:   \t" << totalHospitalSize[2] << " \t"<<(totalHospitalSize[2]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[2] << ")" << std::endl;
-    std::cout << "Employee Capacity 20-99:   \t" << totalHospitalSize[3] << " \t"<<(totalHospitalSize[3]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[3] << ")" << std::endl;
-    std::cout << "Employee Capacity 100-499: \t" << totalHospitalSize[4] << " \t"<<(totalHospitalSize[4]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[4] << ")" << std::endl;
-    std::cout << "Employee Capacity 500:     \t" << totalHospitalSize[5] << " \t"<<(totalHospitalSize[5]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[5] << ")" << std::endl;
-    
-    std::cout << "----Schools----" << std::endl;
-    std::cout <<"Total Generated: " << totalSchools << std::endl;
-	std::cout << "Employee Capacity 1-4:     \t" << totalSchoolSize[0] << " \t"<<(totalSchoolSize[0]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[0] << ")" << std::endl;
-    std::cout << "Employee Capacity 5-9:     \t" << totalSchoolSize[1] << " \t"<<(totalSchoolSize[1]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[1] << ")" << std::endl;
-    std::cout << "Employee Capacity 10-19:   \t" << totalSchoolSize[2] << " \t"<<(totalSchoolSize[2]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[2] << ")" << std::endl;
-    std::cout << "Employee Capacity 20-99:   \t" << totalSchoolSize[3] << " \t"<<(totalSchoolSize[3]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[3] << ")" << std::endl;
-    std::cout << "Employee Capacity 100-499: \t" << totalSchoolSize[4] << " \t"<<(totalSchoolSize[4]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[4] << ")" << std::endl;
-    std::cout << "Employee Capacity 500:     \t" << totalSchoolSize[5] << " \t"<<(totalSchoolSize[5]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[5] << ")" << std::endl;
-}
-
-Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int startTime, int endTime){
-    int maxX=densityData.size()-1;
-    int maxY=densityData[0].size()-1;
-    int r=0; //Radius
-    //Adjusted Radius range for X,Y Values (Never go beyond or below Grid)
-    int adjusted_actual_radMinY=y;
-    int adjusted_actual_radMaxY=y;
-    int adjusted_actual_radMinX=x;
-    int adjusted_actual_radMaxX=x;
-    //Actual Radius Range Values (Can go Beyond Grid)
-    int actual_radMinY=y;
-    int actual_radMaxY=y;
-    int actual_radMinX=x;
-    int actual_radMaxX=x;
-    Building* b=densityData.at(x).at(y).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
-
-    if(b!=NULL){
-        // Found
-        return b;
-    }else{
-        while(actual_radMaxY<maxY||actual_radMaxX<maxX||actual_radMinY>0||actual_radMinX>0) {
-            r++;
-            //Update Radius ranges
-            adjusted_actual_radMinY=(y-r>0)?y-r:0;
-            adjusted_actual_radMaxY=(y+r<maxY)?y+r:maxY;
-            adjusted_actual_radMinX=(x-r>0)?x-r:0;
-            adjusted_actual_radMaxX=(x+r<maxX)?x+r:maxX;
-            actual_radMinY=y-r;
-            actual_radMaxY=y+r;
-            actual_radMinX=x-r;
-            actual_radMaxX=x+r;
-            
-            for(int j=adjusted_actual_radMinY+1; j<adjusted_actual_radMaxY; j++){
-                //Check Bottom
-                if(actual_radMaxX<=maxX){
-                    //Actual is Still in Grid and has not gone off Edge
-                    b=densityData.at(actual_radMaxX).at(j).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
-                
-                    if(b!=NULL){
-                        // Found
-                        return b;
-                    }
-                }else{
-                    //Gone Off Bottom Edge of Grid
-                    //std::cout<<"-Off Bottom Side: "<<actual_radMaxX<<std::endl;
-                }
-                // Check Top
-                if(actual_radMinX>=0){
-                    //Actual is Still in Grid and has not gone off Edge
-
-                    b=densityData.at(actual_radMinX).at(j).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
-
-                    if(b!=NULL){
-                        // Found
-                        return b;
-                    }
-                }else{
-                    //Gone Off Top Edge of Grid
-                    //std::cout<<"-Off Top Side "<<actual_radMinX<<std::endl;
-                }
-            }
-
-            for(int i=adjusted_actual_radMinX; i<=adjusted_actual_radMaxX;i++){
-                //Right
-                if(actual_radMaxY<=maxY){
-                    //Actual is Still in Grid and has not gone off Edge
-
-                    b=densityData.at(i).at(actual_radMaxY).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
-
-                    if(b!=NULL){
-                        // Found
-                        return b;
-                    }
-                }else{
-                    //Gone Off Right Side of Grid
-                   // std::cout<<"-Off Right Side "<<actual_radMaxY<<std::endl;
-                }
-                //Left
-                if(actual_radMinY>=0){
-                    //Actual is Still in Grid and has not gone off Edge
-
-                    b=densityData.at(i).at(actual_radMinY).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
-
-                    if(b!=NULL){
-                        // Found
-                        return b;
-                    }
-                }else{
-                    //Gone Off Left Side of Grid
-                    //::cout<<"-Off Left Side "<<actual_radMinY<<std::endl;
-                }
-            }
-        }
-        //std::cout<<actual_radMinX<<"-"<<actual_radMaxX<<" "<<actual_radMinY<<"-"<<actual_radMaxY<<std::endl;
-
-    }
-    return NULL;
-}
-
-void generateSchedules(Population &pop) {
-    //Creating Schedules for Families
-    float oldRatio=0;
-    std::cout << "Generating Schedules for Population" << std::endl;
-    if(progressDisplay){
-        printf("Percentage Complete: %3d%%", 0 );
-    }
-    fflush(stdout);
-    for ( int i =0; i<pop.getNumberOfFamilies(); i++ ) {
-        Family *currentFamily = pop.getFamily(i);
-        Building *home =currentFamily->getHome();
-        for(int p=0; p<currentFamily->getNumberOfPeople(); p++){
-            Person *p1 = currentFamily->getPerson(p);
-            Schedule *currentSchedule = p1->getSchedule();
-            switch(currentSchedule->getScheduleType()){
-               // (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
-                case 3:{
-                    //Working Adult
-                    Building *workLocation=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'E', 0, 0);
-                    if(workLocation==NULL){
-                        std::cout<<"No Work Location Found"<<std::endl;
-                    }else{
-                        workLocation->setCurrentCapacity(workLocation->getCurrentCapacity()+1);
-                        //Set To Work Location Forever (Temp For Now)
-                        currentSchedule->addTimeSlot(TimeSlot(workLocation->getID(), 1008));
-                    }
-                    break;
-                }
-                default:{
-                    //Set to Home Forever (Temp For Now)
-                    currentSchedule->addTimeSlot(TimeSlot(home->getID(), 1008));
-                }
-            }
-            
-            
-            //TO DO: Assign Free Time Location and Hours
-        }
-        
-        
-        //Calculate Percent Complete
-        if(progressDisplay){
-            float ratio = i/(float)pop.getNumberOfFamilies();
-            if ( 100*(ratio-oldRatio) > 1 ) {
-                //Update Percent Complete Only if there is a Change
-                printf("\r");
-                printf("Percentage Complete: %3d%%", (int)(ratio*100) );
-                oldRatio=ratio;
-                fflush(stdout);
-            }
-        }
-    }
-    //Print out 100% Complete
-    if(progressDisplay){
-        printf("\r");
-        printf("Percentage Complete: %3d%%", 100 );
-        fflush(stdout);
-    }
-    std::cout << std::endl <<"Population Successfully Assigned Locations" << std::endl;
-
-}
 int main(int argc, char* argv[]) {
     //Display Awesome Logo
     std::cout << " _    _          _____  _      ____   _____" <<std::endl;
@@ -602,15 +195,17 @@ int main(int argc, char* argv[]) {
                                           configuration["Schedule_Employeed_Adults_65-Older_Probablity"],
                                           configuration["Schedule_Unemployeed_Adults_65-Older_Probablity"]};
         
-        
+    generator.seed(time(0));
         
     //Create Population
-    Population pop = Population(configuration["Total_Population"], ageProbablities, familySizeProbablities, configuration["Male_Probablity"], scheduleTypeProbablities, progressDisplay);
+    Population pop = Population(configuration["Total_Population"], ageProbablities, familySizeProbablities, configuration["Male_Probablity"], scheduleTypeProbablities, progressDisplay, configuration["Population_Seed"]);
    
     //Assign Locations to Population
     assignHomes(pop);
-    generateBuildings(businessSizeProbablities, hospitalSizeProbablities, schoolSizeProbablities, pureDensity, densityData.size(), pop.getNumberOfEmployeedAdults());
+    generateBuildings(businessSizeProbablities, hospitalSizeProbablities, schoolSizeProbablities, pureDensity, densityData.size(), pop.getNumberOfEmployeedAdults(), pop.getNumberOfStudentsPerGrade(), pop.getNumberOfChildrenDaycare());
 
+        
+    //Generate Schedules
     generateSchedules(pop);
     int allBuildings=0;
     for(int i=0;i<densityData.size();i++){
@@ -659,12 +254,20 @@ int main(int argc, char* argv[]) {
         xfig.createImage(outputFolder + "haplos_building.fig", buildingData,
                          buildingData.size(), buildingData[0].size(), 100);
     }
-    pop.displayStatistics();
-
-    displayBuildingStatistics(businessSizeProbablities, hospitalSizeProbablities, schoolSizeProbablities);
+    
+    //Create Output Directory
+    mkdir("output", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    time_t now = time(0);
+    tm *ltm = localtime(&now);
+    char buffer [80];
+    strftime(buffer,80,"output/haplos_%Y%m%d_%H%M%S",ltm);
+    string saveLocationPath(buffer);
+    mkdir(buffer, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    pop.displayStatistics(saveLocationPath);
+    displayBuildingStatistics(businessSizeProbablities, hospitalSizeProbablities, schoolSizeProbablities, saveLocationPath);
     
     //Display 10 Families Entirely (Useful for Schedule Testing).
-     //std::cout<<pop.returnFirstTenFamiliesInfo()<<std::endl;
+    pop.returnFirstTenFamiliesInfo(saveLocationPath);
     return 0;
 }
 

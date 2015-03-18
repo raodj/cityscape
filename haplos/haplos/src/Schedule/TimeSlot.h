@@ -47,7 +47,7 @@ class TimeSlot{
          param[in] building Pointer to location person will be at during time slot.
          param[in] endTime time where person will move to next location.
          */
-        TimeSlot(int buildingID, int endTime);
+        TimeSlot(int buildingID, int endTime, char visitorType);
     
         /** Get End Time for given Time Slot
             return end time.
@@ -72,6 +72,7 @@ class TimeSlot{
     private:
         int buildingID;
         int endTime;
+        char visitorType;
 };
 
 #endif /* defined(__haplos__TimeSlot__) */

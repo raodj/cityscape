@@ -1,0 +1,75 @@
+#Configuration File for Cinncinati Data
+
+#####Population####
+#Data File Paths
+Density_File=examples/data/Cinncinati_2000_PopData.asc (http://sedac.ciesin.columbia.edu/data/set/usgrid-summary-file3-2000-msa/)
+Density_File_Total_Population=1979202
+Max_Population_In_Area=1200
+Population_Seed=-1
+
+
+#Configuration for Cinncinati Data
+Total_Population=1979202
+
+#Demographics (Population Projects 2015 US Census. http://www.census.gov/population/projections/data/national/2012/summarytables.html)
+Male_Probablity=0.492782305
+Age_5-Younger_Probablity=0.065505363
+Age_5-13_Probablity=0.114425121
+Age_14-17_Probablity=0.051950598
+Age_18-24_Probablity=0.096411223
+Age_25-44_Probablity=0.262404197
+Age_45-64_Probablity=0.260885665
+Age_65-Older_Probablity=0.148414721
+
+#Family (2010 Data from   Table 62. Households by Age of Householder and Size of Household: 1990 to 2010 https://www.census.gov/compendia/statab/2012/tables/12s0061.pdf)
+Family_Size_1_Probablity=0.267234043;
+Family_Size_2_Probablity=0.336170213;
+Family_Size_3_Probablity=0.158297872;
+Family_Size_4_Probablity=0.137021277;
+Family_Size_5_Probablity=0.062978723;
+Family_Size_6_Probablity=0.023829787;
+Family_Size_7_Probablity=0.014468085;
+
+####Buildings####
+
+#Businesses (2013 QCEW NAICS-Based Data Files, US Totals All Industries. http://www.bls.gov/cew/datatoc.htm)
+Business_Size_0-4_Probablity=0.621002561
+Business_Size_5-9_Probablity=0.156435969
+Business_Size_10-19_Probablity=0.106775904
+Business_Size_20-99_Probablity=0.09685369
+Business_Size_100-499_Probablity=0.017148409
+Business_Size_500_Probablity=0.001783466
+
+#Schools (2013 QCEW NAICS-Based Data Files, NAICS Code 6111, US Totals. http://www.bls.gov/cew/datatoc.htm)
+School_Size_0-4_Probablity=0.000503797
+School_Size_5-9_Probablity=0.001230329
+School_Size_10-19_Probablity=0.002770039
+School_Size_20-99_Probablity=0.009531787
+School_Size_100-499_Probablity=0.010774966
+School_Size_500_Probablity=0.00272808
+
+#Hospitals (2013 QCEW NAICS-Based Data Files, NAICS Code 6111, US Totals. http://www.bls.gov/cew/datatoc.htm)
+Hospital_Size_0-4_Probablity=0.000291528
+Hospital_Size_5-9_Probablity=0.00034429
+Hospital_Size_10-19_Probablity=0.000476862
+Hospital_Size_20-99_Probablity=0.001373867
+Hospital_Size_100-499_Probablity=0.015802844
+Hospital_Size_500_Probablity=0.144651694
+
+####Schedules####
+#Adult Schedules (2013 Household Data Annual Averages Employment status of civillian noninstituional population by age, sex, and race. http://www.bls.gov/cps/cpsaat03.htm)
+Schedule_Employeed_Adults_18-24_Probablity=0.554236211
+Schedule_Unemployeed_Adults_18-24_Probablity=0.445763789
+Schedule_Employeed_Adults_25-44_Probablity=0.758990783
+Schedule_Unemployeed_Adults_25-44_Probablity=0.241009217
+Schedule_Employeed_Adults_45-64_Probablity=0.707666077
+Schedule_Unemployeed_Adults_45-64_Probablity=0.292333923
+Schedule_Employeed_Adults_65-Older_Probablity=0.176932645
+Schedule_Unemployeed_Adults_65-Older_Probablity=0.823067355
+
+#School Aged Schedules
+Schedule_School_Children_14-17_Probablity=1
+Schedule_School_Children_5-13_Probablity=1
+
+#Young Children Schedules
+Schedule_Young_Children_5-Younger_Probablity=1

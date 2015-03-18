@@ -102,10 +102,13 @@ class Building {
          \param[in] c new visitor capacity to change to.
          */
         void setCurrentVisitorCapacity(int time, int c);
+    
+        void addVisitor(int startTime, int endTime);
         /** Return the coordinates of the current location of entity
          
          \return An array consisting of [rows, cols]
          */
+    
         int* getLocation();
     
         /**Return the Char representing the type of building
@@ -118,7 +121,7 @@ class Building {
          \return Human Readable String of Information about the Person
          */
         std::string toString();
-    
+
         /**
          The destructor.
          
@@ -132,7 +135,7 @@ class Building {
         int maxCapacity;
         int currentCapacity;
         int visitorCapacity;
-        int currentVisitorCapacity[1008];
+        int currentVisitorCapacity[1008]; //Visitor Capacity at each time incriment for a week
         std::vector<Person *>currentEmployees[336];
         std::vector<Person *>currentVisitors;
         int idNumber;

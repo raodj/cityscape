@@ -63,14 +63,15 @@ class Population {
          \param[in] familysize1Prob Probably of creating a family of size 6.
          \param[in] familysize1Prob Probably of creating a family of size 7.
          \param[in] progressDisplay Display progress of creating population.
+         \param[in] popSeed Seed used to generate Population (-1 will use a random seed based on time)
 
          */
         Population(int size, double *ageProbablities, double *familySizeProbablities,
-                   double maleProbablity, double *scheduleProbablities, bool progressDisplay);
+                   double maleProbablity, double *scheduleProbablities, bool progressDisplay, int popSeed);
     
         /** Display Statistics about population to Console.
          */
-        void displayStatistics();
+        void displayStatistics(std::string fileLocation);
     
         /** Set the home location of a family and move all members to that location.
          \param[in] home Location family should be set to.
@@ -95,7 +96,17 @@ class Population {
          */
         int getNumberOfEmployeedAdults();
     
-        std::string returnFirstTenFamiliesInfo();
+    
+        /** Get Number of Students Per Grade Created
+         
+         \return Array containing the Students Per Grade Created
+         */
+        int* getNumberOfStudentsPerGrade();
+    
+    
+        int getNumberOfChildrenDaycare();
+    
+    std::string returnFirstTenFamiliesInfo(std::string fileLocation);
         /**
          The destructor.
          
@@ -140,8 +151,8 @@ class Population {
         int numberOfMales=0;
         int numberOfFamiliesSizes[7]={};
         int numberOfPeopleAssignedSchedule[11]={};
-    
-        std::default_random_engine generator;   //Random Generator for Distributions
+        int numberOfStudentsAssignedGrade[13]={};
+        int numberOfChildrenDaycare=0;
     
         std::vector < Family > families;    //Families in Population.
 };

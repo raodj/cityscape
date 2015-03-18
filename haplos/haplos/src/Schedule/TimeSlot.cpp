@@ -39,9 +39,10 @@ TimeSlot::TimeSlot(){
     endTime=0;
 }
 
-TimeSlot::TimeSlot(int buildingID, int endTime){
+TimeSlot::TimeSlot(int buildingID, int endTime, char visitorType){
     this->buildingID=buildingID;
     this->endTime=endTime;
+    this->visitorType=visitorType;
 }
 
 int TimeSlot::getLocation(){
@@ -53,7 +54,7 @@ int TimeSlot::getEndTime(){
 }
 
 std::string TimeSlot::toString(){
-    return "\t\t\t\t"+std::to_string(buildingID)+"\t"+std::to_string(endTime)+"\n";
+    return "\""+std::to_string(buildingID)+"\",\""+visitorType+"\",\""+std::to_string(endTime)+"\"";
 }
 
 TimeSlot::~TimeSlot(){

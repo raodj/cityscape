@@ -96,6 +96,8 @@ class Family {
          */
         bool getHasYoungChild();
     
+        Person* getNonWorkingAdult();
+    
         std::string toString();
         /**
          The destructor.
@@ -111,6 +113,7 @@ class Family {
         int numberOfPeople; //Number of People in the Family
         bool hasAdult;  //Has an person 18 and older in the family
         bool hasYoungChild; //Has Child that is under the age of 14 and needs to have adult supervision
+        Person *nonWorkingAdult; //Pointer to Non-Working Adult
         Building *homeNumber; //Pointer toHome Building.
     
     

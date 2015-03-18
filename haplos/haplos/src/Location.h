@@ -41,6 +41,8 @@
 #include "Person.h"
 #include "Buildings/Building.h"
 #include "Buildings/Medical.h"
+#include "Buildings/School.h"
+
 #include "Family.h"
 class Person;
 class Family;
