@@ -96,7 +96,14 @@ void Building::setCurrentVisitorCapacity(int time, int c){
     currentVisitorCapacity[time]=c;
 }
 
+void Building::addVisitor(int startTime, int endTime){
+    for(int i = startTime; i<endTime; i++){
+        currentVisitorCapacity[i]++;
+    }
+}
+
 int* Building::getLocation(){
+    //std::cout<<"Location: "<<location[0]<<","<<location[1]<<std::endl;
 	return location;
 }
 
@@ -104,8 +111,8 @@ char Building::getType(){
     return type;
 }
 std::string Building::toString(){
-    std::string returnString=std::to_string(this->idNumber)+", "+std::string(1, this->type)+
-    ", "+std::to_string(this->maxCapacity)+","+std::to_string(this->visitorCapacity)+","+std::to_string(this->location[0])+","+std::to_string(this->location[1]);
+    std::string returnString="ID: "+std::to_string(this->idNumber)+"\n Type: "+std::string(1, this->type)+
+    "\n Capacity: "+std::to_string(this->maxCapacity)+"\n Visitor Capacity: "+std::to_string(this->visitorCapacity)+"\n Location: "+std::to_string(this->location[0])+","+std::to_string(this->location[1]);
     return returnString;
 }
 

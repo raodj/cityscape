@@ -1,10 +1,37 @@
+//------------------------------------------------------------
 //
-//  School.h
-//  haplos
+// This file is part of HAPLOS <http://pc2lab.cec.miamiOH.edu/>
 //
-//  Created by Emily on 5/30/14.
-//  Copyright (c) 2014 Emily. All rights reserved.
+// Human  Population  and   Location  Simulator (HAPLOS)  is
+// free software: you can  redistribute it and/or  modify it
+// under the terms of the GNU  General Public License  (GPL)
+// as published  by  the   Free  Software Foundation, either
+// version 3 (GPL v3), or  (at your option) a later version.
 //
+// HAPLOS is distributed in the hope that it will  be useful,
+// but   WITHOUT  ANY  WARRANTY;  without  even  the IMPLIED
+// WARRANTY of  MERCHANTABILITY  or FITNESS FOR A PARTICULAR
+// PURPOSE.
+//
+// Miami University and the HAPLOS  development team make no
+// representations  or  warranties  about the suitability of
+// the software,  either  express  or implied, including but
+// not limited to the implied warranties of merchantability,
+// fitness  for a  particular  purpose, or non-infringement.
+// Miami  University and  its affiliates shall not be liable
+// for any damages  suffered by the  licensee as a result of
+// using, modifying,  or distributing  this software  or its
+// derivatives.
+//
+// By using or  copying  this  Software,  Licensee  agree to
+// abide  by the intellectual  property laws,  and all other
+// applicable  laws of  the U.S.,  and the terms of the  GNU
+// General  Public  License  (version 3).  You  should  have
+// received a  copy of the  GNU General Public License along
+// with HAPLOS.  If not, you may  download copies  of GPL V3
+// from <http://www.gnu.org/licenses/>.
+//
+//-----------------------------------------------------------
 
 #ifndef __haplos__School__
 #define __haplos__School__
@@ -24,8 +51,37 @@ class School : public Building{
          \param[in] visitorCapacity max number of visitors a can have in a given hour.
          \param[in] gradeCapacity max number of students they can have in a given grade.
          */
-        School(int i, int x, int y, int capacity, int visitorCapacity, int gradeCapacity[13]);
+        School(int i, int x, int y, int capacity, int visitorCapacity);
     
+        /** The alternative constructor for this class.
+         
+         \param[in] id ID number of Building
+         \param[in] x row number of building
+         \param[in] y col number of building
+         \param[in] capacity max number of employees.
+         \param[in] visitorCapacity max number of visitors a can have in a given hour.
+         \param[in] gradeCapacity max number of students they can have in a given grade.
+         \param[in] forceSchoolType 0=Elementry, 1= Middle, 2= High School
+         */
+        School(int i, int x, int y, int capacity, int visitorCapacity, int forceSchoolType);
+    
+        /**Get time of day when school will start (based on a 144 hour time units)
+         \return Time of School Starting
+         */
+        int getSchoolStartTime();
+    
+        /*Get time of day when school will end (baesd on 144 hour time units)
+         \return Time of School Ending
+         */
+        int getSchoolEndTime();
+    
+        /*Returns true if it has a avaliable student slot for a given grade
+         */
+        bool hasGradeAvaliable(int grade);
+    
+        /*Add a Student to a grade
+         */
+        void addStudent(int grade);
         /**
          The destructor.
          
@@ -36,7 +92,12 @@ class School : public Building{
         virtual ~School();
     private:
         int maxVisitorCapacity;
-        int *gradeCapacity;
+        int gradeCapacity[13];
+        int gradeMaxCapacity[13];
+        int studentCapacity;
+        int studentMaxCapacity;
+        int schoolStart;
+        int schoolEnd;
     
     
 };

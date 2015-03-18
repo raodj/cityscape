@@ -1,0 +1,215 @@
+#ifndef BUILDINGHELPER_CPP
+#define BUILDINGHELPER_CPP
+//------------------------------------------------------------
+//
+// This file is part of HAPLOS <http://pc2lab.cec.miamiOH.edu/>
+//
+// Human  Population  and   Location  Simulator (HAPLOS)  is
+// free software: you can  redistribute it and/or  modify it
+// under the terms of the GNU  General Public License  (GPL)
+// as published  by  the   Free  Software Foundation, either
+// version 3 (GPL v3), or  (at your option) a later version.
+//
+// HAPLOS is distributed in the hope that it will  be useful,
+// but   WITHOUT  ANY  WARRANTY;  without  even  the IMPLIED
+// WARRANTY of  MERCHANTABILITY  or FITNESS FOR A PARTICULAR
+// PURPOSE.
+//
+// Miami University and the HAPLOS  development team make no
+// representations  or  warranties  about the suitability of
+// the software,  either  express  or implied, including but
+// not limited to the implied warranties of merchantability,
+// fitness  for a  particular  purpose, or non-infringement.
+// Miami  University and  its affiliates shall not be liable
+// for any damages  suffered by the  licensee as a result of
+// using, modifying,  or distributing  this software  or its
+// derivatives.
+//
+// By using or  copying  this  Software,  Licensee  agree to
+// abide  by the intellectual  property laws,  and all other
+// applicable  laws of  the U.S.,  and the terms of the  GNU
+// General  Public  License  (version 3).  You  should  have
+// received a  copy of the  GNU General Public License along
+// with HAPLOS.  If not, you may  download copies  of GPL V3
+// from <http://www.gnu.org/licenses/>.
+//
+//-----------------------------------------------------------
+
+#include <stdio.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
+#include "Buildings/Medical.h"
+#include "Buildings/School.h"
+#include "Buildings/Business.h"
+
+
+/** Checks to see if a there exist a building has a avalible slot for person in a given visitor type.
+ \param[in] vistorType type of visitor (E=Employee, V=Standard Visitor, P=Patient)
+ \param[in] radius radius limit (-1 means no limit).
+ \param[in] startTime start time of slot (required for standard visitor)
+ \param[in] endTime end time of slot (required for standard visitor
+ \return pointer to building that has avaliable visitor slot
+ */
+Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, int startTime, int endTime){
+    int maxX=densityData.size()-1;
+    int maxY=densityData[0].size()-1;
+    int r=0; //Radius
+    //Adjusted Radius range for X,Y Values (Never go beyond or below Grid)
+    int adjusted_actual_radMinY=y;
+    int adjusted_actual_radMaxY=y;
+    int adjusted_actual_radMinX=x;
+    int adjusted_actual_radMaxX=x;
+    //Actual Radius Range Values (Can go Beyond Grid)
+    int actual_radMinY=y;
+    int actual_radMaxY=y;
+    int actual_radMinX=x;
+    int actual_radMaxX=x;
+    //std::cout<<x<<","<<y<<std::endl;
+    Building* b=densityData.at(x).at(y).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
+    
+    if(b!=NULL){
+        // Found
+        return b;
+    }else{
+        /*if(typeOfVisitor=='S'){
+            std::cout<<"Starting Locaiton: "<<x<<" "<<y<<std::endl;
+        }*/
+        while(actual_radMaxY<maxY||actual_radMaxX<maxX||actual_radMinY>0||actual_radMinX>0) {
+            /*if(typeOfVisitor=='S'){
+                std::cout<<"----Next---"<<std::endl;
+            }*/
+            r++;
+            //Update Radius ranges
+            adjusted_actual_radMinY=(y-r>0)?y-r:0;
+            adjusted_actual_radMaxY=(y+r<maxY)?y+r:maxY;
+            adjusted_actual_radMinX=(x-r>0)?x-r:0;
+            adjusted_actual_radMaxX=(x+r<maxX)?x+r:maxX;
+            actual_radMinY=y-r;
+            actual_radMaxY=y+r;
+            actual_radMinX=x-r;
+            actual_radMaxX=x+r;
+            
+            for(int j=adjusted_actual_radMinY+1; j<adjusted_actual_radMaxY; j++){
+                //Check Bottom
+                if(actual_radMaxX<=maxX){
+                    //Actual is Still in Grid and has not gone off Edge
+                    b=densityData.at(actual_radMaxX).at(j).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
+                    /*if(typeOfVisitor=='S'){
+                        std::cout<<"Bottom: "<<actual_radMaxX<<" "<<j<<std::endl;
+                    }*/
+                    if(b!=NULL){
+                        // Found
+                        return b;
+                    }
+                }else{
+                    //Gone Off Bottom Edge of Grid
+                    //std::cout<<"-Off Bottom Side: "<<actual_radMaxX<<std::endl;
+                }
+                // Check Top
+                if(actual_radMinX>=0){
+                    //Actual is Still in Grid and has not gone off Edge
+                    
+                    b=densityData.at(actual_radMinX).at(j).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
+                    /*if(typeOfVisitor=='S'){
+                        std::cout<<"Top: "<<actual_radMinX<<" "<<j<<std::endl;
+                    }*/
+                    if(b!=NULL){
+                        // Found
+                        return b;
+                    }
+                }else{
+                    //Gone Off Top Edge of Grid
+                    //std::cout<<"-Off Top Side "<<actual_radMinX<<std::endl;
+                }
+            }
+            
+            for(int i=adjusted_actual_radMinX; i<=adjusted_actual_radMaxX;i++){
+                //Right
+                if(actual_radMaxY<=maxY){
+                    //Actual is Still in Grid and has not gone off Edge
+                    
+                    b=densityData.at(i).at(actual_radMaxY).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
+                   /* if(typeOfVisitor=='S'){
+                        std::cout<<"Right: "<<i<<" "<<actual_radMaxY<<std::endl;
+                    }*/
+                    if(b!=NULL){
+                        // Found
+                        return b;
+                    }
+                }else{
+                    //Gone Off Right Side of Grid
+                    // std::cout<<"-Off Right Side "<<actual_radMaxY<<std::endl;
+                }
+                //Left
+                if(actual_radMinY>=0){
+                    //Actual is Still in Grid and has not gone off Edge
+                    
+                    b=densityData.at(i).at(actual_radMinY).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
+                    /*if(typeOfVisitor=='S'){
+                        std::cout<<"Left: "<<i<<" "<<actual_radMinY<<std::endl;
+                    }*/
+                    if(b!=NULL){
+                        // Found
+                        return b;
+                    }
+                }else{
+                    //Gone Off Left Side of Grid
+                    //::cout<<"-Off Left Side "<<actual_radMinY<<std::endl;
+                }
+            }
+        }
+        //std::cout<<actual_radMinX<<"-"<<actual_radMaxX<<" "<<actual_radMinY<<"-"<<actual_radMaxY<<std::endl;
+        
+        //Check for Radius Limit
+        if( radius>=0 && r+1 >radius){
+          //  std::cout<<"Hit Radius Limit"<<std::endl;
+            return NULL;
+        }
+    }
+    return NULL;
+}
+
+void displayBuildingStatistics(double businessSizeProbablities[6], double hospitalSizeProbablities[6], double schoolSizeProbablities[6], string fileLocation){
+    std::ostringstream outputString;
+    
+    outputString << "--------Buildings--------" << std::endl;
+    outputString << "Total Buildings Generated: " << numberOfBuildings << std::endl;
+    outputString << "----Businesses----" << std::endl;
+    outputString <<"Total Generated: " << totalBusinesses << std::endl;
+    outputString << "Employee Capacity 1-4:     \t" << totalBusinessSize[0] << " \t"<<(totalBusinessSize[0]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[0] << ")" << std::endl;
+    outputString << "Employee Capacity 5-9:     \t" << totalBusinessSize[1] << " \t"<<(totalBusinessSize[1]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[1] << ")" << std::endl;
+    outputString << "Employee Capacity 10-19:   \t" << totalBusinessSize[2] << " \t"<<(totalBusinessSize[2]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[2] << ")" << std::endl;
+    outputString << "Employee Capacity 20-99:   \t" << totalBusinessSize[3] << " \t"<<(totalBusinessSize[3]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[3] << ")" << std::endl;
+    outputString << "Employee Capacity 100-499: \t" << totalBusinessSize[4] << " \t"<<(totalBusinessSize[4]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[4] << ")" << std::endl;
+    outputString << "Employee Capacity 500:     \t" << totalBusinessSize[5] << " \t"<<(totalBusinessSize[5]/(double)totalBusinesses) << "\t(Expected " << businessSizeProbablities[5] << ")" << std::endl;
+    
+    outputString << "----Hospitals----" << std::endl;
+    outputString <<"Total Generated: " << totalHospitals << std::endl;
+    outputString << "Employee Capacity 1-4:     \t" << totalHospitalSize[0] << " \t"<<(totalHospitalSize[0]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[0] << ")" << std::endl;
+    outputString << "Employee Capacity 5-9:     \t" << totalHospitalSize[1] << " \t"<<(totalHospitalSize[1]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[1] << ")" << std::endl;
+    outputString << "Employee Capacity 10-19:   \t" << totalHospitalSize[2] << " \t"<<(totalHospitalSize[2]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[2] << ")" << std::endl;
+    outputString << "Employee Capacity 20-99:   \t" << totalHospitalSize[3] << " \t"<<(totalHospitalSize[3]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[3] << ")" << std::endl;
+    outputString << "Employee Capacity 100-499: \t" << totalHospitalSize[4] << " \t"<<(totalHospitalSize[4]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[4] << ")" << std::endl;
+    outputString << "Employee Capacity 500:     \t" << totalHospitalSize[5] << " \t"<<(totalHospitalSize[5]/(double)totalHospitals) << "\t(Expected " << hospitalSizeProbablities[5] << ")" << std::endl;
+    
+    outputString << "----Schools----" << std::endl;
+    outputString <<"Total Generated: " << totalSchools << std::endl;
+    outputString << "Employee Capacity 1-4:     \t" << totalSchoolSize[0] << " \t"<<(totalSchoolSize[0]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[0] << ")" << std::endl;
+    outputString << "Employee Capacity 5-9:     \t" << totalSchoolSize[1] << " \t"<<(totalSchoolSize[1]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[1] << ")" << std::endl;
+    outputString << "Employee Capacity 10-19:   \t" << totalSchoolSize[2] << " \t"<<(totalSchoolSize[2]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[2] << ")" << std::endl;
+    outputString << "Employee Capacity 20-99:   \t" << totalSchoolSize[3] << " \t"<<(totalSchoolSize[3]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[3] << ")" << std::endl;
+    outputString << "Employee Capacity 100-499: \t" << totalSchoolSize[4] << " \t"<<(totalSchoolSize[4]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[4] << ")" << std::endl;
+    outputString << "Employee Capacity 500:     \t" << totalSchoolSize[5] << " \t"<<(totalSchoolSize[5]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[5] << ")" << std::endl;
+    if(fileLocation==""){
+        std::cout<< outputString.str();
+    }else{
+        ofstream buildingStatsFile;
+        buildingStatsFile.open(fileLocation+"/buildingStatistics.txt");
+        buildingStatsFile << outputString.str();
+        buildingStatsFile.close();
+        
+    }
+}
+#endif

@@ -36,11 +36,13 @@
 
 #include "Family.h"
 #include <vector>
+#include <sstream>
 
 using namespace std;
 
 Family::Family() {
     hasAdult=false;
+    hasYoungChild=false;
     numberOfPeople=0;
     homeNumber=NULL;
 }
@@ -60,7 +62,7 @@ Person* Family::getAllPersons(){
 }
 
 void Family::setHome(Building *n){
-    homeNumber=n;
+    homeNumber= n;
 
 }
 
@@ -72,6 +74,10 @@ void Family::addPerson(Person newPerson){
     members.push_back(newPerson);
     if(newPerson.getAge()>17){
         hasAdult=true;
+        if(newPerson.getSchedule()->getScheduleType()==4){
+            //Non-Working Adult
+            nonWorkingAdult= &members.at(members.size()-1);
+        }
     }else{
         if(newPerson.getAge()<14){
             //Has Child that Needs to be Supervised by Parent
@@ -95,14 +101,23 @@ bool Family::getHasAdult(){
 bool Family::getHasYoungChild(){
     return hasYoungChild;
 }
+
+Person* Family::getNonWorkingAdult(){
+    
+    return nonWorkingAdult;
+}
+
 std::string Family::toString(){
-    std::string returnString="---------------\nFamily Home Number: "+std::to_string(homeNumber->getID())+"\n";
-    returnString+="Number of People: "+std::to_string(numberOfPeople)+"\n";
-    returnString+="Detail Information: \n";
+    std::ostringstream outputString;
+    outputString << "\"Family Home Number:\",\""<< homeNumber->getID() << '"'<< std::endl;
+    outputString << "\"Number of People: \",\"" << numberOfPeople <<'"'<< std::endl;
+    outputString << "\"Has Non-Working Adult: \",\"" << ( (nonWorkingAdult!=NULL) ? "Yes" : "No" ) << '"'<< std::endl;
+    outputString << "\"Has Young Child: \",\"" << ((hasYoungChild) ? "Yes" : "No") << '"'<< std::endl;
+    outputString << "\"Detail Information: \"" << std::endl;
     for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){
-        returnString+=it->toString();
+        outputString << it->toString();
     }
-    return returnString;
+    return outputString.str();
 }
 Family::~Family() {
 	// TODO Auto-generated destructor stub
