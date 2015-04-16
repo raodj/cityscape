@@ -115,8 +115,8 @@ void assignHomes(Population &pop){
     
 }
 
-void generateBuildings(double businessSizeProbablities[6], double hospitalSizeProbablities[6], double schoolSizeProbablities[6], std::vector<double> locationProbablties, int const width, int const
-    numberOfEmployeedAdults, int* numberOfStudentsPerGrade, int numberChildrenDaycare ){
+void generateBuildings(double businessSizeProbablities[6], double hospitalSizeProbablities[6], double schoolSizeProbablities[6], std::vector<double> locationProbablties, int const width,
+                       int const numberOfEmployeedAdults, int* numberOfStudentsPerGrade, int numberChildrenDaycare ){
     std::cout<< "Generating Buildings" <<std::endl;
 
     //Set Random Generator Seed
@@ -230,7 +230,52 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
     }
     std::cout<<"Generate Daycares"<<std::endl;
     std::cout<<numberChildrenDaycare<<std::endl;
-    
+    while(numberChildrenDaycare>0){
+        int capacity = 0;
+        switch(businessSizeDistribution(generator)){
+                /*case 0:
+                 //4 (Anything less than 4 seems kind of silly)
+                 capacity = 4;
+                 break;
+                 case 1:
+                 //5-9
+                 capacity = (int)rand() % 4 + 5;
+                 break;*/
+            case 2:
+                //10-19
+                capacity = (int)rand() % 9 + 10;
+                break;
+            case 3:
+                //20-99
+                capacity = (int)rand() % 79 + 20;
+                break;
+            case 4:
+                //100-499
+                capacity = (int)rand() % 399 + 100;\
+                break;
+            case 5:
+                //500
+                capacity=500;
+                break;
+            default:
+                //Need a minimum of 6 teachers (0.20 will not be teachers)
+                capacity = (int)rand() % 9 + 10;
+                break;
+                
+        }
+        int location = locationDistribution(generator);
+        
+        daycareBuildings.push_back(Daycare(numberOfBuildings, location%width, location/width, capacity, 10));
+        allBuildings.insert({numberOfBuildings, &daycareBuildings.at(daycareBuildings.size()-1)});
+        densityData.at(location%width).at(location/width).addBuilding(&daycareBuildings.at(daycareBuildings.size()-1));
+        numberChildrenDaycare-=capacity;
+        if(numberChildrenDaycare<0){
+            numberChildrenDaycare=0;
+        }
+        numberOfBuildings++;
+
+    }
+
    // std::cout<<"Number of Schools Generated (Elementry, Middle, High): "<<eleTotal<<" "<<middleTotal<<" "<<highTotal<<std::endl<<std::endl;
     std::cout<<"Generating Businesses"<<std::endl;
     //Create Businesses

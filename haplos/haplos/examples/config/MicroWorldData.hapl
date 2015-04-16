@@ -5,8 +5,8 @@
 Density_File=examples/data/MicroWorld.asc
 Density_File_Total_Population=104
 Max_Population_In_Area=10
-#Population_Seed=1424220736
-Population_Seed=-1
+Population_Seed=1424220736
+#Population_Seed=-1
 #Configuration for MicroWorld Data
 Total_Population=104
 
