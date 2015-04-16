@@ -112,9 +112,8 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
             }
             newFamily.addPerson(newPerson);
         }
-  
-        if(newFamily.getHasYoungChild() && newFamily.getNonWorkingAdult()==nullptr){
-            std::cout<<"Family Needs Day Care"<<std::endl;
+        if(newFamily.getHasYoungChild() && newFamily.getNonWorkingAdult()==NULL){
+            //std::cout<<"Family Needs Day Care"<<std::endl;
             numberOfChildrenDaycare++;
         }
         
@@ -193,7 +192,6 @@ int Population::generateFamilySize(){
                                                  familySizeProbablites[5],
                                                  familySizeProbablites[6]};
     int size=distribution(generator);
-   // std::cout<< "Family Size (In Generator): "<< size << std::endl;
     numberOfFamiliesSizes[size]++;
     return size+1;
 }
@@ -477,7 +475,7 @@ void Population::displayStatistics(std::string fileLocation){
 std::string Population::returnFirstTenFamiliesInfo(std::string fileLocation){
     
     std::string returnString="FIRST 10 FAMILY INFORMATION\n";
-    int n=10;
+    int n=getNumberOfFamilies();
     if(getNumberOfFamilies()<10){
         n=getNumberOfFamilies();
     }

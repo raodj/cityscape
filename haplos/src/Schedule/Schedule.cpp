@@ -108,8 +108,29 @@ TimeSlot* Schedule::peekNextLocation(){
 }
 
 std::string Schedule::toString(){
-    std::string returnString= "\"Type:\",\""+std::to_string(type)+"\"\n\n";
-    returnString+="\"ID\",\"Visitor Type\",\"End Time\"\n";
+    std::string wordType ="";
+    switch(type){
+        case 0:
+            wordType="Young Child";
+            break;
+        case 1:
+            wordType = "Young School Child";
+            break;
+        case 2:
+            wordType = "School Child";
+            break;
+        case 3:
+            wordType="Employed Adult";
+            break;
+        case 4:
+            wordType="Unemployed Adult";
+            break;
+        default:
+            wordType="Uknown";
+            break;
+    }
+    std::string returnString= "\"Type:\",\""+wordType+"\"\n\n";
+    returnString+="\"ID\",\"Visitor Type\",\"End Time\",\"Real Time\"\n";
     for(std::vector< TimeSlot >::iterator it = plan.begin(); it!= plan.end(); ++it){
         returnString+=it->toString()+"\n";
     }

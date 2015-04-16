@@ -33,6 +33,7 @@
 //
 //-----------------------------------------------------------
 #include "TimeSlot.h"
+#include <cstdio>
 
 TimeSlot::TimeSlot(){
     buildingID=-1;
@@ -54,7 +55,12 @@ int TimeSlot::getEndTime(){
 }
 
 std::string TimeSlot::toString(){
-    return "\""+std::to_string(buildingID)+"\",\""+visitorType+"\",\""+std::to_string(endTime)+"\"";
+    int day = endTime/144;
+    int time = endTime-(day*144);
+    int minutes=time*10;
+    int hour = minutes/60;
+    minutes = minutes%60;
+    return "\""+std::to_string(buildingID)+"\",\""+visitorType+"\",\""+std::to_string(endTime)+"\",\""+ std::to_string(day)+"("+std::to_string(hour)+":"+std::to_string(minutes)+")\"";
 }
 
 TimeSlot::~TimeSlot(){

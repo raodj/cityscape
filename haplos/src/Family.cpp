@@ -43,8 +43,10 @@ using namespace std;
 Family::Family() {
     hasAdult=false;
     hasYoungChild=false;
+    hasChild=false;
     numberOfPeople=0;
     homeNumber=NULL;
+    nonWorkingAdultPos=-1;
 }
 
 Person* Family::getPerson(int id){
@@ -74,11 +76,12 @@ void Family::addPerson(Person newPerson){
     members.push_back(newPerson);
     if(newPerson.getAge()>17){
         hasAdult=true;
-        if(newPerson.getSchedule()->getScheduleType()==4){
+        if(newPerson.getSchedule()->getScheduleType()==4 && nonWorkingAdultPos==-1){
             //Non-Working Adult
-            nonWorkingAdult= &members.at(members.size()-1);
+            nonWorkingAdultPos=members.size()-1;
         }
     }else{
+        hasChild=true;
         if(newPerson.getAge()<14){
             //Has Child that Needs to be Supervised by Parent
             hasYoungChild=true;
@@ -98,20 +101,28 @@ bool Family::getHasAdult(){
     return hasAdult;
 }
 
+bool Family::getHasChild(){
+    return hasChild;
+}
+
 bool Family::getHasYoungChild(){
     return hasYoungChild;
 }
 
 Person* Family::getNonWorkingAdult(){
-    
-    return nonWorkingAdult;
+    if(nonWorkingAdultPos==-1){
+        return NULL;
+    }else{
+        return &members.at(nonWorkingAdultPos);
+    }
 }
 
 std::string Family::toString(){
     std::ostringstream outputString;
     outputString << "\"Family Home Number:\",\""<< homeNumber->getID() << '"'<< std::endl;
     outputString << "\"Number of People: \",\"" << numberOfPeople <<'"'<< std::endl;
-    outputString << "\"Has Non-Working Adult: \",\"" << ( (nonWorkingAdult!=NULL) ? "Yes" : "No" ) << '"'<< std::endl;
+    outputString << "\"Has Non-Working Adult: \",\"" << ( (nonWorkingAdultPos!=-1) ? "Yes("+std::to_string(members.at(nonWorkingAdultPos).getID())+")" : "No" ) << '"'<< std::endl;
+    outputString << "\"Has Child: \",\"" << ((hasChild) ? "Yes" : "No") << '"'<< std::endl;
     outputString << "\"Has Young Child: \",\"" << ((hasYoungChild) ? "Yes" : "No") << '"'<< std::endl;
     outputString << "\"Detail Information: \"" << std::endl;
     for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){
