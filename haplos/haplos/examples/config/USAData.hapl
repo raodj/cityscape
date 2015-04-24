@@ -50,6 +50,14 @@ School_Size_20-99_Probablity=0.009531787
 School_Size_100-499_Probablity=0.010774966
 School_Size_500_Probablity=0.00272808
 
+#Daycare (Based on School Data for now) (2013 QCEW NAICS-Based Data Files, NAICS Code 6111, US Totals. http://www.bls.gov/cew/datatoc.htm)
+Daycare_Size_0-4_Probablity=0.000503797
+Daycare_Size_5-9_Probablity=0.001230329
+Daycare_Size_10-19_Probablity=0.002770039
+Daycare_Size_20-99_Probablity=0.009531787
+Daycare_Size_100-499_Probablity=0.010774966
+Daycare_Size_500_Probablity=0.00272808
+
 #Hospitals (2013 QCEW NAICS-Based Data Files, NAICS Code 6111, US Totals. http://www.bls.gov/cew/datatoc.htm)
 Hospital_Size_0-4_Probablity=0.000291528
 Hospital_Size_5-9_Probablity=0.00034429

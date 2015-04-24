@@ -103,6 +103,17 @@ class Building {
          */
         void setCurrentVisitorCapacity(int time, int c);
     
+        /**Set ID of Building
+         \param[in] id id of building
+         */
+        void setID(int i);
+    
+        /**Set location of Building
+         \param[in] x 
+         \param[in] y
+         */
+        void setLocation(int x, int y);
+    
         void addVisitor(int startTime, int endTime);
         /** Return the coordinates of the current location of entity
          
@@ -114,7 +125,7 @@ class Building {
         /**Return the Char representing the type of building
          \return the Char repreenting the type of building
          */
-        char getType();
+        char getType() const;
     
         /** Returns a Human Readable Version on Information about the building.
          

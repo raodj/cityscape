@@ -171,7 +171,7 @@ Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, in
     return NULL;
 }
 
-void displayBuildingStatistics(double businessSizeProbablities[6], double hospitalSizeProbablities[6], double schoolSizeProbablities[6], string fileLocation){
+void displayBuildingStatistics(double businessSizeProbablities[6], double hospitalSizeProbablities[6], double schoolSizeProbablities[6], double daycareSizeProbablities[6], string fileLocation){
     std::ostringstream outputString;
     
     outputString << "--------Buildings--------" << std::endl;
@@ -202,6 +202,15 @@ void displayBuildingStatistics(double businessSizeProbablities[6], double hospit
     outputString << "Employee Capacity 20-99:   \t" << totalSchoolSize[3] << " \t"<<(totalSchoolSize[3]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[3] << ")" << std::endl;
     outputString << "Employee Capacity 100-499: \t" << totalSchoolSize[4] << " \t"<<(totalSchoolSize[4]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[4] << ")" << std::endl;
     outputString << "Employee Capacity 500:     \t" << totalSchoolSize[5] << " \t"<<(totalSchoolSize[5]/(double)totalSchools) << "\t(Expected " << schoolSizeProbablities[5] << ")" << std::endl;
+    
+    outputString << "----Daycares----" << std::endl;
+    outputString <<"Total Generated: " << totalDaycares << std::endl;
+    outputString << "Employee Capacity 1-4:     \t" << totalDaycareSize[0] << " \t"<<(totalDaycareSize[0]/(double)totalDaycares) << "\t(Expected " << daycareSizeProbablities[0] << ")" << std::endl;
+    outputString << "Employee Capacity 5-9:     \t" << totalDaycareSize[1] << " \t"<<(totalDaycareSize[1]/(double)totalDaycares) << "\t(Expected " << daycareSizeProbablities[1] << ")" << std::endl;
+    outputString << "Employee Capacity 10-19:   \t" << totalDaycareSize[2] << " \t"<<(totalDaycareSize[2]/(double)totalDaycares) << "\t(Expected " << daycareSizeProbablities[2] << ")" << std::endl;
+    outputString << "Employee Capacity 20-99:   \t" << totalDaycareSize[3] << " \t"<<(totalDaycareSize[3]/(double)totalDaycares) << "\t(Expected " << daycareSizeProbablities[3] << ")" << std::endl;
+    outputString << "Employee Capacity 100-499: \t" << totalDaycareSize[4] << " \t"<<(totalDaycareSize[4]/(double)totalDaycares) << "\t(Expected " << daycareSizeProbablities[4] << ")" << std::endl;
+    outputString << "Employee Capacity 500:     \t" << totalDaycareSize[5] << " \t"<<(totalDaycareSize[5]/(double)totalDaycares) << "\t(Expected " << daycareSizeProbablities[5] << ")" << std::endl;
     if(fileLocation==""){
         std::cout<< outputString.str();
     }else{

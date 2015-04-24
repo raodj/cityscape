@@ -477,16 +477,16 @@ bool sort_schoolTimes(const std::pair<int, School*>& firstElem, const std::pair<
     
 }
 
-void generateEmployeedAdultSchedule(Person *p, Family *f){
+void generateEmployeedAdultSchedule(Person *p, Family *f, bool childModification){
     //Working Adult
     Schedule *currentSchedule = p->getSchedule();
     Building *home =f->getHome();
     Building *lastPlace = home;
     Building *jobLocation=allBuildings[currentSchedule->getJobLocation()];
     
-    double workProb=0.50;
-    double outProb=0.20;
-    double homeProb=0.30;
+    double workProb=0.70;
+    double outProb=0.10;
+    double homeProb=0.20;
     
     std::discrete_distribution<int> distribution{homeProb,workProb,outProb};
     std::discrete_distribution<int> no_work_left_distribution{0.5,0,0.5};
@@ -502,7 +502,7 @@ void generateEmployeedAdultSchedule(Person *p, Family *f){
     std::vector <std::pair<int, School*> >schoolTimes;
     
     //Get Children School Start Times If Needed
-    if(f->getHasChild() && f->getNonWorkingAdult()== NULL){
+    if(childModification && f->getNonWorkingAdult()== NULL){
         for(int fm=0; fm<f->getNumberOfPeople(); fm++){
             Person *p1 = f->getPerson(fm);
             Schedule *sc = p1->getSchedule();
@@ -549,7 +549,7 @@ void generateEmployeedAdultSchedule(Person *p, Family *f){
             }
             
             //Check if child needs to go to School or Be taken to a Neighboor
-            if(dayTime>=nextSchoolTime.first-1 && nextSchoolTime.second!=nullptr){
+            if(childModification && dayTime>=nextSchoolTime.first-1 && nextSchoolTime.second!=nullptr){
                 //Get From School
                 currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, 'T'));
                 if(currentPlaceInSchoolTimes<schoolTimes.size()-1){
@@ -687,7 +687,7 @@ void generateEmployeedAdultSchedule(Person *p, Family *f){
 }
 
 
-void generateUnemployeedAdultSchedule(Person *p, Family *f){
+void generateUnemployeedAdultSchedule(Person *p, Family *f, bool childModification){
     //Non-working Adult
     Schedule *currentSchedule = p->getSchedule();
     Building *home =f->getHome();
@@ -706,7 +706,7 @@ void generateUnemployeedAdultSchedule(Person *p, Family *f){
     int totalTimeSpentAway = 0; //Once it hits 16 hours (96) force go home
     std::vector <std::pair<int, School*> >schoolTimes;
     
-    if(f->getHasChild() && f->getNonWorkingAdult()== p){
+    if(childModification && f->getHasChild()){
         for(int fm=0; fm<f->getNumberOfPeople(); fm++){
             Person *p1 = f->getPerson(fm);
             Schedule *sc = p1->getSchedule();
@@ -726,7 +726,7 @@ void generateUnemployeedAdultSchedule(Person *p, Family *f){
             nextSchoolTime=schoolTimes.at(currentPlaceInSchoolTimes);
         }
         while(dayTime<144){
-            if(dayTime>=nextSchoolTime.first-1 && nextSchoolTime.second!=nullptr){
+            if(childModification && dayTime>=nextSchoolTime.first-1 && nextSchoolTime.second!=nullptr){
                 currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, 'T'));
                  if(currentPlaceInSchoolTimes<schoolTimes.size()-1){
                      currentPlaceInSchoolTimes++;
@@ -874,10 +874,22 @@ void generateSchedules(Population &pop) {
     for ( int i =0; i<pop.getNumberOfFamilies(); i++ ) {
         Family *currentFamily = pop.getFamily(i);
         assignJobSchoolLocations(currentFamily);
+        bool childModificationNeeded = false;
+        if(currentFamily->getHasChild()){
+            childModificationNeeded= true;
+        }
 
         for(int p=0; p<currentFamily->getNumberOfPeople(); p++){
             Person *p1 = currentFamily->getPerson(p);
             Schedule *currentSchedule = p1->getSchedule();
+            bool childModification = false;
+            if(childModificationNeeded){
+                if(currentFamily->getNonWorkingAdult() == p1 || currentFamily->getNonWorkingAdult() == NULL){
+                    //Non-Working Adult Assigned  or First Employeed Adult Modify Schedules to get Children from Schools/Daycares as needed
+                    childModification= true;
+                    childModificationNeeded=false;
+                }
+            }
             switch(currentSchedule->getScheduleType()){
                 case 0:
                     //std::cout<<"Generating Young Child Schedule"<<std::endl;
@@ -893,11 +905,11 @@ void generateSchedules(Population &pop) {
                     break;
                 case 3:
                     //std::cout<<"Generating Employeed Adult Schedule"<<std::endl;
-                    generateEmployeedAdultSchedule(p1, currentFamily);
+                    generateEmployeedAdultSchedule(p1, currentFamily, childModification);
                     break;
                 case 4:
                     //std::cout<<"Generating UnEmployeed Schedule"<<std::endl;
-                    generateUnemployeedAdultSchedule(p1, currentFamily);
+                    generateUnemployeedAdultSchedule(p1, currentFamily, childModification);
                     break;
                 default:
                     std::cout<<"ERROR: Unknown Schedule Type"<<std::endl;
