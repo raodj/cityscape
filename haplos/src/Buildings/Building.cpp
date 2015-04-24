@@ -102,12 +102,20 @@ void Building::addVisitor(int startTime, int endTime){
     }
 }
 
+void Building::setID(int id){
+    this->idNumber= id;
+}
+void Building::setLocation(int x, int y){
+    this->location[0]=x;
+    this->location[1]=y;
+}
+
 int* Building::getLocation(){
     //std::cout<<"Location: "<<location[0]<<","<<location[1]<<std::endl;
 	return location;
 }
 
-char Building::getType(){
+char Building::getType() const{
     return type;
 }
 std::string Building::toString(){

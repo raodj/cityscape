@@ -48,7 +48,9 @@
 #include "Location.h"
 #include "Population.h"
 #include "ImageGeneration/XFigImageGenerator.h"
-#include "ConfigFile.h"
+#include "Files/ConfigFile.h"
+#include "Files/ImageFileGenerator.h"
+
 #include "Buildings/Medical.h"
 #include "Buildings/School.h"
 #include "Buildings/Business.h"
@@ -77,9 +79,11 @@ bool progressDisplay=true;
 int totalBusinessSize[6];
 int totalHospitalSize[6];
 int totalSchoolSize[6];
+int totalDaycareSize[6];
 int totalSchools=0;
 int totalHospitals=0;
 int totalBusinesses=0;
+int totalDaycares=0;
 int numberOfBuildings=0;
 
 #include "buildingHelper.pcpp"
@@ -182,6 +186,13 @@ int main(int argc, char* argv[]) {
                                        configuration["School_Size_20-99_Probablity"],
                                        configuration["School_Size_100-499_Probablity"],
                                        configuration["School_Size_500_Probablity"]};
+   
+    double daycareSizeProbablities[6]={ configuration["Daycare_Size_0-4_Probablity"],
+                                        configuration["Daycare_Size_5-9_Probablity"],
+                                        configuration["Daycare_Size_10-19_Probablity"],
+                                        configuration["Daycare_Size_20-99_Probablity"],
+                                        configuration["Daycare_Size_100-499_Probablity"],
+                                        configuration["Daycare_Size_500_Probablity"]};
     
     double scheduleTypeProbablities[11]={ configuration["Schedule_Young_Children_5-Younger_Probablity"],
                                           configuration["Schedule_School_Children_5-13_Probablity"],
@@ -207,12 +218,12 @@ int main(int argc, char* argv[]) {
         
     //Generate Schedules
     generateSchedules(pop);
-    int allBuildings=0;
+    /*int allBuildings=0;
     for(int i=0;i<densityData.size();i++){
         for(int j=0;j<densityData[0].size();j++){
-            allBuildings+=densityData.at(i).at(j).getNumberOfBuildings();
+            allBuildings+=densityData.at(i).at(j).getNumberOfBuildings(NULL);
         }
-    }
+    }*/
     if(produceImages){
         #ifdef HAVE_MAGICK
             ImageGen ig(outputFolder);
@@ -240,7 +251,7 @@ int main(int argc, char* argv[]) {
 
                 }else{
                     imageData.at(x).at(y)=densityData.at(x).at(y).getCurrentPopulation();
-                    buildingData.at(x).at(y)=densityData.at(x).at(y).getNumberOfBuildings();
+                    buildingData.at(x).at(y)=densityData.at(x).at(y).getNumberOfBuildings(NULL);
 
                 }
             }
@@ -261,13 +272,35 @@ int main(int argc, char* argv[]) {
     tm *ltm = localtime(&now);
     char buffer [80];
     strftime(buffer,80,"output/haplos_%Y%m%d_%H%M%S",ltm);
-    string saveLocationPath(buffer);
+    std::string saveLocationPath(buffer);
     mkdir(buffer, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    
+    strftime(buffer,80,"output/haplos_%Y%m%d_%H%M%S/imageFiles",ltm);
+    std::string imageFileLocationPath(buffer);
+    mkdir(buffer, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    
+    strftime(buffer,80,"output/haplos_%Y%m%d_%H%M%S/familyData",ltm);
+    std::string familyFileLocationPath(buffer);
+    mkdir(buffer, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    
+    //Create Files
     pop.displayStatistics(saveLocationPath);
-    displayBuildingStatistics(businessSizeProbablities, hospitalSizeProbablities, schoolSizeProbablities, saveLocationPath);
+    displayBuildingStatistics(businessSizeProbablities, hospitalSizeProbablities, schoolSizeProbablities, daycareSizeProbablities, saveLocationPath);
     
     //Display 10 Families Entirely (Useful for Schedule Testing).
-    pop.returnFirstTenFamiliesInfo(saveLocationPath);
+    pop.returnFirstTenFamiliesInfo(familyFileLocationPath);
+    
+    //Generate Sample Image Generation Files
+    ImageFileGenerator imgGen = ImageFileGenerator(&densityData, imageFileLocationPath);
+    imgGen.makeBuildingFile("building_All.hapi", NULL);
+    imgGen.makeBuildingFile("building_Daycares.hapi", 'D');
+    imgGen.makeBuildingFile("building_Schools.hapi", 'S');
+    imgGen.makeBuildingFile("building_Businesss.hapi", 'B');
+    imgGen.makeBuildingFile("building_Homes.hapi", 'H');
+    imgGen.makeBuildingFile("building_Medical.hapi", 'M');
+
+    imgGen.makePopFile("pop.hapi");
+    
     return 0;
 }
 

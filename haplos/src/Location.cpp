@@ -87,8 +87,31 @@ int* Location::getCoordinates(){
 	return coordinates;
 }
 
-int Location::getNumberOfBuildings() const{
-    return buildings.size();
+int Location::getNumberOfBuildings(char type) const{
+
+    if(type==NULL){
+        //Get Count for All Buildings
+        return buildings.size();
+    }else{
+        //Get Count for Specific Type of Building
+        int count =0;
+        int i=0;
+        for ( auto it = buildings.begin(); it != buildings.end(); ++it ){
+            if(it->second->getType()==type){
+                count++;
+            }
+            if(it->second->getType()!='M'&&it->second->getType()!='B'&&it->second->getType()!='H'&&it->second->getType()!='S'&&it->second->getType()!='D'){
+                std::cout<<"------------"<<std::endl;
+                std::cout<<"Location: "<<coordinates[0]<<", "<<coordinates[1]<<std::endl;
+                std::cout<<it->second->toString()<<std::endl;
+                std::cout<<i<<"/"<<buildings.size()<<std::endl;
+                std::cout<<"------------"<<std::endl;
+
+            }
+            i++;
+        }
+        return count;
+    }
 }
 
 void Location::addFamily(Family *f){

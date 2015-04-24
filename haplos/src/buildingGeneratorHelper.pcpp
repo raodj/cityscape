@@ -52,8 +52,10 @@ void assignHomes(Population &pop){
         printf("Percentage Complete: %3d%%", 0 );
     }
     fflush(stdout);
-    otherBuildings.push_back(Building('H', -1, -1, -1, 0, 0));
-
+    for ( int i =0; i<pop.getNumberOfFamilies(); i++ ) {
+        //Create all Homes (Temporary)
+        otherBuildings.push_back(Building('H', -1, -1, -1, 0, 0));
+    }
     for ( int i =0; i<pop.getNumberOfFamilies(); i++ ) {
         while (densityData.at(x).at(y).isFull()) {
             //Move to Next Location in column
@@ -77,17 +79,14 @@ void assignHomes(Population &pop){
             break;
         }
         //Set Location of Family
-        otherBuildings.push_back(Building('H', numberOfBuildings, x, y, pop.getFamily(i)->getNumberOfPeople(), 0));
+        otherBuildings[i].setCurrentCapacity(pop.getFamily(i)->getNumberOfPeople());
+        otherBuildings[i].setLocation(x,y);
+        otherBuildings[i].setID(numberOfBuildings);
         
-            /*std::cout<<"-----------"<<std::endl;
-            std::cout<<&otherBuildings.back()<<std::endl;
-            std::cout<<otherBuildings.back().toString()<<std::endl;
-            std::cout<<"-----------"<<std::endl;
-            */
-        
-        allBuildings.insert({numberOfBuildings, &otherBuildings.at(otherBuildings.size()-1)});
+        allBuildings.insert({numberOfBuildings, &otherBuildings[i]});
         densityData.at(x).at(y).addFamily(pop.getFamily(i));
-        pop.setHomeLocationOfFamily(&otherBuildings.at(otherBuildings.size()-1), i);
+        densityData.at(x).at(y).addBuilding(&otherBuildings[i]);
+        pop.setHomeLocationOfFamily(&otherBuildings[i], i);
         
         numberOfBuildings++;
         
@@ -147,38 +146,48 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
     //Force Generate Enough Schools for Kids
     std::cout<<"Generating Schools"<<std::endl;
     while(elementrySchoolPopulation+middleSchoolPopulation+highSchoolPopulation>0){
-       // std::cout<<"--------------"<<std::endl;
         int capacity = 0;
-        //std::cout<<"Schools Needed For "<<elementrySchoolPopulation+middleSchoolPopulation+highSchoolPopulation<<std::endl;
-        
         switch(businessSizeDistribution(generator)){
             /*case 0:
                 //4 (Anything less than 4 seems kind of silly)
                 capacity = 4;
+                totalSchoolSize[0]++;
+
                 break;
             case 1:
                 //5-9
                 capacity = (int)rand() % 4 + 5;
+                totalSchoolSize[1]++;
+
                 break;*/
             case 2:
                 //10-19
                 capacity = (int)rand() % 9 + 10;
+                totalSchoolSize[2]++;
+
                 break;
             case 3:
                 //20-99
                 capacity = (int)rand() % 79 + 20;
+                totalSchoolSize[3]++;
+
                 break;
             case 4:
                 //100-499
-                capacity = (int)rand() % 399 + 100;\
+                capacity = (int)rand() % 399 + 100;
+                totalSchoolSize[4]++;
+
                 break;
             case 5:
                 //500
                 capacity=500;
+                totalSchoolSize[5]++;
+
                 break;
             default:
                 //Need a minimum of 6 teachers (0.20 will not be teachers)
                 capacity = (int)rand() % 9 + 10;
+                totalSchoolSize[2]++;
                 break;
 
         }
@@ -186,10 +195,7 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
         if(elementrySchoolPopulation>0){
             //Make Elementry School
            // std::cout<<"Making Elementry: "<<location%width<<", "<<location/width<<"("<<capacity<<")"<<std::endl;
-            //School tmp = School(numberOfBuildings, location%width, location/width, capacity, 0, 0);
             schoolBuildings.push_back(School(numberOfBuildings, location%width, location/width, capacity, 10, 0));
-            allBuildings.insert({numberOfBuildings, &schoolBuildings.at(schoolBuildings.size()-1)});
-            densityData.at(location%width).at(location/width).addBuilding(&schoolBuildings.at(schoolBuildings.size()-1));
             elementrySchoolPopulation-=capacity;
             if(elementrySchoolPopulation<0){
                 elementrySchoolPopulation=0;
@@ -200,10 +206,7 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
             if(middleSchoolPopulation>0){
                 //Make Middle School
               //  std::cout<<"Making Middle: "<<location%width<<", "<<location/width<<"("<<capacity<<")"<<std::endl;
-               // School tmp = School(numberOfBuildings, location%width, location/width, capacity, 0, 1);
                 schoolBuildings.push_back(School(numberOfBuildings, location%width, location/width, capacity, 10, 1));
-                allBuildings.insert({numberOfBuildings, &schoolBuildings.at(schoolBuildings.size()-1)});
-                densityData.at(location%width).at(location/width).addBuilding(&schoolBuildings.at(schoolBuildings.size()-1));
                 middleSchoolPopulation-=capacity;
                 if(middleSchoolPopulation<0){
                     middleSchoolPopulation=0;
@@ -215,8 +218,6 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
                     //Make High School
                   //  std::cout<<"Making High: "<<location%width<<", "<<location/width<<"("<<capacity<<")"<<std::endl;
                     schoolBuildings.push_back(School(numberOfBuildings, location%width, location/width, capacity, 10, 2));
-                    allBuildings.insert({numberOfBuildings, &schoolBuildings.at(schoolBuildings.size()-1)});
-                    densityData.at(location%width).at(location/width).addBuilding(&schoolBuildings.at(schoolBuildings.size()-1));
                     highSchoolPopulation-=capacity;
                     if(highSchoolPopulation<0){
                         highSchoolPopulation=0;
@@ -226,54 +227,70 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
                 }
             }
         }
+        totalSchools++;
         totalBuinessPopulation+=capacity;
     }
+    for(int i = 0; i< schoolBuildings.size();i++){
+        //Set up Pointers
+        allBuildings.insert({schoolBuildings.at(i).getID(), &schoolBuildings.at(i)});
+        densityData.at(schoolBuildings.at(i).getLocation()[0]).at(schoolBuildings.at(i).getLocation()[1]).addBuilding(&schoolBuildings.at(i));
+    }
     std::cout<<"Generate Daycares"<<std::endl;
-    std::cout<<numberChildrenDaycare<<std::endl;
     while(numberChildrenDaycare>0){
         int capacity = 0;
         switch(businessSizeDistribution(generator)){
-                /*case 0:
-                 //4 (Anything less than 4 seems kind of silly)
+            case 0:
+                 //4
                  capacity = 4;
+                 totalDaycareSize[0]++;
                  break;
-                 case 1:
+            case 1:
                  //5-9
                  capacity = (int)rand() % 4 + 5;
-                 break;*/
+                 totalDaycareSize[1]++;
+                 break;
             case 2:
                 //10-19
                 capacity = (int)rand() % 9 + 10;
+                totalDaycareSize[2]++;
                 break;
-            case 3:
+            /*case 3: Anything greater than 20 seems kind of Silly
                 //20-99
                 capacity = (int)rand() % 79 + 20;
+                totalDaycareSize[3]++;
                 break;
             case 4:
                 //100-499
-                capacity = (int)rand() % 399 + 100;\
+                capacity = (int)rand() % 399 + 100;
+                totalDaycareSize[4]++;
                 break;
             case 5:
                 //500
                 capacity=500;
-                break;
+                totalDaycareSize[5]++;
+                break;*/
             default:
-                //Need a minimum of 6 teachers (0.20 will not be teachers)
-                capacity = (int)rand() % 9 + 10;
+                //Genrate a midsize Daycare
+                capacity = (int)rand() % 4 + 5;
+                totalDaycareSize[1]++;
                 break;
                 
         }
         int location = locationDistribution(generator);
-        
+        //std::cout<<"Creating Daycare "<< location%width<<","<<location/width<<std::endl;
         daycareBuildings.push_back(Daycare(numberOfBuildings, location%width, location/width, capacity, 10));
-        allBuildings.insert({numberOfBuildings, &daycareBuildings.at(daycareBuildings.size()-1)});
-        densityData.at(location%width).at(location/width).addBuilding(&daycareBuildings.at(daycareBuildings.size()-1));
         numberChildrenDaycare-=capacity;
         if(numberChildrenDaycare<0){
             numberChildrenDaycare=0;
         }
+        totalDaycares++;
         numberOfBuildings++;
 
+    }
+    for(int i = 0; i< daycareBuildings.size();i++){
+        //Set up Pointers
+        allBuildings.insert({daycareBuildings.at(i).getID(), &daycareBuildings.at(i)});
+        densityData.at(daycareBuildings.at(i).getLocation()[0]).at(daycareBuildings.at(i).getLocation()[1]).addBuilding(&daycareBuildings.at(i));
     }
 
    // std::cout<<"Number of Schools Generated (Elementry, Middle, High): "<<eleTotal<<" "<<middleTotal<<" "<<highTotal<<std::endl<<std::endl;
@@ -282,7 +299,7 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
     while(numberOfEmployeedAdults>totalBuinessPopulation){
         int capacity = -1;
         bool hospital=false;
-        bool school=false;
+       // bool school=false;
         switch(businessSizeDistribution(generator)){
             case 0:{
                 //Building Size 0-4
@@ -388,25 +405,31 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
             }
         }
         int location = locationDistribution(generator);
-        if(school){
-            //School was made
-            schoolBuildings.push_back(School(numberOfBuildings, location%width, location/width, capacity, 10));
-            allBuildings.insert({numberOfBuildings, &schoolBuildings.at(schoolBuildings.size()-1)});
+       
+        if(hospital){
+            //Medical was made
+            medicalBuildings.push_back(Medical(numberOfBuildings, location%width, location/width, capacity, 10, 0));
+            allBuildings.insert({numberOfBuildings, &medicalBuildings.at(medicalBuildings.size()-1)});
         }else{
-            if(hospital){
-                //Medical was made
-                medicalBuildings.push_back(Medical(numberOfBuildings, location%width, location/width, capacity, 10, 0));
-                allBuildings.insert({numberOfBuildings, &medicalBuildings.at(medicalBuildings.size()-1)});
-            }else{
-                //Normal business was made
-                businessBuildings.push_back(Business(numberOfBuildings,location%width, location/width, capacity, 10));
-                allBuildings.insert({numberOfBuildings, &businessBuildings.at(businessBuildings.size()-1)});
-                //std::cout<<numberOfBuildings<<": "<<newBuilding.getLocation()[0]<<" "<<newBuilding.getLocation()[1]<<std::endl;
-            }
+            //Normal business was made
+            businessBuildings.push_back(Business(numberOfBuildings,location%width, location/width, capacity, 10));
+            allBuildings.insert({numberOfBuildings, &businessBuildings.at(businessBuildings.size()-1)});
+            //std::cout<<numberOfBuildings<<": "<<newBuilding.getLocation()[0]<<" "<<newBuilding.getLocation()[1]<<std::endl;
         }
-        densityData.at(location%width).at(location/width).addBuilding(allBuildings[numberOfBuildings]);
         totalBuinessPopulation+=capacity;
         numberOfBuildings++;
+    }
+    
+    for(int i = 0; i< medicalBuildings.size();i++){
+        //Set up Pointers
+        allBuildings.insert({medicalBuildings.at(i).getID(), &medicalBuildings.at(i)});
+        densityData.at(medicalBuildings.at(i).getLocation()[0]).at(medicalBuildings.at(i).getLocation()[1]).addBuilding(&medicalBuildings.at(i));
+    }
+    
+    for(int i = 0; i< businessBuildings.size();i++){
+        //Set up Pointers
+        allBuildings.insert({businessBuildings.at(i).getID(), &businessBuildings.at(i)});
+        densityData.at(businessBuildings.at(i).getLocation()[0]).at(businessBuildings.at(i).getLocation()[1]).addBuilding(&businessBuildings.at(i));
     }
     
     std::cout<<"Buildings Generated: "<<numberOfBuildings<<std::endl;

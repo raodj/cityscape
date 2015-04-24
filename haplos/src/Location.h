@@ -113,9 +113,10 @@ public:
     
     /** Return the number of buildings in a location.
      
-     \return The number of buildings in a location.
+     \param type Type of building to count (if null all buildings are retrived)
+     \return The number of buildings in a location of a specific type
      */
-    int getNumberOfBuildings() const;
+    int getNumberOfBuildings(char type) const;
     
     /** Check to see if location is currently full.
      
