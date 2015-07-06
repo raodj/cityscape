@@ -52,7 +52,7 @@
  \param[in] endTime end time of slot (required for standard visitor
  \return pointer to building that has avaliable visitor slot
  */
-Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, int startTime, int endTime){
+Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, int startTime, int endTime, int numberOfVisitors){
     int maxX=densityData.size()-1;
     int maxY=densityData[0].size()-1;
     int r=0; //Radius
@@ -67,17 +67,17 @@ Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, in
     int actual_radMinX=x;
     int actual_radMaxX=x;
     //std::cout<<x<<","<<y<<std::endl;
-    Building* b=densityData.at(x).at(y).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
+    Building* b=densityData.at(x).at(y).hasAvaliableBuilding(typeOfVisitor, startTime, endTime, numberOfVisitors);
     
     if(b!=NULL){
         // Found
         return b;
     }else{
-        /*if(typeOfVisitor=='S'){
+        /*if(typeOfVisitor=='E'){
             std::cout<<"Starting Locaiton: "<<x<<" "<<y<<std::endl;
         }*/
         while(actual_radMaxY<maxY||actual_radMaxX<maxX||actual_radMinY>0||actual_radMinX>0) {
-            /*if(typeOfVisitor=='S'){
+            /*if(typeOfVisitor=='E'){
                 std::cout<<"----Next---"<<std::endl;
             }*/
             r++;
@@ -91,12 +91,12 @@ Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, in
             actual_radMinX=x-r;
             actual_radMaxX=x+r;
             
-            for(int j=adjusted_actual_radMinY+1; j<adjusted_actual_radMaxY; j++){
+            for(int j=adjusted_actual_radMinY; j<adjusted_actual_radMaxY; j++){
                 //Check Bottom
                 if(actual_radMaxX<=maxX){
                     //Actual is Still in Grid and has not gone off Edge
-                    b=densityData.at(actual_radMaxX).at(j).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
-                    /*if(typeOfVisitor=='S'){
+                    b=densityData.at(actual_radMaxX).at(j).hasAvaliableBuilding(typeOfVisitor, startTime, endTime,numberOfVisitors);
+                    /*if(typeOfVisitor=='E'){
                         std::cout<<"Bottom: "<<actual_radMaxX<<" "<<j<<std::endl;
                     }*/
                     if(b!=NULL){
@@ -111,8 +111,8 @@ Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, in
                 if(actual_radMinX>=0){
                     //Actual is Still in Grid and has not gone off Edge
                     
-                    b=densityData.at(actual_radMinX).at(j).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
-                    /*if(typeOfVisitor=='S'){
+                    b=densityData.at(actual_radMinX).at(j).hasAvaliableBuilding(typeOfVisitor, startTime, endTime,numberOfVisitors);
+                    /*if(typeOfVisitor=='E'){
                         std::cout<<"Top: "<<actual_radMinX<<" "<<j<<std::endl;
                     }*/
                     if(b!=NULL){
@@ -130,8 +130,8 @@ Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, in
                 if(actual_radMaxY<=maxY){
                     //Actual is Still in Grid and has not gone off Edge
                     
-                    b=densityData.at(i).at(actual_radMaxY).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
-                   /* if(typeOfVisitor=='S'){
+                    b=densityData.at(i).at(actual_radMaxY).hasAvaliableBuilding(typeOfVisitor, startTime, endTime,numberOfVisitors);
+                    /*if(typeOfVisitor=='E'){
                         std::cout<<"Right: "<<i<<" "<<actual_radMaxY<<std::endl;
                     }*/
                     if(b!=NULL){
@@ -146,8 +146,8 @@ Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, in
                 if(actual_radMinY>=0){
                     //Actual is Still in Grid and has not gone off Edge
                     
-                    b=densityData.at(i).at(actual_radMinY).hasAvaliableBuilding(typeOfVisitor, startTime, endTime);
-                    /*if(typeOfVisitor=='S'){
+                    b=densityData.at(i).at(actual_radMinY).hasAvaliableBuilding(typeOfVisitor, startTime, endTime, numberOfVisitors);
+                    /*if(typeOfVisitor=='E'){
                         std::cout<<"Left: "<<i<<" "<<actual_radMinY<<std::endl;
                     }*/
                     if(b!=NULL){

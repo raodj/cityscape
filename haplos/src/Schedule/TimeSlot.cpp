@@ -54,6 +54,15 @@ int TimeSlot::getEndTime(){
     return endTime;
 }
 
+int TimeSlot::getDayEndTime(){
+    int day = endTime/144;
+    return endTime-(day*144);
+}
+
+int TimeSlot::getVisitorType(){
+    return visitorType;
+}
+
 std::string TimeSlot::toString(){
     int day = endTime/144;
     int time = endTime-(day*144);

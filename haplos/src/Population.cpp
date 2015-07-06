@@ -112,7 +112,8 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
             }
             newFamily.addPerson(newPerson);
         }
-        if(newFamily.getHasYoungChild() && newFamily.getNonWorkingAdult()==NULL){
+        
+        if(newFamily.getHasYoungChild()>0 && newFamily.getChildCareAdult()->getSchedule()->getScheduleType()!=4){
             //std::cout<<"Family Needs Day Care"<<std::endl;
             numberOfChildrenDaycare++;
         }

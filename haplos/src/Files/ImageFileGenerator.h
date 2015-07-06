@@ -48,8 +48,8 @@ class ImageFileGenerator {
 public:
     ImageFileGenerator();
     ImageFileGenerator(std::vector< std::vector < Location > > *locationData, std::string outputLocaiton);
-    bool makePopFile(std::string fileName);
-    bool makeBuildingFile(std::string fileName, char type);
+    bool makePopFile(std::string fileName, std::vector<std::string> headerInformation);
+    bool makeBuildingFile(std::string fileName, char type, std::vector<std::string> headerInformation);
     
 private:
     

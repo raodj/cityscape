@@ -75,9 +75,19 @@ class School : public Building{
          */
         int getSchoolEndTime();
     
+        /*Get the max capacity of the school for students.
+         \return Time of School Ending
+         */
+        int getStudentMaxCapacity();
+    
+        /*Get the current capacity of the school for students.
+         \return Time of School Ending
+         */
+        int getStudentCapacity();
+    
         /*Returns true if it has a avaliable student slot for a given grade
          */
-        bool hasGradeAvaliable(int grade);
+        bool hasGradeAvaliable(int grade, int numberOfStudents);
     
         /*Add a Student to a grade
          */
@@ -98,6 +108,8 @@ class School : public Building{
         int studentMaxCapacity;
         int schoolStart;
         int schoolEnd;
+        int startGrade;
+        int endGrade;
     
     
 };

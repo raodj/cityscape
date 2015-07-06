@@ -47,7 +47,7 @@ ImageFileGenerator::ImageFileGenerator(std::vector< std::vector < Location > > *
     this->outputLocation=outputLocation;
 }
 
-bool ImageFileGenerator::makePopFile(std::string fileName){
+bool ImageFileGenerator::makePopFile(std::string fileName, std::vector<std::string> headerInformation){
     std::ostringstream outputString;
     int maxVal=0;
     int minVal=INT_MAX;
@@ -68,15 +68,25 @@ bool ImageFileGenerator::makePopFile(std::string fileName){
         }
         outputString<<"\n";
     }
+    
     std::ofstream buildingStatsFile;
     buildingStatsFile.open(outputLocation+"/"+fileName);
+
+    //Add Header Information
+    for(std::vector<std::string>::iterator it = headerInformation.begin(); it != headerInformation.end(); ++it) {
+        buildingStatsFile<<*it<<"\n";
+    }
+    
+    //Add Data
     buildingStatsFile << minVal<<","<<maxVal<<"\n"<<outputString.str();
+    
+    
     buildingStatsFile.close();
     return true;
     
 }
 
-bool ImageFileGenerator::makeBuildingFile(std::string fileName, char type){
+bool ImageFileGenerator::makeBuildingFile(std::string fileName, char type, std::vector<std::string> headerInformation){
     std::ostringstream outputString;
     int maxVal=0;
     int minVal=INT_MAX;
@@ -97,9 +107,18 @@ bool ImageFileGenerator::makeBuildingFile(std::string fileName, char type){
         }
         outputString<<"\n";
     }
+
     std::ofstream buildingStatsFile;
     buildingStatsFile.open(outputLocation+"/"+fileName);
+
+    //Add Header Information
+    for(std::vector<std::string>::iterator it = headerInformation.begin(); it != headerInformation.end(); ++it) {
+        buildingStatsFile<<*it<<"\n";
+    }
+    
+    //Add Data
     buildingStatsFile << minVal<<","<<maxVal<<"\n"<<outputString.str();
+    
     buildingStatsFile.close();
     return true;
 }

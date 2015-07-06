@@ -139,12 +139,15 @@ void Location::removePerson(int idNum){
 	numberOfPeople--;
 }
 
-Building* Location::hasAvaliableBuilding(char visitorType, int startTime, int endTime){
+Building* Location::hasAvaliableBuilding(char visitorType, int startTime, int endTime, int numberOfVisitors){
     for ( auto it = buildings.begin(); it != buildings.end(); ++it ){
         switch(visitorType){
             case 'E':
                 if(it->second->getType()=='B' || it->second->getType()=='M' || it->second->getType()=='S'){
-                    if(it->second->getCurrentCapacity()<it->second->getMaxCapacity()){
+                   //std::cout<<"Building Found that can have Employee"<<std::endl;
+                    //std::cout<<"Max Capacity: "<<it->second->getMaxCapacity()-it->second->getCurrentCapacity()<<std::endl;
+                    //std::cout<<"Current Capacity: "<<it->second->getCurrentCapacity()<<std::endl;
+                    if(it->second->getMaxCapacity()-it->second->getCurrentCapacity()>numberOfVisitors){
                         //std::cout<<"FOUND Employeer"<<std::endl;
                         return it->second;
                     }
@@ -154,7 +157,7 @@ Building* Location::hasAvaliableBuilding(char visitorType, int startTime, int en
             {
                 int invalid=false;
                 for(int i = startTime; i<endTime; i++){
-                    if(it->second->getCurrentVisitorCapacity(i)>=it->second->getMaxVisitorCapacity()){
+                    if(it->second->getMaxVisitorCapacity()-it->second->getCurrentVisitorCapacity(i)<numberOfVisitors){
                         invalid=true;
                         break;
                     }
@@ -168,7 +171,7 @@ Building* Location::hasAvaliableBuilding(char visitorType, int startTime, int en
             case 'P':
                 if(it->second->getType()=='M'){
                     Medical* b = static_cast<Medical* >(it->second);
-                    if(b->getCurrentPatientCapacity()<b->getMaxPatientCapacity()){
+                    if(b->getMaxPatientCapacity()-b->getCurrentPatientCapacity()>numberOfVisitors){
                       //  std::cout<<"FOUND Patient"<<std::endl;
                         return it->second;
                     }
@@ -178,13 +181,23 @@ Building* Location::hasAvaliableBuilding(char visitorType, int startTime, int en
                 //Student
                 if(it->second->getType()=='S'){
                     School* b = static_cast<School* >(it->second);
-                    if(b->hasGradeAvaliable(startTime)){
+                    if(b->hasGradeAvaliable(startTime, numberOfVisitors)){
                         //std::cout<<"FOUND Student"<<std::endl;
                         return it->second;
                     }
 
                 }
-
+                break;
+            case 'D':
+                //Daycare
+                if(it->second->getType()=='D'){
+                    Daycare* b = static_cast<Daycare* >(it->second);
+                    if(b->getMaxChildCapacity()-b->getChildCapacity()>numberOfVisitors){
+                        return it->second;
+                    }
+                    
+                }
+                break;
                 
         }
     }

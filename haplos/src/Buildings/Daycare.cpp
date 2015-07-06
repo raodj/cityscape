@@ -36,8 +36,21 @@
 #include "Daycare.h"
 #include "Building.h"
 
-Daycare::Daycare(int i, int x, int y, int capacity, int visitorCapacity) : Building('D', i, x, y, capacity, visitorCapacity){
+Daycare::Daycare(int i, int x, int y, int capacity, int visitorCapacity, int childCapacity) : Building('D', i, x, y, capacity, visitorCapacity){
+    this->maxChildCapacity=childCapacity;
+    this->childCapacity=0;
+}
 
+int Daycare::getChildCapacity(){
+    return childCapacity;
+}
+
+int Daycare::getMaxChildCapacity(){
+    return maxChildCapacity;
+}
+
+void Daycare::setChildCapacity(int c){
+    childCapacity=c;
 }
 
 Daycare::~Daycare(){

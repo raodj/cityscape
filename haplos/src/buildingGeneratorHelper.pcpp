@@ -277,8 +277,8 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
                 
         }
         int location = locationDistribution(generator);
-        //std::cout<<"Creating Daycare "<< location%width<<","<<location/width<<std::endl;
-        daycareBuildings.push_back(Daycare(numberOfBuildings, location%width, location/width, capacity, 10));
+        std::cout<<"Creating Daycare "<< location%width<<","<<location/width<<std::endl;
+        daycareBuildings.push_back(Daycare(numberOfBuildings, location%width, location/width, 10, 10, capacity));
         numberChildrenDaycare-=capacity;
         if(numberChildrenDaycare<0){
             numberChildrenDaycare=0;
@@ -431,7 +431,8 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
         allBuildings.insert({businessBuildings.at(i).getID(), &businessBuildings.at(i)});
         densityData.at(businessBuildings.at(i).getLocation()[0]).at(businessBuildings.at(i).getLocation()[1]).addBuilding(&businessBuildings.at(i));
     }
-    
+    std::cout<< numberOfEmployeedAdults<<"/"<<totalBuinessPopulation<<std::endl;
+
     std::cout<<"Buildings Generated: "<<numberOfBuildings<<std::endl;
     
 }

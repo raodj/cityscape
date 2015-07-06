@@ -49,8 +49,13 @@ class Daycare : public Building {
          \param[in] capacity max number of employees.
          \param[in] visitorCapacity max number of children a business can have in a given hour.
          */
-        Daycare(int id, int x, int y, int capacity, int visitorCapacity);
+        Daycare(int id, int x, int y, int capacity, int visitorCapacity, int childCapacity);
     
+        int getChildCapacity();
+    
+        int getMaxChildCapacity();
+    
+        void setChildCapacity(int c);
         /**
          The destructor.
          
@@ -62,5 +67,7 @@ class Daycare : public Building {
     private:
         int maxVisitorCapacity;
         int currentVisitorCapacity;
+        int childCapacity;
+        int maxChildCapacity;
     };
 #endif /* defined(__haplos__Business__) */
