@@ -36,6 +36,7 @@
 //-----------------------------------------------------------
 #include <stdio.h>
 #include <vector>
+#include <map>
 #include <utility>
 #include "Family.h"
 #include "Buildings/Medical.h"
@@ -54,228 +55,93 @@ struct sort_pair{
 void generateYoungChildSchedule(Person* p, Family *f){
     //Yougn Child (Follow Adult always or day care)
     Schedule *currentSchedule = p->getSchedule();
-    Building *home =f->getHome();
-    
-    
-    //Set School Location
-    if(currentSchedule->getScheduleType()==1 || currentSchedule->getScheduleType()==2){
-        //Set School
-        Building *schoolLocation=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'S', -1, p->getAge(), 0);
-        if(schoolLocation==NULL){
-            std::cout<<"No School Location Found For Young Child"<<std::endl;
+    Schedule *childCareAdultSchedule = f->getChildCareAdult()->getSchedule();
+    Daycare  *daycareLocaiton = f->getDaycare();
+    //std::cout<<"---Young Child: "<<p->getID()<<"---"<<std::endl;
+    //Set Schedule Based on Child Care Adult
+    int i=0;
+    bool atDaycare=false;
+    while(childCareAdultSchedule->getLocationAt(i)!=NULL){
+        TimeSlot *slot =childCareAdultSchedule->getLocationAt(i);
+        TimeSlot *nextSlot =childCareAdultSchedule->getLocationAt(i+1);
+        if(slot->getLocation()==daycareLocaiton->getID() && slot->getVisitorType()== 'V' && nextSlot != NULL && nextSlot->getVisitorType()=='E'){
+            //std::cout<<"\t At Daycare or Parent is at Work: "<<slot->getEndTime()<<std::endl;
+            //std::cout<<"\t\tNot at Daycare Already"<<std::endl;
+            atDaycare=true;
         }else{
-            currentSchedule->setJobLocation(schoolLocation->getID());
+            if(slot->getLocation() == daycareLocaiton->getID() && slot->getVisitorType()== 'V' && atDaycare){
+                    //std::cout<<"\t\tGetting Picked Up from Daycare"<<std::endl;
+                    currentSchedule->addTimeSlot(TimeSlot(daycareLocaiton->getID(), slot->getEndTime(), 'D'));
+                    atDaycare=false;
+            }else{
+                //std::cout<<"Other Time Slot" <<slot->getEndTime()<<std::endl;
+                if(!atDaycare){
+                    //std::cout<<"Not currently attending Daycare"<<std::endl;
+                    currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
+                }
+            }
         }
-        
-        
+        i++;
     }
-    
 }
 
 void generateYoungSchoolAgedChildSchedule(Person *p, Family *f){
     //Older School Aged Child (On own after school)
     Schedule *currentSchedule = p->getSchedule();
-    Building *home =f->getHome();
-    
-    //Set Probablities for where they can go
-    double workProb=0;
-    double outProb=0.2;
-    double homeProb=0.8;
-    int radius = 2;
-    
-    
-    //Set School Location
-    if(currentSchedule->getScheduleType()==1 || currentSchedule->getScheduleType()==2){
-        //Set School
-        Building *schoolLocation=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'S', -1, p->getAge(), 0);
-        if(schoolLocation==NULL){
-            //std::cout<<"No School Location Found For School Aged Child"<<std::endl;
-            //std::cout<<p->toString()<<std::endl;
-        }else{
-            //std::cout<<"School Found"<<std::endl;
-            currentSchedule->setJobLocation(schoolLocation->getID());
-        }
-        
-        
-    }
-    //std::cout<<"\tGenerating Schedule"<<std::endl;
-    //School Aged Child (On own after school)
-    std::discrete_distribution<int> distribution{homeProb,workProb,outProb};
-    
+    Schedule *childCareAdultSchedule = f->getChildCareAdult()->getSchedule();
     School *attendingSchool= static_cast<School* >(allBuildings[currentSchedule->getJobLocation()]);
     attendingSchool->addStudent(0);
-    
-    int dayEndTime=0;
-    int dayTime=0;  //Time for current day (Midnight = 0, 11:59=144
-    int trueTime=0; //Actual HAPLOS Time (Monday at Midnight = 0, till Sunday at 11:59 = 1008)
-    int totalTimeSpentAtHome=0; //Total Time spent at home for the given day
-    
+    int schoolStartTime = attendingSchool->getSchoolStartTime();
+    int schoolEndTime = attendingSchool->getSchoolEndTime();
+    //std::cout<<"---Young School: "<<p->getID()<<"---"<<std::endl;
+    //std::cout<<"School Time: " <<schoolStartTime <<" - "<<schoolEndTime<<std::endl;
     //Get School start and End times for reference
-    int schoolStart = dayTime+attendingSchool->getSchoolStartTime();
-    int schoolEnd = dayTime+attendingSchool->getSchoolEndTime();
-    
-    //Add One Hour for Sleep for Previous Day
-    totalTimeSpentAtHome=6;
-    int timeUpOnMonday = schoolStart;
-    //Create Schedule
-    for(int day=0; day< 7 ; day++){
-        //Update trueTime to reflect a full day has passed
-        trueTime+=dayTime;
-        dayTime=0;
-        //Kids should Always be home at the start of the day (Curfew at 23:00 (138))
-        Building *lastPlace = home;
-        if(day<5){
-            //School Day
-            //Add Sleeping Time if Needed
-            
-            if(totalTimeSpentAtHome<48){
-                int timeNeeded = 48-totalTimeSpentAtHome;
-                if(dayTime+timeNeeded<schoolStart){
-                    //Progress Time to Earliest Possible Activty time
-                    dayTime+=timeNeeded;
+    int i=0;
+    bool atSchool=false;
+    while(childCareAdultSchedule->getLocationAt(i)!=NULL){
+        TimeSlot *slot =childCareAdultSchedule->getLocationAt(i);
+
+        if(slot->getLocation()==currentSchedule->getJobLocation()){
+            if(atSchool==true && slot->getDayEndTime()>=schoolEndTime){
+                //std::cout<<"\t\tLeaving School"<<std::endl;
+                //std::cout<<"\t\t\tS "<<currentSchedule->getJobLocation()<<": "<<slot->getEndTime()<<std::endl;
+
+                if(slot->getDayEndTime()>schoolEndTime){
+                    int visitorTime = slot->getDayEndTime()-schoolEndTime;
+                    currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
+                                                          slot->getEndTime()-visitorTime,
+                                                          'S'));
+                    currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
+                                                          slot->getEndTime(),
+                                                          'V'));
+                }else{
+                    currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
+                                                          slot->getEndTime(),
+                                                          'S'));
                 }
-            }
+                atSchool=false;
+             }else{
+                 if(slot->getDayEndTime() >= schoolStartTime && slot->getDayEndTime()<=schoolEndTime){
+                     //std::cout<<"\t\tAt to School"<<std::endl;
+                     atSchool=true;
+                 }else{
+                     if(!atSchool){
+                         //std::cout<<"\t\tNot At School"<<std::endl;
+                         //std::cout<<"\t\t\t"<<slot->getVisitorType()<<" "<<slot->getLocation()<<": "<<slot->getEndTime()<<std::endl;
+                         currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
+                     }
+                     
+                 }
+             }
             
-            if (totalTimeSpentAtHome>=48 && dayTime<schoolStart){
-                //Activity before School
-                //std::cout<<"\t\tBefore School Activty"<<std::endl;
-                switch(distribution(generator)){
-                    case 0:
-                        //Home
-                        break;
-                    case 1:
-                        //Job (Should not Happen)
-                        //std::cout<<"ERROR: KID GOT A JOB"<<std::endl;
-                        break;
-                    case 2:
-                        //Out
-                        //std::cout<< "\t\t\tFind Place To Go Out (Before)" <<std::endl;
-                        lastPlace=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'H', radius, trueTime+dayTime, trueTime+dayTime+schoolStart);
-                        if(lastPlace==NULL){
-                            //No avaliable place to go so just return back to home
-                            //std::cout<<"\t\tBefore School: No Places found to go out :("<<std::endl;
-                            //std::cout<<"\t\t\tTime Frame: "<<trueTime+dayTime<<"-"<<trueTime+dayTime+schoolStart<<std::endl;
-                            lastPlace=home;
-                        }
-                        totalTimeSpentAtHome=0;
-                        break;
-                }
-            }
-            
-            //std::cout<<"\t\In School"<<std::endl;
-            //Advance time to Start of School
-            totalTimeSpentAtHome=0;
-            dayTime=schoolStart;
-            //Go To School
-            
-            currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, ((lastPlace == home) ? 'H' : 'V')));
-            dayTime+=schoolEnd-schoolStart;
-            currentSchedule->addTimeSlot(TimeSlot(attendingSchool->getID(), trueTime+dayTime, 'S'));
-            
-            // std::cout<<"\t\tAfter School Activty"<<std::endl;
-            while(dayTime<138){
-                //std::cout<<dayTime<<std::endl;
-                //Activity After School
-                switch(distribution(generator)){
-                    case 0:
-                        //Home
-                        //update time to reflect staying at home once home
-                        totalTimeSpentAtHome+= 138 - dayTime;
-                        dayTime =138;
-                        break;
-                    case 1:
-                        //Job (Should not Happen)
-                        break;
-                    case 2:
-                        //Out
-                        //std::cout<< "\t\t\tFind Place To Go Out (After)" <<std::endl;
-                        int timeSpentOut=1;
-                        if(138-dayTime){
-                            timeSpentOut=(int)rand() % (138-dayTime)+1;
-                        }
-                        lastPlace=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'V', radius, trueTime+dayTime, trueTime+dayTime+timeSpentOut);
-                        if(lastPlace==NULL){
-                            //No avaliable place to go so just return back to home
-                            //std::cout<<"\t\t After School: No Places found to go out :("<<std::endl;
-                            //std::cout<<"\t\t\tTime Frame: "<<trueTime+dayTime<<"-"<<trueTime+dayTime+timeSpentOut<<std::endl;
-                            //update time to reflect staying at home once home
-                            totalTimeSpentAtHome+= 138 - dayTime;
-                            dayTime =138;
-                        }else{
-                            
-                            dayTime+=timeSpentOut;
-                            currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, 'V'));
-                            lastPlace->addVisitor(trueTime+dayTime,schoolStart);
-                        }
-                        
-                        break;
-                }
-            }
-        }
-        else{
-            //Weekend
-            //Add Sleeping Time if Needed
-            if(totalTimeSpentAtHome<48){
-                int timeNeeded = 48-totalTimeSpentAtHome;
-                //Progress Time to Earliest Possible Activty time
-                dayTime+=timeNeeded;
-            }
-            int curfew = 138;
-            int sleepIfOutAllNight = 144-curfew + timeUpOnMonday;
-            if(sleepIfOutAllNight<48 && day==6){
-                curfew = curfew-(48-sleepIfOutAllNight);
-            }
-            while(dayTime<curfew){
-                int timeSpentOut=1;
-                //Activity After School
-                switch(distribution(generator)){
-                    case 0:
-                        //Home
-                        //update time to reflect staying at home once home
-                        if (lastPlace!=home){
-                            //Update Schedule to Reflect Change of Location
-                            currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, ((lastPlace == home) ? 'H' : 'V')));
-                        }
-                        timeSpentOut=(int)rand() % (138-dayTime)+1;
-                        totalTimeSpentAtHome+= timeSpentOut;
-                        dayTime +=timeSpentOut;
-                        break;
-                    case 1:
-                        //Job (Should not Happen)
-                        break;
-                    case 2:
-                        //Out
-                        //std::cout<< "\t\t\tFind Place To Go Out (After)" <<std::endl;
-                        timeSpentOut=1;
-                        if(138-dayTime>1){
-                            timeSpentOut=(int)rand() % (138-dayTime)+1;
-                        }
-                        
-                        //Update Schedule To reflect moving of location
-                        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, ((lastPlace == home) ? 'H' : 'V')));
-                        
-                        Building *lastPlace_tmp=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'V', radius, trueTime+dayTime, trueTime+dayTime+timeSpentOut);
-                        
-                        if(lastPlace_tmp==NULL){
-                            //No avaliable place to go so just return back to home
-                            std::cout<<"\t\t\tNo Places found to go out :(";
-                            //update time to reflect staying at home once home
-                            totalTimeSpentAtHome+= 138 - dayTime;
-                            dayTime =curfew;
-                        }else{
-                            lastPlace = lastPlace_tmp;
-                            lastPlace->addVisitor(trueTime+dayTime,timeSpentOut);
-                            dayTime+=timeSpentOut;
-                            
-                        }
-                        
-                        break;
-                }
-                
-            }
-        }
-        totalTimeSpentAtHome+=144-dayTime;
-        dayTime=144;
+         }else{
+             if(!atSchool){
+                 //std::cout<<"\t\tNot At School"<<std::endl;
+                 //std::cout<<"\t\t\t"<<slot->getVisitorType()<<" "<<slot->getLocation()<<": "<<slot->getEndTime()<<std::endl;
+                 currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
+             }
+         }
+        i++;
     }
     
 }
@@ -291,90 +157,149 @@ void generateSchoolAgedChildSchedule(Person *p, Family *f){
     double homeProb=0.8;
     int radius = 2;
     
-    //std::cout<<"\tGenerating Schedule"<<std::endl;
+    ////std::cout<<"\tGenerating Schedule"<<std::endl;
     //School Aged Child (On own after school)
     std::discrete_distribution<int> distribution{homeProb,workProb,outProb};
     
     School *attendingSchool= static_cast<School* >(allBuildings[currentSchedule->getJobLocation()]);
     attendingSchool->addStudent(0);
 
-    int dayEndTime=0;
     int dayTime=0;  //Time for current day (Midnight = 0, 11:59=144
     int trueTime=0; //Actual HAPLOS Time (Monday at Midnight = 0, till Sunday at 11:59 = 1008)
     int totalTimeSpentAtHome=0; //Total Time spent at home for the given day
+    int maxTimeAway = 96;
+    int totalTimeSpentAway = 0;
+    int crewfew = 138;
+    int visitorType = 'H';
+    int sleepTimeNeeded = 48;
     
     //Get School start and End times for reference
     int schoolStart = dayTime+attendingSchool->getSchoolStartTime();
     int schoolEnd = dayTime+attendingSchool->getSchoolEndTime();
-    
     //Add One Hour for Sleep for Previous Day
-    totalTimeSpentAtHome=6;
     int timeUpOnMonday = schoolStart;
+    
+    //std::cout<<"---School Age Child: "<<p->getID()<<"---"<<std::endl;
+    //std::cout<<"School Location: "<<attendingSchool->getID()<<" "<<schoolStart<<"-"<<schoolEnd<<std::endl;
+
     //Create Schedule
     for(int day=0; day< 7 ; day++){
+        //std::cout<<"Starting New Day "<<day<<std::endl;
         //Update trueTime to reflect a full day has passed
         trueTime+=dayTime;
         dayTime=0;
         //Kids should Always be home at the start of the day (Curfew at 23:00 (138))
         Building *lastPlace = home;
+        visitorType='H';
         if(day<5){
+            //std::cout<<"\t"<<"School Day"<<std::endl;
             //School Day
             //Add Sleeping Time if Needed
             
-            if(totalTimeSpentAtHome<48){
-                int timeNeeded = 48-totalTimeSpentAtHome;
-                if(dayTime+timeNeeded<schoolStart){
+            if(totalTimeSpentAtHome<sleepTimeNeeded){
+                //std::cout<<"\t"<<"Adding Addtional Sleep Time"<<std::endl;
+                int timeNeeded = sleepTimeNeeded-totalTimeSpentAtHome;
+                if(dayTime+timeNeeded<schoolStart-1){
                     //Progress Time to Earliest Possible Activty time
                     dayTime+=timeNeeded;
+                    totalTimeSpentAway=0;
+                }else{
+                    dayTime=schoolStart-1;
+                    totalTimeSpentAway+=schoolStart-1-dayTime;
                 }
             }
-                
-            if (totalTimeSpentAtHome>=48 && dayTime<schoolStart){
+            //Add Predicted Time Spent at School to Away Time
+            totalTimeSpentAway+= (schoolEnd - schoolStart)+1;
+            
+            //std::cout<<"\tCheck Before School Activty"<<std::endl;
+            if (totalTimeSpentAtHome>=sleepTimeNeeded && dayTime<schoolStart-1 && totalTimeSpentAway<maxTimeAway){
                 //Activity before School
-               // std::cout<<"\t\tBefore School Activty"<<std::endl;
+                //std::cout<<"\t\tCan go out Still"<<std::endl;
+
                 switch(distribution(generator)){
                     case 0:
                         //Home
+                        if(lastPlace != home) {
+                            currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                                  trueTime+dayTime,
+                                                                  visitorType));
+                            lastPlace=home;
+                            visitorType='H';
+                        }
+                        dayTime = schoolStart-1;
                         break;
                     case 1:
                         //Job (Should not Happen)
-                        //std::cout<<"ERROR: KID GOT A JOB"<<std::endl;
+                        ////std::cout<<"ERROR: KID GOT A JOB"<<std::endl;
                         break;
                     case 2:
                         //Out
-                        //std::cout<< "\t\t\tFind Place To Go Out (Before)" <<std::endl;
-                        lastPlace=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'H', radius, trueTime+dayTime, trueTime+dayTime+schoolStart);
-                        if(lastPlace==NULL){
+                        //std::cout<< "\t\tFind Place To Go Out (Before)" <<std::endl;
+                        Building *lastPlace_tmp=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'H', radius, trueTime+dayTime, trueTime+dayTime+schoolStart, 1);
+                        if(lastPlace_tmp==NULL){
                             //No avaliable place to go so just return back to home
                             //std::cout<<"\t\tBefore School: No Places found to go out :("<<std::endl;
                             //std::cout<<"\t\t\tTime Frame: "<<trueTime+dayTime<<"-"<<trueTime+dayTime+schoolStart<<std::endl;
                             lastPlace=home;
+                            visitorType='H';
+                            dayTime = schoolStart-1;
+                        }else{
+                            if(lastPlace != lastPlace_tmp) {
+                                currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                                      trueTime+dayTime,
+                                                                      visitorType));
+                                lastPlace=lastPlace_tmp;
+                            }
+                            dayTime+=(trueTime+dayTime+schoolStart)-(trueTime+dayTime);
+                            totalTimeSpentAway+=(trueTime+dayTime+schoolStart)-(trueTime+dayTime);
+                            totalTimeSpentAtHome=0;
+                            lastPlace->addVisitor(trueTime+dayTime,trueTime+dayTime+schoolStart);
+                            visitorType='V';
+
                         }
                         totalTimeSpentAtHome=0;
                         break;
                 }
            }
             
-         //std::cout<<"\t\In School"<<std::endl;
+           //std::cout<<"\tGoing to school"<<std::endl;
             //Advance time to Start of School
             totalTimeSpentAtHome=0;
             dayTime=schoolStart;
-            //Go To School
             
+            //Go To School (No Need to update totalAway Time due to its already been taken into Account)
             currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, ((lastPlace == home) ? 'H' : 'V')));
+            currentSchedule->addTimeSlot(TimeSlot(-1, trueTime+dayTime, 'T'));
             dayTime+=schoolEnd-schoolStart;
-            currentSchedule->addTimeSlot(TimeSlot(attendingSchool->getID(), trueTime+dayTime, 'S'));
+            visitorType='S';
+            totalTimeSpentAtHome=0;
+            lastPlace=attendingSchool;
             
-           // std::cout<<"\t\tAfter School Activty"<<std::endl;
-            while(dayTime<138){
-                //std::cout<<dayTime<<std::endl;
+            //std::cout<<"\tAfter School Activty"<<std::endl;
+            while(dayTime<crewfew && totalTimeSpentAway<maxTimeAway){
+                //std::cout<<"\t\tCan go out Still"<<std::endl;
+
                 //Activity After School
                 switch(distribution(generator)){
                     case 0:
                         //Home
                         //update time to reflect staying at home once home
-                        totalTimeSpentAtHome+= 138 - dayTime;
-                        dayTime =138;
+                        //std::cout<<"\t\t\t Staying Home"<<std::endl;
+                        totalTimeSpentAtHome+= crewfew - dayTime;
+                        if(lastPlace != home){
+                            //std::cout<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+
+                            currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                                  trueTime+dayTime,
+                                                                  visitorType));
+                            visitorType='H';
+                            lastPlace= home;
+                        }
+                        if(totalTimeSpentAtHome > sleepTimeNeeded){
+                            totalTimeSpentAway=0;
+                        }
+                        dayTime =crewfew;
+                        
                         break;
                     case 1:
                         //Job (Should not Happen)
@@ -383,87 +308,182 @@ void generateSchoolAgedChildSchedule(Person *p, Family *f){
                         //Out
                         //std::cout<< "\t\t\tFind Place To Go Out (After)" <<std::endl;
                         int timeSpentOut=1;
-                        if(138-dayTime){
-                            timeSpentOut=(int)rand() % (138-dayTime)+1;
+                        if(crewfew-dayTime){
+                            timeSpentOut=(int)rand() % (crewfew-dayTime)+1;
                         }
-                        lastPlace=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'V', radius, trueTime+dayTime, trueTime+dayTime+timeSpentOut);
+                        Building *lastPlace_tmp=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'V', radius, trueTime+dayTime, trueTime+dayTime+timeSpentOut, 1);
                         if(lastPlace==NULL){
                             //No avaliable place to go so just return back to home
                             //std::cout<<"\t\t After School: No Places found to go out :("<<std::endl;
                             //std::cout<<"\t\t\tTime Frame: "<<trueTime+dayTime<<"-"<<trueTime+dayTime+timeSpentOut<<std::endl;
+                            if(lastPlace != home){
+                                //std::cout<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+
+                                currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                                      trueTime+dayTime,
+                                                                      visitorType));
+                                visitorType='H';
+                                lastPlace=home;
+
+                            }
+                            
                             //update time to reflect staying at home once home
-                            totalTimeSpentAtHome+= 138 - dayTime;
-                            dayTime =138;
+                            totalTimeSpentAtHome+= crewfew - dayTime;
+                            if(totalTimeSpentAtHome >=sleepTimeNeeded){
+                                totalTimeSpentAway=0;
+                            }
+                            dayTime =crewfew;
                         }else{
 
+                            if(lastPlace != lastPlace_tmp || visitorType!='V') {
+                                //std::cout<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+
+                                currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                                      trueTime+dayTime,
+                                                                      visitorType));
+                                lastPlace=lastPlace_tmp;
+                                visitorType='V';
+                            }
                             dayTime+=timeSpentOut;
-                            currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, 'V'));
-                            lastPlace->addVisitor(trueTime+dayTime,schoolStart);
+                            totalTimeSpentAway+=timeSpentOut;
+                            totalTimeSpentAtHome=0;
+                            lastPlace->addVisitor(trueTime+dayTime,trueTime+dayTime+timeSpentOut);
                         }
                         
                         break;
                 }
+            } //End of While
+            if(lastPlace != home){
+               // //std::cout<<"\tCrewfew: "<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+                currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                      trueTime+dayTime,
+                                                      visitorType));
+                lastPlace = home;
+                visitorType='H';
+                
             }
         }
         else{
             //Weekend
+            //std::cout<<"\tNon-School Day"<<std::endl;
             //Add Sleeping Time if Needed
-            if(totalTimeSpentAtHome<48){
-                int timeNeeded = 48-totalTimeSpentAtHome;
+            if(totalTimeSpentAtHome<sleepTimeNeeded){
+                int timeNeeded = sleepTimeNeeded-totalTimeSpentAtHome;
                 //Progress Time to Earliest Possible Activty time
                 dayTime+=timeNeeded;
             }
-            int curfew = 138;
-            int sleepIfOutAllNight = 144-curfew + timeUpOnMonday;
-            if(sleepIfOutAllNight<48 && day==6){
-                curfew = curfew-(48-sleepIfOutAllNight);
+            int sleepIfOutAllNight = 144-crewfew + timeUpOnMonday;
+            if(sleepIfOutAllNight<sleepTimeNeeded && day==6){
+                crewfew = crewfew-(sleepTimeNeeded-sleepIfOutAllNight);
             }
-            while(dayTime<curfew){
+            
+            while(dayTime<crewfew){
                 int timeSpentOut=1;
-                //Activity After School
-                switch(distribution(generator)){
-                    case 0:
-                        //Home
-                        //update time to reflect staying at home once home
-                        if (lastPlace!=home){
-                            //Update Schedule to Reflect Change of Location
-                            currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, ((lastPlace == home) ? 'H' : 'V')));
-                        }
-                        timeSpentOut=(int)rand() % (138-dayTime)+1;
-                        totalTimeSpentAtHome+= timeSpentOut;
-                        dayTime +=timeSpentOut;
-                        break;
-                    case 1:
-                        //Job (Should not Happen)
-                        break;
-                    case 2:
-                        //Out
-                        //std::cout<< "\t\t\tFind Place To Go Out (After)" <<std::endl;
-                        timeSpentOut=1;
-                        if(138-dayTime>1){
-                            timeSpentOut=(int)rand() % (138-dayTime)+1;
-                        }
-                        
-                        //Update Schedule To reflect moving of location
-                        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, ((lastPlace == home) ? 'H' : 'V')));
-
-                        lastPlace=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'V', radius, trueTime+dayTime, trueTime+dayTime+timeSpentOut);
-
-                        if(lastPlace==NULL){
-                            //No avaliable place to go so just return back to home
-                            std::cout<<"\t\t\tNo Places found to go out :(";
+                if(totalTimeSpentAway>=maxTimeAway){
+                    //std::cout<<"\tForce Home ("<<trueTime+dayTime<<"): "<<dayTime<<std::endl;
+                    //std::cout<<"\t\tTime Need to be Home: "<<sleepTimeNeeded-totalTimeSpentAtHome<<std::endl;
+                    //std::cout<<"\t\tTime Already Spent at Home: "<< totalTimeSpentAtHome<<std::endl;
+                    //Been out too Long Need to Get Sleep
+                    int timeNeedToBeHome= sleepTimeNeeded-totalTimeSpentAtHome;
+                    if(lastPlace != home){
+                        //std::cout<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+                        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                              trueTime+dayTime,
+                                                              visitorType));
+                    }
+                    lastPlace=home;
+                    dayTime+=timeNeedToBeHome;
+                    totalTimeSpentAtHome+=timeNeedToBeHome;
+                    if(totalTimeSpentAtHome >=sleepTimeNeeded){
+                        totalTimeSpentAway=0;
+                    }
+                    visitorType='H';
+                    
+                }else{
+                    switch(distribution(generator)){
+                        case 0:
+                            //Home
                             //update time to reflect staying at home once home
-                            totalTimeSpentAtHome+= 138 - dayTime;
-                            dayTime =curfew;
-                        }else{
-                            lastPlace->addVisitor(trueTime+dayTime,timeSpentOut);
-                            dayTime+=timeSpentOut;
+                            if (lastPlace!=home){
+                                //Update Schedule to Reflect Change of Location
+                                //std::cout<<"\tStay Home Case: "<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+                                currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, visitorType));
+                                lastPlace=home;
+                            }
+                            timeSpentOut=(int)rand() % (crewfew-dayTime)+1;
+                            totalTimeSpentAtHome+= timeSpentOut;
+                            totalTimeSpentAway+=timeSpentOut;
+                            if(totalTimeSpentAtHome>=sleepTimeNeeded){
+                                totalTimeSpentAway=0;
+                            }
+                            visitorType='H';
+                            dayTime +=timeSpentOut;
+                            break;
+                        case 1:
+                            //Job (Should not Happen)
+                            break;
+                        case 2:
+                            //Out
+                            ////std::cout<< "\t\t\tFind Place To Go Out (After)" <<std::endl;
+                            timeSpentOut=1;
+                            if(crewfew-dayTime>1){
+                                timeSpentOut=(int)rand() % (crewfew-dayTime)+1;
+                            }
+                            
+                            Building *lastPlace_tmp=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'V', radius, trueTime+dayTime, trueTime+dayTime+timeSpentOut, 1);
 
-                        }
-                        
-                        break;
+                            if(lastPlace==NULL){
+                                //No avaliable place to go so just return back to home
+                                //std::cout<<"\t\t\tNo Places found to go out :(";
+                                //update time to reflect staying at home once home
+                                totalTimeSpentAtHome+= crewfew - dayTime;
+                                totalTimeSpentAway+=crewfew - dayTime;
+                                if(lastPlace != home) {
+                                    //std::cout<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+
+                                    currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                                          trueTime+dayTime,
+                                                                          visitorType));
+                                    lastPlace=home;
+                                }
+                                visitorType='H';
+                                if(totalTimeSpentAtHome>=sleepTimeNeeded){
+                                    totalTimeSpentAway=0;
+                                }
+                                dayTime =crewfew;
+                            }else{
+                                if(lastPlace != lastPlace_tmp || visitorType!= 'V') {
+                                    
+                                    //std::cout<<"\t Visitor Case: "<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+
+                                    currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                                          trueTime+dayTime,
+                                                                          visitorType));
+                                }
+                                lastPlace=lastPlace_tmp;
+
+                                visitorType='V';
+                                totalTimeSpentAtHome=0;
+                                totalTimeSpentAway+=timeSpentOut;
+                                lastPlace->addVisitor(trueTime+dayTime,trueTime+dayTime+timeSpentOut);
+                                dayTime+=timeSpentOut;
+
+                            }
+                            
+                            break;
+                    }
                 }
 
+            } //End of While
+            
+            if(lastPlace != home){
+                //std::cout<<"\tCrewfew: "<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+                currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                      trueTime+dayTime,
+                                                      visitorType));
+                lastPlace = home;
+                visitorType='H';
+                
             }
         }
         totalTimeSpentAtHome+=144-dayTime;
@@ -477,16 +497,39 @@ bool sort_schoolTimes(const std::pair<int, School*>& firstElem, const std::pair<
     
 }
 
-void generateEmployeedAdultSchedule(Person *p, Family *f, bool childModification){
+std::vector <std::pair<int, School*> > getSchoolTimes(Family *f){
+    std::vector <std::pair<int, School*> > schoolTimes;
+    std::map <std::string,int > existingTimes;
+    for(int fm=0; fm<f->getNumberOfPeople(); fm++){
+        Person *p1 = f->getPerson(fm);
+        Schedule *sc = p1->getSchedule();
+        if(sc->getScheduleType()==1 || sc->getScheduleType()==2){
+            School *attendingSchool= static_cast<School* >(allBuildings[sc->getJobLocation()]);
+            //std::cout<<sc->getJobLocation()<<std::endl;
+            //std::cout<<"Type: "<<attendingSchool->getType()<<std::endl;;
+            std::string key =std::to_string(attendingSchool->getSchoolStartTime())+"_"+std::to_string(attendingSchool->getID());
+            if(existingTimes[key]!=1){
+                existingTimes[key]=1;
+                schoolTimes.push_back(std::make_pair(attendingSchool->getSchoolStartTime(), attendingSchool));
+                schoolTimes.push_back(std::make_pair(attendingSchool->getSchoolEndTime(), attendingSchool));
+            }
+        }
+    }
+    std::sort(schoolTimes.begin(), schoolTimes.end(), sort_schoolTimes);
+    return schoolTimes;
+}
+
+
+void generateEmployeedAdultSchedule(Person *p, Family *f, int schoolChildModification, bool youngChildModification){
     //Working Adult
     Schedule *currentSchedule = p->getSchedule();
     Building *home =f->getHome();
     Building *lastPlace = home;
     Building *jobLocation=allBuildings[currentSchedule->getJobLocation()];
     
-    double workProb=0.70;
-    double outProb=0.10;
-    double homeProb=0.20;
+    double workProb=0.90;
+    double outProb=0.05;
+    double homeProb=0.05;
     
     std::discrete_distribution<int> distribution{homeProb,workProb,outProb};
     std::discrete_distribution<int> no_work_left_distribution{0.5,0,0.5};
@@ -498,47 +541,62 @@ void generateEmployeedAdultSchedule(Person *p, Family *f, bool childModification
     int totalTimeSpentAway = 0; //Once it hits 16 hours (96) force go home
     int dailyTotalTimeAtJob = 0; //Total time spent at job in a given day (0-14 Hours, 0-84 HAPLOS Time)
     int totalTimeSpentAtJob = ((int)rand() % 300)+60; //Total time Spent at work during the week 10-60 hours (60-360)
-    //std::cout<<totalTimeSpentAtJob<<std::endl;
-    std::vector <std::pair<int, School*> >schoolTimes;
+    bool kidsAtSchool = false;
+    bool kidsAtDaycare = false;
+    int crewfew = (schoolChildModification>=0 || youngChildModification) ? 120 : 144;
     
+    //If Need to Take care of Child give a little more buffer in case kid needs to be taken to school
+    int maxTimeAway = ((youngChildModification || schoolChildModification)? 90 : 96);
+    int fullDay=144;
+    ////std::cout<<totalTimeSpentAtJob<<std::endl;
+    std::vector <std::pair<int, School*> >schoolTimes;
+    //std::cout<<"---Employeed: "<<p->getID()<<" "<<schoolChildModification<<" "<<(youngChildModification?"True":"False")<<"---"<<std::endl;
+    //std::cout<<"\tTest: "<<currentSchedule->getJobLocation()<<std::endl;
+    //std::cout<<"\tJob Location: "<<jobLocation->getID()<<std::endl;
     //Get Children School Start Times If Needed
-    if(childModification && f->getNonWorkingAdult()== NULL){
-        for(int fm=0; fm<f->getNumberOfPeople(); fm++){
-            Person *p1 = f->getPerson(fm);
-            Schedule *sc = p1->getSchedule();
-            if(sc->getScheduleType()==1){
-                School *attendingSchool= static_cast<School* >(allBuildings[sc->getJobLocation()]);
-                
-                schoolTimes.push_back(std::make_pair(attendingSchool->getSchoolStartTime(), attendingSchool));
-                schoolTimes.push_back(std::make_pair(attendingSchool->getSchoolEndTime(), attendingSchool));
-            }
-        }
-        std::sort(schoolTimes.begin(), schoolTimes.end(), sort_schoolTimes);
+    if(schoolChildModification>-1){
+        schoolTimes=getSchoolTimes(f);
     }
+    char visitorType='H';
+
+    //std::cout<<"\t"<<schoolTimes.size()<<std::endl;
     for(int day=0; day< 7 ; day++){
         int currentPlaceInSchoolTimes = 0;
-        std::pair<int, School*> nextSchoolTime=std::make_pair(145,nullptr);
+        std::pair<int, School*> nextSchoolTime=std::make_pair(9999,nullptr);
         
         //Reset School Time to first one if a week day.
-        if(schoolTimes.size()>0 && day<5){
-            nextSchoolTime=schoolTimes.at(currentPlaceInSchoolTimes);
+        //Reset to first School Time if Needed
+        if(schoolChildModification>-1 && schoolTimes.size()>0 && day<5){
+            nextSchoolTime=schoolTimes.at(0);
+            nextSchoolTime.first+=trueTime;
         }
         
+        dailyTotalTimeAtJob=0;
         //Determine how long needs to be spent at Job today
-        if(totalTimeSpentAtJob<(84-schoolTimes.size())){
-            //Less than 14 hours needed
-            dailyTotalTimeAtJob=(int)rand() % ((84-schoolTimes.size())-totalTimeSpentAtJob);
-        }else{
-            //More than 14 hours needed
-            dailyTotalTimeAtJob=(int)rand() % ((84-schoolTimes.size())-dailyTotalTimeAtJob);
+        if(totalTimeSpentAtJob>0 ){
+            if(totalTimeSpentAtJob<84){
+                //Less than 14 hours needed
+                //std::cout<<"totalTimeSpentAtJob: "<<totalTimeSpentAtJob<<std::endl;
+                dailyTotalTimeAtJob=((int)rand() % totalTimeSpentAtJob)+1;
+            }else{
+                //More than 14 hours needed
+                dailyTotalTimeAtJob=((int)rand() % 84)+1;
+            }
         }
-        char visitorType;
-        
-        while(dayTime<144){
+        ////std::cout<<"\t"<<dailyTotalTimeAtJob<<std::endl;
+        //std::cout<<"Starting New Day "<<day<<std::endl;
+        //std::cout<<"--Daily Job Total: "<<dailyTotalTimeAtJob<<std::endl;
+        while(dayTime<crewfew){
+            int maxTimeOut=0;
+            if(crewfew != fullDay && ( crewfew-dayTime )< (maxTimeAway-totalTimeSpentAway)){
+                maxTimeOut=crewfew-dayTime;
+            }else{
+                maxTimeOut=maxTimeAway-totalTimeSpentAway;
+            }
             //Repeat until day is over
             
             //Determine Visitor Type for Last Place
-            if(lastPlace==home){
+            /*if(lastPlace==home){
                 visitorType='H';
             }else{
                 if(lastPlace==jobLocation){
@@ -546,142 +604,392 @@ void generateEmployeedAdultSchedule(Person *p, Family *f, bool childModification
                 }else{
                     visitorType='V';
                 }
-            }
+            }*/
             
-            //Check if child needs to go to School or Be taken to a Neighboor
-            if(childModification && dayTime>=nextSchoolTime.first-1 && nextSchoolTime.second!=nullptr){
+            //Check if child needs to go to School
+            if(schoolChildModification>-1 && dayTime>=nextSchoolTime.first-1-trueTime && nextSchoolTime.second!=nullptr && day<5){
                 //Get From School
-                currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, 'T'));
+                currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                      trueTime+dayTime,
+                                                      visitorType));
+                lastPlace=nextSchoolTime.second;
                 if(currentPlaceInSchoolTimes<schoolTimes.size()-1){
-                    //Advance to the next school time
                     currentPlaceInSchoolTimes++;
                     nextSchoolTime=schoolTimes.at(currentPlaceInSchoolTimes);
-                    lastPlace=nextSchoolTime.second;
-                    totalTimeSpentAway++;
-                    dayTime++;
+                    nextSchoolTime.first+=day*fullDay;
+                    if(currentPlaceInSchoolTimes==schoolTimes.size()/2){
+                        kidsAtSchool=true;
+                    }
+                    
                 }else{
-                    //No more School times to take into account until the next day
-                    nextSchoolTime=std::make_pair(145,nullptr);
+                    nextSchoolTime=schoolTimes.at(0);
+                    currentPlaceInSchoolTimes=0;
+                    nextSchoolTime.first+=(day+1)*fullDay;
+                    kidsAtSchool=false;
                 }
+                
+                totalTimeSpentAtHome=0;
+                dayTime++;
+                currentSchedule->addTimeSlot(TimeSlot(-1,
+                                                      trueTime+dayTime,
+                                                      'T'));
+                visitorType='V';
             }else{
                 //Child does not need to go to school right now
-                if(totalTimeSpentAway>=96){
+                if(totalTimeSpentAway>=maxTimeAway){
                     //Been out too Long Need to Get Sleep
-                    currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, ((lastPlace == home) ? 'H' : 'V')));
+                    //std::cout<<"\tForce Home ("<<trueTime+dayTime<<"): "<<dayTime<<std::endl;
+                    //std::cout<<"\t\tTime Need to be Home: "<<48-totalTimeSpentAtHome<<std::endl;
+                    //std::cout<<"\t\tTime Already Spent at Home: "<< totalTimeSpentAtHome<<std::endl;
+                    
+                    if(youngChildModification && kidsAtDaycare){
+                        //Pick Young Child off at Daycare
+                        //std::cout<<"\t\tPicking Up Kid At Daycare: " <<dailyTotalTimeAtJob<<std::endl;
+                        
+                        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                              trueTime+dayTime,
+                                                              visitorType));
+                        lastPlace=f->getDaycare();
+                        dayTime++;
+                        totalTimeSpentAway++;
+                        currentSchedule->addTimeSlot(TimeSlot(-1,
+                                                              trueTime+dayTime,
+                                                              'T'));
+                        visitorType='V';
+                        kidsAtDaycare=false;
+                        
+                    }
+                    
+                    int timeNeedToBeHome= 48-totalTimeSpentAtHome;
+                    if(lastPlace != home){
+                        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                              trueTime+dayTime,
+                                                              visitorType));
+                    }
+                    visitorType='H';
                     lastPlace=home;
-                    if(nextSchoolTime.first-1>dayTime+48){
-                        totalTimeSpentAtHome+= 48;
-                        dayTime +=48;
+                    if(nextSchoolTime.first-1>dayTime+timeNeedToBeHome+trueTime){
+                        totalTimeSpentAtHome+= timeNeedToBeHome;
+                        dayTime +=timeNeedToBeHome;
                         totalTimeSpentAway=0;
                     }else{
-                        totalTimeSpentAtHome+=nextSchoolTime.first-1-dayTime;
-                        dayTime+=nextSchoolTime.first-1;
+                        //Need to take a break to take kid to school
+                        //std::cout<<"\t\tNeed to Break to take Child to Schoool"<<std::endl;
+                        //std::cout<<"\t\t\tNext School Time: "<<nextSchoolTime.first<<std::endl;
+                        //std::cout<<"\t\t\tTrue Time: "<<trueTime<<std::endl;
+                        //std::cout<<"\t\t\tDay Time: "<<dayTime<<std::endl;
+                        //std::cout<<"\t\t\tCal: "<<(nextSchoolTime.first-1-trueTime-dayTime);
+                        totalTimeSpentAtHome+=nextSchoolTime.first-1-trueTime-dayTime;
+                        //std::cout<<"\t\t\tTotal Time Spent At Home: "<<totalTimeSpentAtHome<<std::endl;
+                        dayTime=nextSchoolTime.first-trueTime-1;
                     }
+                    visitorType='H';
                     
                 }else{
                     //Can do something else
-                    int timeSpentOut=0;
-                    int activity=0; //Activity Type
-                    
-                    //Determine which Distribution to use
-                    if(dailyTotalTimeAtJob<=0){
-                        //No work Left to do at job
-                        activity = no_work_left_distribution(generator);
-                    }else{
-                        //Work still to do at job
-                        activity = distribution(generator);
+                    int timeLeft=crewfew-dayTime;
+                    if(youngChildModification){
+                        timeLeft-=2;
                     }
-                    
-                    //Pick Activity
-                    switch(activity){
-                        case 0:{
-                            //Home
-                            //update time to reflect staying at home once home
-                            if (lastPlace!=home){
-                                //Update Schedule to Reflect Change of Location
+                    //Check for if need to go to Job
+                    //std::cout<<"\t\tDaily Total Time At Job: "<<dailyTotalTimeAtJob<<" Time Left: "<<timeLeft<<std::endl;
+                    if(dailyTotalTimeAtJob>timeLeft && timeLeft>2 && ((schoolChildModification>-1 && kidsAtSchool) || (schoolChildModification==-1))){
+                        //Force to go to Job until no longer able to or no time is left
+                        //std::cout<<"\tForce Job("<<trueTime+dayTime<<"): "<<dayTime<<std::endl;
+                        
+                        int timeSpentAtJob=0;
+                        //Assume Max Time Can Be Spent
+                        timeSpentAtJob = (dailyTotalTimeAtJob>timeLeft)? timeLeft : dailyTotalTimeAtJob;
+                        
+                        if(dayTime+dailyTotalTimeAtJob>nextSchoolTime.first-1-trueTime){
+                            //Need to take break to pick up child from school
+                            timeSpentAtJob =(nextSchoolTime.first-1-trueTime)-dayTime;
+                            
+                        }
+                        
+                        //Check that Force Home isn't going to kick in
+                        if(timeSpentAtJob+totalTimeSpentAway>maxTimeAway){
+                            timeSpentAtJob=maxTimeAway-totalTimeSpentAway;
+                        }
+                        
+                        if(youngChildModification && !kidsAtDaycare){
+                            if(f->getDaycare()!= lastPlace){
+                                timeSpentAtJob-=2;
+                                //std::cout<<"\t\tDropping Kid At Daycare: " <<dailyTotalTimeAtJob<<std::endl;
                                 currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, visitorType));
-                                lastPlace=home;
+                                //Drop Young Child off at Daycare first
+                                lastPlace=f->getDaycare();
+                                dayTime++;
+                                totalTimeSpentAway++;
+                                currentSchedule->addTimeSlot(TimeSlot(-1,
+                                                                      trueTime+dayTime,
+                                                                  'T'));
                             }
-                            timeSpentOut=(int)rand() % ((nextSchoolTime.first-1)-dayTime)+1;
-                            totalTimeSpentAtHome+= timeSpentOut;
-                            dayTime +=timeSpentOut;
-                            break;
+                            visitorType='V';
+                            kidsAtDaycare=true;
                         }
-                        case 1:{
-                            //Job
-                            /*if(f->hasYoungChild()){
-                                //Modification to take child to daycare if not already
-                            }*/
-                            int timeSpentAtJob=0;
-                            currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, visitorType));
-                            if(dayTime+dailyTotalTimeAtJob>nextSchoolTime.first-1){
-                                //Need to take break to pick up child from school
-                                timeSpentAtJob =(nextSchoolTime.first-1)-dayTime;
-                                
-                            }
-                            totalTimeSpentAway+=timeSpentAtJob;
-                            totalTimeSpentAtJob-=timeSpentAtJob;
-                            dailyTotalTimeAtJob-=timeSpentAtJob;
-                            dayTime=nextSchoolTime.first-1;
-                
-                            break;
+                        
+                        //std::cout<<"\t\tTime Need to be Job: " <<dailyTotalTimeAtJob<<std::endl;
+                        //std::cout<<"\t\tTime Already Spent at Home: "<< totalTimeSpentAtHome<<std::endl;
+                        if(lastPlace != jobLocation || visitorType!='E'){
+                            currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                                  trueTime+dayTime,
+                                                                  visitorType));
+                            lastPlace=jobLocation;
                         }
-                        case 2:{
-                            //Out
-                            timeSpentOut=1;
-                            // if(138-dayTime>1){
-                            timeSpentOut=(int)rand() % ((nextSchoolTime.first-1)-dayTime)+1;
-                            //}
-                            
-                            //Update Schedule To reflect moving of location
-                            currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, visitorType));
-                            Building *lastPlace_tmp=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'V', -1, trueTime+dayTime, trueTime+dayTime+timeSpentOut);
-                            
-                            if(lastPlace_tmp==NULL){
-                                //No avaliable place to go so just return back to home
-                                std::cout<<"\t\t\tNo Places found to go out :("<<std::endl;
+                        visitorType='E';
+                        totalTimeSpentAtHome=0;
+                        totalTimeSpentAway+=timeSpentAtJob;
+                        totalTimeSpentAtJob-=timeSpentAtJob;
+                        dailyTotalTimeAtJob-=timeSpentAtJob;
+                        dayTime+=timeSpentAtJob;
+                        
+                        
+                    }else{
+                        int activity=0; //Activity Type
+                        
+                        //Determine which Distribution to use
+                        if(dailyTotalTimeAtJob<=0 ||
+                           !kidsAtSchool ||
+                           (youngChildModification && totalTimeSpentAway<maxTimeAway-2) ){
+                            //No work Left to do at job
+                            activity = no_work_left_distribution(generator);
+                        }else{
+                            //Work still to do at job
+                            activity = distribution(generator);
+                        }
+
+                        int timeSpentAtLocation=0;
+                        //Pick Activity
+                        switch(activity){
+                            case 0:{
+                                //Home
+                                //std::cout<<"\tHome ("<<trueTime+dayTime<<")"<<std::endl;
                                 //update time to reflect staying at home once home
-                                totalTimeSpentAtHome+= (nextSchoolTime.first-1) - dayTime;
-                                dayTime =(nextSchoolTime.first-1);
-                            }else{
-                                lastPlace=lastPlace_tmp;
-                                lastPlace->addVisitor(trueTime+dayTime,timeSpentOut);
-                                dayTime+=timeSpentOut;
-                                if(totalTimeSpentAtHome<48){
-                                    totalTimeSpentAway+=totalTimeSpentAtHome;
-                                    totalTimeSpentAtHome=0;
-                                }
-                                totalTimeSpentAway+=timeSpentOut;
+
+                                //std::cout<<"\t\tdayTime: "<<dayTime<<std::endl;
                                 
+                                if(youngChildModification && kidsAtDaycare){
+                                    //Pick Young Child off at Daycare
+                                    //std::cout<<"\t\tPicking Up Kid At Daycare: " <<dailyTotalTimeAtJob<<std::endl;
+                                    
+                                    currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                                          trueTime+dayTime,
+                                                                          visitorType));
+                                    lastPlace=f->getDaycare();
+                                    dayTime++;
+                                    totalTimeSpentAway++;
+                                    currentSchedule->addTimeSlot(TimeSlot(-1,
+                                                                          trueTime+dayTime,
+                                                                          'T'));
+                                    visitorType='V';
+                                    kidsAtDaycare=false;
+                                    
+                                }
+                                
+                                if(schoolChildModification>-1){
+                                    // //std::cout<<nextSchoolTime.first<<std::endl;
+                                    // //std::cout<<trueTime<<std::endl;
+                                    // //std::cout<<dayTime<<std::endl;
+                                    timeSpentAtLocation=(int)rand() % ((nextSchoolTime.first-1-trueTime)-dayTime)+1;
+                                }else{
+                                    timeSpentAtLocation=((int)rand() % maxTimeOut)+1;
+                                    
+                                }
+                                totalTimeSpentAtHome+= timeSpentAtLocation;
+                                //std::cout<<"\t\tTime Spent Here: "<<timeSpentAtLocation<<std::endl;
+                                
+                                //Check if time Spent Home is 8 hours or longer
+                                if(totalTimeSpentAtHome>=48){
+                                    totalTimeSpentAway=0;
+                                }else{
+                                    totalTimeSpentAway+= timeSpentAtLocation;
+                                }
+                                //std::cout<<"\t\tCurrent Time Spent out Total: "<<totalTimeSpentAway<<std::endl;
+                                if (lastPlace!=home){
+                                    //Update Schedule to Reflect Change of Location
+                                    currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                                          trueTime+dayTime,
+                                                                          visitorType));
+                                    lastPlace=home;
+                                }
+                                
+                                
+                                visitorType='H';
+                                break;
                             }
-                            
-                            
-                            break;
-                        }
-                    }
-                } //End of If
+                            case 1:{
+                                //Job
+                                //std::cout<<"\tGoing to Job "<<visitorType<<std::endl;
+                                if(youngChildModification && !kidsAtDaycare){
+                                    if(f->getDaycare()!= lastPlace){
+                                        //std::cout<<"\t\tDropping Kid At Daycare: " <<dailyTotalTimeAtJob<<std::endl;
+                                        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, visitorType));
+                                        //Drop Young Child off at Daycare first
+                                        lastPlace=f->getDaycare();
+                                        dayTime++;
+                                        totalTimeSpentAway++;
+                                        currentSchedule->addTimeSlot(TimeSlot(-1,
+                                                                              trueTime+dayTime,
+                                                                              'T'));
+                                    }
+                                    visitorType='V';
+                                    kidsAtDaycare=true;
+                                }
+                                int maxTimeCanBeSpentAtJob = (dailyTotalTimeAtJob>(maxTimeAway-totalTimeSpentAway)? maxTimeAway-totalTimeSpentAway : dailyTotalTimeAtJob);
+                                if(dayTime+maxTimeCanBeSpentAtJob+trueTime>nextSchoolTime.first-1
+                                   && nextSchoolTime.second!=nullptr){
+                                    //Need to take break to pick up child from school
+                                    timeSpentAtLocation = (nextSchoolTime.first-1)-dayTime-trueTime;
+                                    
+                                }else{
+                                    //std::cout<<"\t\t Max for Time Out: "<<maxTimeCanBeSpentAtJob<<std::endl;
+                                    timeSpentAtLocation = ((int)rand() % maxTimeCanBeSpentAtJob)+1;
+                                    if(!youngChildModification){
+                                        timeSpentAtLocation++;
+                                    }
+                                }
+                                
+                                
+                                if(lastPlace != jobLocation || visitorType!='E'){
+                                    currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                                          trueTime+dayTime,
+                                                                          visitorType));
+                                    lastPlace=jobLocation;
+                                    
+                                }
+                                totalTimeSpentAtHome=0;
+                                totalTimeSpentAway+=timeSpentAtLocation;
+                                totalTimeSpentAtJob-=timeSpentAtLocation;
+                                dailyTotalTimeAtJob-=timeSpentAtLocation;
+                                
+                                visitorType='E';
+                    
+                                break;
+                            }
+                            case 2:{
+                                //Out
+                                //std::cout<<"\tVisitor ("<<trueTime+dayTime<<"): "<<dayTime<<std::endl;
+                                //std::cout<<"\t\tCurrent Time Spent out Total: "<<totalTimeSpentAway<<std::endl;
+                                timeSpentAtLocation=1;
+                                if(dayTime+(maxTimeOut)+trueTime>nextSchoolTime.first-1
+                                   && nextSchoolTime.second!=nullptr){
+                                    //Need to take break to pick up child from school
+                                    timeSpentAtLocation = (nextSchoolTime.first-1)-dayTime-trueTime;
+                                    
+                                }else{
+                                    //std::cout<<"\t\t Max for Time Out: "<<maxTimeOut<<std::endl;
+                                    timeSpentAtLocation = ((int)rand() % maxTimeOut)+1;
+                                }
+                                //std::cout<<"\t\tTime Spent at Location:"<<timeSpentAtLocation<<std::endl;
+                                //Update Schedule To reflect moving of location
+                                Building *lastPlace_tmp=findAvaliableBuilding(
+                                                                              home->getLocation()[0],
+                                                                              home->getLocation()[1], 'V', -1,
+                                                                              trueTime+dayTime,
+                                                                              trueTime+dayTime+timeSpentAtLocation,
+                                                                              1);
+                                
+                                if(lastPlace_tmp==NULL){
+                                    //No avaliable place to go so just return back to home
+                                    //std::cout<<"\t\t\tNo Places found to go out :("<<std::endl;
+                                    //update time to reflect staying at home once home
+                                    
+                                    if(lastPlace != home){
+                                        //Wasn't at Home Needs to Go Home
+                                        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime,  visitorType));
+                                        lastPlace=home;
+                                    }
+                                    //Update Time Spent at Home
+                                    totalTimeSpentAtHome+=timeSpentAtLocation;
+                                    //Check if time Spent Home is 8 hours or longer
+                                    if(totalTimeSpentAtHome>=48){
+                                        totalTimeSpentAway=0;
+                                    }
+                                    visitorType='H';
+                                    
+                                }else{
+                                    //Found Location
+                                     if(lastPlace != lastPlace_tmp || visitorType!='V') {
+                                        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                                              trueTime+dayTime,
+                                                                              visitorType));
+                                        lastPlace=lastPlace_tmp;
+                                     }
+                                    lastPlace->addVisitor(trueTime+dayTime,timeSpentAtLocation);
+                                    if(totalTimeSpentAtHome<48){
+                                        totalTimeSpentAway+=totalTimeSpentAtHome;
+                                    }
+                                    totalTimeSpentAtHome=0;
+                                    totalTimeSpentAway+=timeSpentAtLocation;
+                                    visitorType='V';
+                                    //std::cout<<"\t\tNew Last Place: "<<lastPlace->getID()<<std::endl;
+
+                                    break;
+                                }// End Of Null Check Else
+                            } //End of Case
+                        } //End of Switch Case
+                        dayTime+=timeSpentAtLocation;
+                    } // End of Everything Else Check
+                } //End of Job Check
             }//End of School Time If
         }//End of While
         
-        //End of Day (Update True Time)
+        if(crewfew != fullDay){
+            //std::cout<<"\tHandeling Crewfew"<<std::endl;
+            if(lastPlace != home){
+                currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                      trueTime+dayTime,
+                                                      visitorType));
+                lastPlace=home;
+                visitorType='H';
+                
+            }
+            if(dayTime<fullDay+30) {
+                int timeSpentAtLocation = fullDay-dayTime+30;
+                //std::cout<<"\t\tTime Spent At Location: "<<timeSpentAtLocation<<std::endl;
+                totalTimeSpentAtHome+= timeSpentAtLocation;
+                //std::cout<<"\t\tTotal Time Spent At Home: "<<totalTimeSpentAtHome<<std::endl;
+                dayTime+=timeSpentAtLocation;
+            }
+            if(totalTimeSpentAtHome<48){
+                //std::cout<<"\t\tAddtional Time Spent at Home: "<<48-totalTimeSpentAtHome<<std::endl;
+                dayTime+=48-totalTimeSpentAtHome;
+            }
+            
+            totalTimeSpentAway=0;
+        }
         trueTime+=dayTime;
-        if(dayTime>144){
+        if(dayTime>fullDay){
+            //std::cout<<"\tDealing with Bleed Over"<<std::endl;
+            //std::cout<<"\t\tTime Before Dealing with: "<<dayTime<<std::endl;
             //Day Bleed Over to Next Day
             if(schoolTimes.size()>0){
                 //Make sure bleed over doesn't go past first school time for kids
-                if(dayTime-144>schoolTimes.at(currentPlaceInSchoolTimes).first-1){
-                    dayTime = schoolTimes.at(currentPlaceInSchoolTimes).first;
+                if(dayTime-fullDay>nextSchoolTime.first-1){
+                    dayTime = nextSchoolTime.first;
                 }else{
-                    dayTime=dayTime-144;
+                    dayTime=dayTime-fullDay;
                 }
             }else{
-                dayTime=dayTime-144;
+                dayTime=dayTime-fullDay;
             }
+            
+            //Avoid Double Count
+            trueTime=trueTime-dayTime;
+            
+            //std::cout<<"\t\tTime At End of bleed over: "<<dayTime<<std::endl;
         }else{
             //Day Didn't bleed Over
             dayTime=0;
         }
-        
+    }//For Loop
+    
+    
+    //Check for Completely Empty Schedule
+    if(currentSchedule->peekNextLocation()==NULL){
+        //std::cout<<"Didn't go Anywhere :("<<std::endl;
+        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, 'H'));
     }
     
 }
@@ -689,6 +997,8 @@ void generateEmployeedAdultSchedule(Person *p, Family *f, bool childModification
 
 void generateUnemployeedAdultSchedule(Person *p, Family *f, bool childModification){
     //Non-working Adult
+    //std::cout<<"Unemployeed: "<<p->getID()<<" "<<(childModification?"True":"False")<<std::endl;
+
     Schedule *currentSchedule = p->getSchedule();
     Building *home =f->getHome();
     Building *lastPlace = home;
@@ -706,125 +1016,248 @@ void generateUnemployeedAdultSchedule(Person *p, Family *f, bool childModificati
     int totalTimeSpentAway = 0; //Once it hits 16 hours (96) force go home
     std::vector <std::pair<int, School*> >schoolTimes;
     
-    if(childModification && f->getHasChild()){
-        for(int fm=0; fm<f->getNumberOfPeople(); fm++){
-            Person *p1 = f->getPerson(fm);
-            Schedule *sc = p1->getSchedule();
-            if(sc->getScheduleType()==1){
-                School *attendingSchool= static_cast<School* >(allBuildings[sc->getJobLocation()]);
-                
-                schoolTimes.push_back(std::make_pair(attendingSchool->getSchoolStartTime(), attendingSchool));
-                schoolTimes.push_back(std::make_pair(attendingSchool->getSchoolEndTime(), attendingSchool));
-            }
-        }
-        std::sort(schoolTimes.begin(), schoolTimes.end(), sort_schoolTimes);
+    int crewfew = (childModification) ? 120 : 144;
+
+    int fullDay = 144;
+    //If Need to Take care of Child give a little more buffer in case kid needs to be taken to school
+    int maxTimeAway = ((childModification)? 94 : 96);
+    //Check if Child Modifications Need to Be made
+    if(childModification){
+        schoolTimes=getSchoolTimes(f);
     }
+    
+    //Start of Week Loop
     for(int day=0; day< 7 ; day++){
         int currentPlaceInSchoolTimes = 0;
-        std::pair<int, School*> nextSchoolTime=std::make_pair(145,nullptr);
-        if(schoolTimes.size()>0 && day<5){
-            nextSchoolTime=schoolTimes.at(currentPlaceInSchoolTimes);
+        std::pair<int, School*> nextSchoolTime=std::make_pair(9999,nullptr);
+        ////std::cout<<schoolTimes.size()<<std::endl;
+        //Reset to first School Time if Needed
+        if(childModification && schoolTimes.size()>0 && day<5){
+            ////std::cout<<"\t\tSetting Inital School Time: "<<std::endl;
+            nextSchoolTime=schoolTimes.at(0);
+            nextSchoolTime.first+=trueTime;
+            ////std::cout<<nextSchoolTime.first<<std::endl;
         }
-        while(dayTime<144){
-            if(childModification && dayTime>=nextSchoolTime.first-1 && nextSchoolTime.second!=nullptr){
-                currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, 'T'));
-                 if(currentPlaceInSchoolTimes<schoolTimes.size()-1){
+        ////std::cout<<"--New Day "<<day<<std::endl;
+        ////std::cout<<"\tDayTime At Start: "<<dayTime<<std::endl;
+        ////std::cout<<"\tTrue Time At Start: " << trueTime<<std::endl;
+        //While there is still time left in the day
+        while(dayTime<crewfew){
+            
+            //Check that Child doesn't need to be taken to School
+            if(childModification && dayTime>=nextSchoolTime.first-1-trueTime && nextSchoolTime.second!=nullptr && day<5){
+                //Child Needs to be taken to School
+                ////std::cout<<"Picking up Kid: "<<trueTime+dayTime<<std::endl;
+                ////std::cout<<"\tPick Up Time: "<<nextSchoolTime.first-1-trueTime<<" "<<dayTime<<std::endl;
+                ////std::cout<<"\tcurrentPlaceInSchoolTimes: "<<currentPlaceInSchoolTimes<<std::endl;
+                //Leave Previous Location
+                currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                      trueTime+dayTime,
+                                                      ((lastPlace == home) ? 'H' : 'V')));
+                lastPlace=nextSchoolTime.second;
+                if(currentPlaceInSchoolTimes<schoolTimes.size()-1){
                      currentPlaceInSchoolTimes++;
                      nextSchoolTime=schoolTimes.at(currentPlaceInSchoolTimes);
-                     lastPlace=nextSchoolTime.second;
-                     dayTime++;
+                     nextSchoolTime.first+=day*fullDay;
+
                  }else{
-                     nextSchoolTime=std::make_pair(145,nullptr);
+                     nextSchoolTime=schoolTimes.at(0);
+                     currentPlaceInSchoolTimes=0;
+                     nextSchoolTime.first+=(day+1)*fullDay;
                  }
+                
+                totalTimeSpentAtHome=0;
+                dayTime++;
+                currentSchedule->addTimeSlot(TimeSlot(-1,
+                                                      trueTime+dayTime,
+                                                      'T'));
             }else{
-                if(totalTimeSpentAway>=96){
+                if(totalTimeSpentAway>=maxTimeAway){
+                    //std::cout<<"\tForce Home ("<<trueTime+dayTime<<"): "<<dayTime<<std::endl;
+                    //std::cout<<"\t\tTime Need to be Home: "<<48-totalTimeSpentAtHome<<std::endl;
+                    //std::cout<<"\t\tTime Already Spent at Home: "<< totalTimeSpentAtHome<<std::endl;
                     //Been out too Long Need to Get Sleep
-                    currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, ((lastPlace == home) ? 'H' : 'V')));
+                    int timeNeedToBeHome= 48-totalTimeSpentAtHome;
+                    if(lastPlace != home){
+                        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                              trueTime+dayTime,
+                                                              'V'));
+                    }
                     lastPlace=home;
-                    if(nextSchoolTime.first-1>dayTime+48){
-                        totalTimeSpentAtHome+= 48;
-                        dayTime +=48;
+                    if(nextSchoolTime.first-1>dayTime+timeNeedToBeHome+trueTime){
+                        totalTimeSpentAtHome+= timeNeedToBeHome;
+                        dayTime +=timeNeedToBeHome;
                         totalTimeSpentAway=0;
                     }else{
-                        totalTimeSpentAtHome+=nextSchoolTime.first-1-dayTime;
-                        dayTime+=nextSchoolTime.first-1-dayTime;
+                        //Need to take a break to take kid to school
+                        totalTimeSpentAtHome+=nextSchoolTime.first-1-dayTime-trueTime;
+                        dayTime=nextSchoolTime.first-1-trueTime;
                     }
 
                 }else{
-                    int timeSpentOut=0;
+                    int timeSpentAtLocation=0;
                     //Can go out
                     switch(distribution(generator)){
                         case 0:
                             //Home
+                            //std::cout<<"\tHome ("<<trueTime+dayTime<<")"<<std::endl;
                             //update time to reflect staying at home once home
                             if (lastPlace!=home){
                                 //Update Schedule to Reflect Change of Location
-                                currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, ((lastPlace == home) ? 'H' : 'V')));
+                                currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                                      trueTime+dayTime,
+                                                                      ((lastPlace == home) ? 'H' : 'V')));
                                 lastPlace=home;
                             }
-                            timeSpentOut=(int)rand() % ((nextSchoolTime.first-1)-dayTime)+1;
-                            totalTimeSpentAtHome+= timeSpentOut;
-                            dayTime +=timeSpentOut;
+                            //std::cout<<"\t\tdayTime: "<<dayTime<<std::endl;
+
+                            if(childModification){
+                                timeSpentAtLocation=(int)rand() % ((nextSchoolTime.first-1-trueTime)-dayTime)+1;
+                            }else{
+                                timeSpentAtLocation=((int)rand() % (crewfew-dayTime))+1;
+
+                            }
+                            totalTimeSpentAtHome+= timeSpentAtLocation;
+                            //std::cout<<"\t\tTime Spent Here: "<<timeSpentAtLocation<<std::endl;
+
+                            //Check if time Spent Home is 8 hours or longer
+                            if(totalTimeSpentAtHome>=48){
+                                totalTimeSpentAway=0;
+                            }else{
+                                totalTimeSpentAway+= timeSpentAtLocation;
+                            }
+                            ////std::cout<<"\t\tCurrent Time Spent out Total: "<<totalTimeSpentAway<<std::endl;
                             break;
                         case 1:
                             //Job (Should not Happen)
                             break;
                         case 2:
                             //Out
-                            timeSpentOut=1;
-                           // if(138-dayTime>1){
-                                timeSpentOut=(int)rand() % ((nextSchoolTime.first-1)-dayTime)+1;
-                            //}
-                            
+                            //std::cout<<"\tVisitor ("<<trueTime+dayTime<<"): "<<dayTime<<std::endl;
+                            //std::cout<<"\t\tCurrent Time Spent out Total: "<<totalTimeSpentAway<<std::endl;
+                            timeSpentAtLocation=1;
+                            if(dayTime+(maxTimeAway-totalTimeSpentAway)+trueTime>nextSchoolTime.first-1
+                               && nextSchoolTime.second!=nullptr){
+                                //Need to take break to pick up child from school
+                                timeSpentAtLocation = (nextSchoolTime.first-1)-dayTime-trueTime;
+                                
+                            }else{
+                                ////std::cout<<"\t\t Max for Time Out: "<<96-totalTimeSpentAway<<std::endl;
+                                timeSpentAtLocation = ((int)rand() % (maxTimeAway-totalTimeSpentAway))+1;
+                            }
+                            //std::cout<<"\t\tTime Spent at Location:"<<timeSpentAtLocation<<std::endl;
                             //Update Schedule To reflect moving of location
-                            currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, ((lastPlace == home) ? 'H' : 'V')));
-                            Building *lastPlace_tmp=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'V', -1, trueTime+dayTime, trueTime+dayTime+timeSpentOut);
+                            Building *lastPlace_tmp=findAvaliableBuilding(
+                                                                          home->getLocation()[0],
+                                                                          home->getLocation()[1], 'V', -1,
+                                                                          trueTime+dayTime,
+                                                                          trueTime+dayTime+timeSpentAtLocation,1);
                             
                             if(lastPlace_tmp==NULL){
                                 //No avaliable place to go so just return back to home
-                                std::cout<<"\t\t\tNo Places found to go out :("<<std::endl;
+                                //std::cout<<"\t\t\tNo Places found to go out :("<<std::endl;
                                 //update time to reflect staying at home once home
-                                totalTimeSpentAtHome+= (nextSchoolTime.first-1) - dayTime;
-                                dayTime =(nextSchoolTime.first-1);
+                               
+                                if(lastPlace != home){
+                                    //Wasn't at Home Needs to Go Home
+                                    currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, 'V'));
+                                }
+                                //Update Time Spent at Home
+                                totalTimeSpentAtHome+=timeSpentAtLocation;
+                                lastPlace=home;
+                                //Check if time Spent Home is 8 hours or longer
+                                if(totalTimeSpentAtHome>=48){
+                                    totalTimeSpentAway=0;
+                                }
+                                
                             }else{
-                                lastPlace=lastPlace_tmp;
-                                lastPlace->addVisitor(trueTime+dayTime,timeSpentOut);
-                                dayTime+=timeSpentOut;
+                                //Found Location
+                                if(lastPlace != lastPlace_tmp) {
+                                    currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                                      trueTime+dayTime,
+                                                                      ((lastPlace == home) ? 'H' : 'V')));
+                                    lastPlace=lastPlace_tmp;
+
+                                }
+                                lastPlace->addVisitor(trueTime+dayTime,timeSpentAtLocation);
                                 if(totalTimeSpentAtHome<48){
                                     totalTimeSpentAway+=totalTimeSpentAtHome;
-                                    totalTimeSpentAtHome=0;
                                 }
-                                totalTimeSpentAway+=timeSpentOut;
+                                totalTimeSpentAtHome=0;
+                                totalTimeSpentAway+=timeSpentAtLocation;
                                 
-                            }
-                            
+                                //std::cout<<"\t\tNew Last Place: "<<lastPlace->getID()<<std::endl;
                             
                             break;
-                    }
-                } //End of If
-            }//End of School Time If
-        }//End of While
-        
+                            } // End Of Null Check Else
+                            
+                } //End of Switch
+                //Advance Clock
+                dayTime+=timeSpentAtLocation;
+                    //std::cout<<"\t\tTrue Time at End of Loop: "<<trueTime<<std::endl;
+                //std::cout<<"\t\tTime at End of Loop: "<<dayTime<<std::endl;
+            }//End of Can Do Something else
+        }//End of No Child to Pick Up Else
+         } //End of While Day
         //End of Day (Update True Time)
+        
+        if(crewfew != fullDay){
+            //std::cout<<"\tHandeling Crewfew"<<std::endl;
+            if(lastPlace != home){
+                currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(),
+                                                      trueTime+dayTime,
+                                                      ((lastPlace == home) ? 'H' : 'V')));
+                lastPlace=home;
+                
+            }
+            if(dayTime<fullDay+30) {
+                int timeSpentAtLocation = fullDay-dayTime+30;
+                //std::cout<<"\t\tTime Spent At Location: "<<timeSpentAtLocation<<std::endl;
+                totalTimeSpentAtHome+= timeSpentAtLocation;
+                //std::cout<<"\t\tTotal Time Spent At Home: "<<totalTimeSpentAtHome<<std::endl;
+                dayTime+=timeSpentAtLocation;
+            }
+            if(totalTimeSpentAtHome<48){
+                //std::cout<<"\t\tAddtional Time Spent at Home: "<<48-totalTimeSpentAtHome<<std::endl;
+                dayTime+=48-totalTimeSpentAtHome;
+            }
+            
+            totalTimeSpentAway=0;
+        }
+        
         trueTime+=dayTime;
-        if(dayTime>144){
+        if(dayTime>fullDay){
+            //std::cout<<"\tDealing with Bleed Over"<<std::endl;
+            //std::cout<<"\t\tTime Before Dealing with: "<<dayTime<<std::endl;
             //Day Bleed Over to Next Day
             if(schoolTimes.size()>0){
                 //Make sure bleed over doesn't go past first school time for kids
-                if(dayTime-144>schoolTimes.at(currentPlaceInSchoolTimes).first-1){
-                    dayTime = schoolTimes.at(currentPlaceInSchoolTimes).first;
+                if(dayTime-fullDay>nextSchoolTime.first-1){
+                    dayTime = nextSchoolTime.first;
                 }else{
-                    dayTime=dayTime-144;
+                    dayTime=dayTime-fullDay;
                 }
             }else{
-                dayTime=dayTime-144;
+                dayTime=dayTime-fullDay;
             }
+            
+            //Avoid Double Count
+            trueTime=trueTime-dayTime;
+            
+            //std::cout<<"\t\tTime At End of bleed over: "<<dayTime<<std::endl;
         }else{
             //Day Didn't bleed Over
             dayTime=0;
         }
-
+    }//For Loop
+    
+        
+    //Check for Completely Empty Schedule
+    if(currentSchedule->peekNextLocation()==NULL){
+        //std::cout<<"Didn't go Anywhere :("<<std::endl;
+        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, 'H'));
     }
+
 
 }
 
@@ -834,23 +1267,35 @@ void assignJobSchoolLocations(Family *f){
         Schedule *currentSchedule =f->getPerson(p)->getSchedule();
         if(currentSchedule->getScheduleType()==1 || currentSchedule->getScheduleType()==2){
             //Set School
-            Building *schoolLocation=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'S', -1, f->getPerson(p)->getAge(), 0);
+            Building *schoolLocation=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'S', -1, f->getPerson(p)->getAge(), 0, 1);
             if(schoolLocation==NULL){
-                //std::cout<<"No School Location Found For School Aged Child"<<std::endl;
-                //std::cout<<p->toString()<<std::endl;
+                ////std::cout<<"No School Location Found For School Aged Child"<<std::endl;
+                ////std::cout<<p->toString()<<std::endl;
             }else{
-                //std::cout<<"School Found"<<std::endl;
+                ////std::cout<<"School Found"<<std::endl;
                 currentSchedule->setJobLocation(schoolLocation->getID());
             }
             
         }
-        
+        if(currentSchedule->getScheduleType()==0 && f->getDaycare()==NULL){
+            //Young Child that needs to go to DayCare
+            Building *daycareLocation=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'D', -1, f->getPerson(p)->getAge(), 0, f->getHasYoungChild());
+            if(daycareLocation==NULL){
+                //std::cout<<"No Daycare"<<std::endl;
+                //std::cout<<f->getPerson(p)->toString()<<std::endl;
+            }else{
+                ////std::cout<<"School Found"<<std::endl;
+                Daycare* d = static_cast<Daycare* >(daycareLocation);
+
+                f->setDaycare(d);
+            }
+        }
         if(currentSchedule->getScheduleType()==3){
             //Employeed
-            //std::cout<<"Loc: "<<home->getLocation()[0]<<","<<home->getLocation()[1]<<std::endl;
-            Building *workLocation=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'E', -1,  0, 0);
+            ////std::cout<<"Loc: "<<home->getLocation()[0]<<","<<home->getLocation()[1]<<std::endl;
+            Building *workLocation=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'E', -1,  0, 0, 1);
             if(workLocation==NULL){
-                std::cout<<"No Work Location Found"<<std::endl;
+                //std::cout<<"-----No Work Location Found"<<std::endl;
             }else{
                 currentSchedule->setJobLocation(workLocation->getID());
             }
@@ -862,11 +1307,10 @@ void assignJobSchoolLocations(Family *f){
     
 }
 
-
 void generateSchedules(Population &pop) {
     //Creating Schedules for Families
     float oldRatio=0;
-    std::cout << "Generating Schedules for Population" << std::endl;
+    //std::cout << "Generating Schedules for Population" << std::endl;
     if(progressDisplay){
         printf("Percentage Complete: %3d%%", 0 );
     }
@@ -875,44 +1319,58 @@ void generateSchedules(Population &pop) {
         Family *currentFamily = pop.getFamily(i);
         assignJobSchoolLocations(currentFamily);
         bool childModificationNeeded = false;
-        if(currentFamily->getHasChild()){
+        if(currentFamily->getHasYoungChild() ||
+           currentFamily->getHasYoungSchoolChild() ||
+           currentFamily->getHasSchoolChild()){
             childModificationNeeded= true;
         }
 
         for(int p=0; p<currentFamily->getNumberOfPeople(); p++){
             Person *p1 = currentFamily->getPerson(p);
             Schedule *currentSchedule = p1->getSchedule();
-            bool childModification = false;
+            int childModification = -1;
+            bool youngChildModification=false;
             if(childModificationNeeded){
-                if(currentFamily->getNonWorkingAdult() == p1 || currentFamily->getNonWorkingAdult() == NULL){
+                if(currentFamily->getChildCareAdult() == p1){
                     //Non-Working Adult Assigned  or First Employeed Adult Modify Schedules to get Children from Schools/Daycares as needed
-                    childModification= true;
+                    if(currentFamily->getHasYoungChild()>0){
+                        youngChildModification=true;
+                    }else{
+                        if(currentFamily->getHasYoungSchoolChild()){
+                            childModification=1;
+
+                        }else{
+                            childModification=0;
+
+                        }
+                    }
+                    
                     childModificationNeeded=false;
                 }
             }
             switch(currentSchedule->getScheduleType()){
                 case 0:
-                    //std::cout<<"Generating Young Child Schedule"<<std::endl;
+                    ////std::cout<<"Generating Young Child Schedule"<<std::endl;
                     generateYoungChildSchedule(p1, currentFamily);
                     break;
                 case 1:
-                    //std::cout<<"Generating Young School Aged Child Schedule"<<std::endl;
+                    ////std::cout<<"Generating Young School Aged Child Schedule"<<std::endl;
                     generateYoungSchoolAgedChildSchedule(p1, currentFamily);
                     break;
                 case 2:
-                    //std::cout<<"Generating School Aged Child Schedule"<<std::endl;
+                    ////std::cout<<"Generating School Aged Child Schedule"<<std::endl;
                     generateSchoolAgedChildSchedule(p1, currentFamily);
                     break;
                 case 3:
-                    //std::cout<<"Generating Employeed Adult Schedule"<<std::endl;
-                    generateEmployeedAdultSchedule(p1, currentFamily, childModification);
+                    ////std::cout<<"Generating Employeed Adult Schedule"<<std::endl;
+                    generateEmployeedAdultSchedule(p1, currentFamily, childModification, youngChildModification);
                     break;
                 case 4:
-                    //std::cout<<"Generating UnEmployeed Schedule"<<std::endl;
-                    generateUnemployeedAdultSchedule(p1, currentFamily, childModification);
+                    ////std::cout<<"Generating UnEmployeed Schedule"<<std::endl;
+                    generateUnemployeedAdultSchedule(p1, currentFamily, (childModification>-1?true:false));
                     break;
                 default:
-                    std::cout<<"ERROR: Unknown Schedule Type"<<std::endl;
+                    //std::cout<<"ERROR: Unknown Schedule Type"<<std::endl;
                     break;
             }
             
@@ -938,7 +1396,7 @@ void generateSchedules(Population &pop) {
         printf("Percentage Complete: %3d%%", 100 );
         fflush(stdout);
     }
-    std::cout << std::endl <<"Population Successfully Assigned Locations" << std::endl;
+    //std::cout << std::endl <<"Population Successfully Assigned Locations" << std::endl;
     
 }
 

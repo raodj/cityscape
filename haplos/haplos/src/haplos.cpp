@@ -289,17 +289,28 @@ int main(int argc, char* argv[]) {
     
     //Display 10 Families Entirely (Useful for Schedule Testing).
     pop.returnFirstTenFamiliesInfo(familyFileLocationPath);
+    vector<std::string> headerInformation;
+
+
+    
+    headerInformation.push_back(std::to_string(configuration["Lower_Left_Longitude"])+","
+                                +std::to_string(configuration["Lower_Left_Laditude"]));
+    headerInformation.push_back(std::to_string(configuration["Cellsize_Width"])+","
+                           +std::to_string(configuration["Cellsize_Height"]));
     
     //Generate Sample Image Generation Files
+    std::cout<<"Generating Image Files."<<std::endl;
     ImageFileGenerator imgGen = ImageFileGenerator(&densityData, imageFileLocationPath);
-    imgGen.makeBuildingFile("building_All.hapi", NULL);
-    imgGen.makeBuildingFile("building_Daycares.hapi", 'D');
-    imgGen.makeBuildingFile("building_Schools.hapi", 'S');
-    imgGen.makeBuildingFile("building_Businesss.hapi", 'B');
-    imgGen.makeBuildingFile("building_Homes.hapi", 'H');
-    imgGen.makeBuildingFile("building_Medical.hapi", 'M');
+    imgGen.makeBuildingFile("building_All.hapi", NULL, headerInformation);
+    imgGen.makeBuildingFile("building_Daycares.hapi", 'D', headerInformation);
+    imgGen.makeBuildingFile("building_Schools.hapi", 'S', headerInformation);
+    imgGen.makeBuildingFile("building_Businesss.hapi", 'B', headerInformation);
+    imgGen.makeBuildingFile("building_Homes.hapi", 'H', headerInformation);
+    imgGen.makeBuildingFile("building_Medical.hapi", 'M', headerInformation);
 
-    imgGen.makePopFile("pop.hapi");
+    imgGen.makePopFile("pop.hapi", headerInformation);
+    
+    std::cout<<"Simulation Complete"<<std::endl;
     
     return 0;
 }

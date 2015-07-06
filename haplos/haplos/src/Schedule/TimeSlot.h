@@ -49,15 +49,21 @@ class TimeSlot{
          */
         TimeSlot(int buildingID, int endTime, char visitorType);
     
-        /** Get End Time for given Time Slot
+        /** Get Real End Time for given Time Slot
             return end time.
          */
         int getEndTime();
     
+        /** Get Day Specific End Time for given Time Slot
+         return end time.
+         */
+        int getDayEndTime();
         /** Get Location ID where person should be in given time slot.
             return Locaiton ID of place person should be.
          */
         int getLocation();
+    
+        int getVisitorType();
     
         std::string toString();
     

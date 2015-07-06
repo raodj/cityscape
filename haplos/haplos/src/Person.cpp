@@ -105,7 +105,7 @@ Schedule* Person::getSchedule(){
 }
 std::string Person::toString(){
     std::ostringstream outputString;
-    outputString << "\n\n\"Person ID:\",\"" << this->id_num << '"' << std::endl;
+    outputString << "\"Person ID:\",\"" << this->id_num << '"' << std::endl;
     outputString << "\"Age:\",\"" << this->age <<'"' << std::endl;
     outputString << "\"Schedule:\"" << std::endl << schedule.toString() << std::endl;
     return outputString.str();

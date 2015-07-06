@@ -85,7 +85,9 @@ class Schedule {
          param[in] type type to change to (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
          */
         void setScheduleType(int type);
-        
+    
+        TimeSlot* getLocationAt(int time);
+
         /**Advance current time step and Get Location for Next Time Step
             return building ID or transport ID for next timestep
          */

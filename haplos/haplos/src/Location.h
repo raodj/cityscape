@@ -42,6 +42,7 @@
 #include "Buildings/Building.h"
 #include "Buildings/Medical.h"
 #include "Buildings/School.h"
+#include "Buildings/Daycare.h"
 
 #include "Family.h"
 class Person;
@@ -128,9 +129,10 @@ public:
      \param[in] vistorType type of visitor (E=Employee, V=Standard Visitor, P=Patient)
      \param[in] startTime start time of slot (required for standard visitor)
      \param[in] endTime end time of slot (required for standard visitor
+     \param[in] numberOfVisitors number of visitors needed.
      \return pointer to building that has avaliable visitor slot
      */
-    Building* hasAvaliableBuilding(char visitorType, int startTime, int endTime);
+    Building* hasAvaliableBuilding(char visitorType, int startTime, int endTime, int numberOfVisitors);
     
     
     /** Removes a person from location.

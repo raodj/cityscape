@@ -42,11 +42,13 @@ using namespace std;
 
 Family::Family() {
     hasAdult=false;
-    hasYoungChild=false;
-    hasChild=false;
+    hasYoungChild=0;
+    hasYoungSchoolChild=false;
+    hasSchoolChild=false;
     numberOfPeople=0;
     homeNumber=NULL;
-    nonWorkingAdultPos=-1;
+    childCareAdultPos=0;
+    daycare=NULL;
 }
 
 Person* Family::getPerson(int id){
@@ -68,23 +70,37 @@ void Family::setHome(Building *n){
 
 }
 
+void Family::setDaycare(Daycare *d){
+    daycare= d;
+}
+
 Building* Family::getHome(){
     return homeNumber;
+}
+
+Daycare* Family::getDaycare(){
+    return daycare;
 }
 
 void Family::addPerson(Person newPerson){
     members.push_back(newPerson);
     if(newPerson.getAge()>17){
         hasAdult=true;
-        if(newPerson.getSchedule()->getScheduleType()==4 && nonWorkingAdultPos==-1){
-            //Non-Working Adult
-            nonWorkingAdultPos=members.size()-1;
+        if(newPerson.getSchedule()->getScheduleType()==4 &&
+           members.at(childCareAdultPos).getSchedule()->getScheduleType()!=4){
+            //Non-Working Adult is being added
+            childCareAdultPos=members.size()-1;
         }
     }else{
-        hasChild=true;
         if(newPerson.getAge()<14){
             //Has Child that Needs to be Supervised by Parent
-            hasYoungChild=true;
+            if(newPerson.getAge()>4){
+                hasYoungSchoolChild=true;
+            }else{
+                hasYoungChild++;
+            }
+        }else{
+            hasSchoolChild=true;
         }
     }
     numberOfPeople++;
@@ -101,30 +117,33 @@ bool Family::getHasAdult(){
     return hasAdult;
 }
 
-bool Family::getHasChild(){
-    return hasChild;
+bool Family::getHasSchoolChild(){
+    return hasSchoolChild;
 }
 
-bool Family::getHasYoungChild(){
+bool Family::getHasYoungSchoolChild(){
+    return hasYoungSchoolChild;
+}
+
+int Family::getHasYoungChild(){
     return hasYoungChild;
 }
 
-Person* Family::getNonWorkingAdult(){
-    if(nonWorkingAdultPos==-1){
-        return NULL;
-    }else{
-        return &members.at(nonWorkingAdultPos);
-    }
+Person* Family::getChildCareAdult(){
+    return &members.at(childCareAdultPos);
+    
 }
+
 
 std::string Family::toString(){
     std::ostringstream outputString;
     outputString << "\"Family Home Number:\",\""<< homeNumber->getID() << '"'<< std::endl;
     outputString << "\"Number of People: \",\"" << numberOfPeople <<'"'<< std::endl;
-    outputString << "\"Has Non-Working Adult: \",\"" << ( (nonWorkingAdultPos!=-1) ? "Yes("+std::to_string(members.at(nonWorkingAdultPos).getID())+")" : "No" ) << '"'<< std::endl;
-    outputString << "\"Has Child: \",\"" << ((hasChild) ? "Yes" : "No") << '"'<< std::endl;
+    outputString << "\"Child Care Adult: \",\"" << std::to_string(members.at(childCareAdultPos).getID())+" (" <<std::to_string(members.at(childCareAdultPos).getSchedule()->getScheduleType())<<")"<< '"'<< std::endl;
+    outputString << "\"Has School Child: \",\"" << ((hasSchoolChild) ? "Yes" : "No") << '"'<< std::endl;
+    outputString << "\"Has Young School Child: \",\"" << ((hasYoungSchoolChild) ? "Yes" : "No") << '"'<< std::endl;
     outputString << "\"Has Young Child: \",\"" << ((hasYoungChild) ? "Yes" : "No") << '"'<< std::endl;
-    outputString << "\"Detail Information: \"" << std::endl;
+    outputString << "\"Detail Information: \"\n" << std::endl;
     for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){
         outputString << it->toString();
     }

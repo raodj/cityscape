@@ -40,9 +40,13 @@
 #include <vector>
 #include "Person.h"
 #include "Buildings/Building.h"
+#include "Buildings/School.h"
+#include "Buildings/Daycare.h"
 
 class Building;
+class Schoool;
 class Person;
+
 class Family {
     /** A class specifically for repersenting a family of indviduals. */
     public:
@@ -81,10 +85,20 @@ class Family {
          */
         void setHome(Building *n);
     
+        /**Assign a Daycare Number to a Family
+         \param[in] n pointer of new Home Building.
+         */
+        void setDaycare(Daycare *d);
+    
         /** Get home number
          \return pointer of home location.
          */
         Building* getHome();
+    
+        /** Get Daycare number
+         \return pointer of Daycare location.
+         */
+        Daycare* getDaycare();
     
         /** Get if Family has an Adult.
          \return True if family has at least 1 adult in it, false if otherwise.
@@ -94,14 +108,19 @@ class Family {
         /** Get if Family has an Young Child (Younger than 14).
          \return True if family has at least 1 young child in it, false if otherwise.
          */
-        bool getHasYoungChild();
+        int getHasYoungChild();
     
-        /** Get if Family has an Child.
-         \return True if family has at least 1 child in it, false if otherwise.
+        /** Get if Family has an School Child.
+         \return True if family has at least 1 school child in it, false if otherwise.
          */
-        bool getHasChild();
+        bool getHasSchoolChild();
     
-        Person* getNonWorkingAdult();
+        /** Get if Family has an Young School Child.
+         \return True if family has at least 1 young school child in it, false if otherwise.
+         */
+        bool getHasYoungSchoolChild();
+    
+        Person* getChildCareAdult();
     
         std::string toString();
         /**
@@ -117,10 +136,12 @@ class Family {
         std::vector < Person > members; //Vector containing all members in the family
         int numberOfPeople; //Number of People in the Family
         bool hasAdult;  //Has an person 18 and older in the family
-        bool hasYoungChild; //Has Child that is under the age of 14 and needs to have adult supervision
-        bool hasChild;
-        int nonWorkingAdultPos;
-        Building *homeNumber; //Pointer toHome Building.
+        int hasYoungChild; //Has Child that is under the age of 14 and needs to have adult supervision
+        bool hasYoungSchoolChild;
+        bool hasSchoolChild;
+        int childCareAdultPos;
+        Building *homeNumber; //Pointer to Home Building.
+        Daycare *daycare;  //Pointer to Daycare for Family.
     
     
 };

@@ -84,6 +84,15 @@ int Schedule::getScheduleType(){
     return type;
 }
 
+TimeSlot* Schedule::getLocationAt(int time){
+    if( time< plan.size()){
+        return &plan[time];
+    }
+    else{
+        return NULL;
+    }
+}
+
 TimeSlot* Schedule::getNextLocation(){
     currentTimeStep++;
     if( currentTimeStep==MAXTIMESTEPS-1 ){
@@ -104,7 +113,11 @@ TimeSlot* Schedule::getNextLocation(){
 }
 
 TimeSlot* Schedule::peekNextLocation(){
-    return &plan[currentTimeSlot];
+    if(plan.size()!=0){
+        return &plan[currentTimeSlot];
+    }else{
+        return NULL;
+    }
 }
 
 std::string Schedule::toString(){
@@ -129,7 +142,7 @@ std::string Schedule::toString(){
             wordType="Uknown";
             break;
     }
-    std::string returnString= "\"Type:\",\""+wordType+"\"\n\n";
+    std::string returnString= "\"Type:\",\""+wordType+"\"\n";
     returnString+="\"ID\",\"Visitor Type\",\"End Time\",\"Real Time\"\n";
     for(std::vector< TimeSlot >::iterator it = plan.begin(); it!= plan.end(); ++it){
         returnString+=it->toString()+"\n";

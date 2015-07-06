@@ -74,7 +74,9 @@ School::School(int i, int x, int y, int capacity, int visitorCapacity) : Buildin
             std::cout<<"Invalid School Type"<<std::endl;
             break;
     }
-    
+    for(int i =0; i<13;i++){
+        gradeCapacity[i]=0;
+    }
     /*while(avalibleTeachers>0){
         gradeMaxCapacity[currentGrade]+=30;
         avalibleTeachers--;
@@ -107,8 +109,8 @@ School::School(int i, int x, int y, int capacity, int visitorCapacity, int force
     int schoolType =forceSchoolType;
     //std::cout<<"Avalaible teachers: "<<avalibleTeachers<<std::endl;
     int currentGrade =0;
-    int endGrade=0;
-    int startGrade=0;
+    endGrade=0;
+    startGrade=0;
     
     switch(schoolType){
         case 0:
@@ -136,7 +138,10 @@ School::School(int i, int x, int y, int capacity, int visitorCapacity, int force
             std::cout<<"Invalid School Type"<<std::endl;
             break;
     }
-    
+    for(int i =0; i<13;i++){
+        gradeCapacity[i]=0;
+    }
+
     /*while(avalibleTeachers>0){
         gradeMaxCapacity[currentGrade]+=30;
         avalibleTeachers--;
@@ -170,22 +175,31 @@ int School::getSchoolEndTime(){
     return schoolEnd;
 }
 
-bool School::hasGradeAvaliable(int age){
+int School::getStudentMaxCapacity(){
+    return studentMaxCapacity;
+}
+
+int School::getStudentCapacity(){
+    return studentCapacity;
+}
+
+bool School::hasGradeAvaliable(int age, int numberOfStudents){
     int grade=age-5;
    // std::cout<<"Start Time: "<<schoolStart<<" "<<this->getID()<<std::endl;
     //std::cout<<"Capacity: "<<studentCapacity<<" "<<studentMaxCapacity<<std::endl;
-    if(studentCapacity<=studentMaxCapacity){
-        //Has Grade Avaliable
-            return true;
+    if(endGrade>=grade && startGrade<=grade){
+        if(studentMaxCapacity-studentCapacity>=numberOfStudents){
+            //Has Grade Avaliable
+                return true;
+        }
     }
-    
     return false;
 }
 
 
 void School::addStudent(int grade){
     //std::cout<<"Grade: "<<grade<<std::endl;
-    gradeCapacity[grade]++;
+    gradeCapacity[grade]=gradeCapacity[grade]+1;
     studentCapacity++;
     
 }
