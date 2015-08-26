@@ -22,6 +22,10 @@ def runAllTests(person, familyNumber):
 		print "**Test Failed: Unemployeed Person "+person.id+" in Family "+familyNumber+" Not Home for 8 Hours."
 		unemployedAtHomeFor8HoursMinFailed=True;
 		
+	if unemployedDoesNotGoToJobFailed or unemployedAtHomeFor8HoursMinFailed:
+		return False
+	return True
+		
 """
 doNotGoToJob 
 person: Person Object

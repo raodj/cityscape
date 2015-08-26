@@ -19,15 +19,20 @@ def runAllTests(person, familyNumber, childCareAdult):
 	global YoungSchoolChildGoesToSchoolFail
 	global YoungToSchoolFollowAdultFail
 	if  YoungSchoolChildGoesToSchoolFail == False and goesToSchool(person) == False:
-		print "**Test Failed: Person "+person.id+" in Family "+familyNumber+" Never Goes to School (Young)."
+		print "**Test Failed: Person "+person.id+" in Family "+familyNumber+" Never Goes to School (Young School)."
 		YoungSchoolChildGoesToSchoolFail=True
 	
 	if  YoungToSchoolOnWeekdaysOnlyFail == False and goesToSchoolOnWeekdaysOnly(person) == False:
-		print "**Test Failed: Person "+person.id+" in Family "+familyNumber+" Doesn't Go to School Only on Weekdays (Young)."
+		print "**Test Failed: Person "+person.id+" in Family "+familyNumber+" Doesn't Go to School Only on Weekdays (Young School)."
 		YoungToSchoolOnWeekdaysOnlyFail=True
 	if  YoungToSchoolFollowAdultFail == False and followsAdult(person, childCareAdult) == False:
-		print "**Test Failed: Person "+person.id+" in Family "+familyNumber+" Doesn't Follow Adult (Young)."
+		print "**Test Failed: Person "+person.id+" in Family "+familyNumber+" Doesn't Follow Adult (Young School)."
 		YoungToSchoolFollowAdultFail=True
+	
+	if YoungToSchoolOnWeekdaysOnlyFail or YoungSchoolChildGoesToSchoolFail or YoungToSchoolFollowAdultFail:
+		return False
+	return True
+	
 		
 """
 goesToSchool
@@ -94,9 +99,22 @@ def followsAdult(person, childCareAdult):
 				atSchoolTill = int(timeSlot[2]) 
 			else:
 				if timeSlot != childCareSchedule[placeInSchedule]:
-					print timeSlot
-					print childCareSchedule[placeInSchedule]
-					return False
+					if timeSlot[0] == childCareSchedule[placeInSchedule][0]:
+						#At Same Location
+						if int(timeSlot[2])>= int(childCareSchedule[placeInSchedule][2]):
+							#Isn't Spanning Multiple Time Slots
+							print "Not at Spanning Multiple Time Slots Fail."
+							print timeSlot
+							print childCareSchedule[placeInSchedule]
+							return False
+						else:
+							#Don't Advance parent schedule yet
+							break;
+					else:
+						print "Not at same Location Fail."
+						print timeSlot
+						print childCareSchedule[placeInSchedule]
+						return False
 			placeInSchedule+=1
 		else:
 			while int(childCareSchedule[placeInSchedule][2])<=atSchoolTill:

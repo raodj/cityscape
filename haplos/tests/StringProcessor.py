@@ -15,6 +15,7 @@ Process Family File in order to create Person Objects. Executes Tests on Family 
 each individual person.
 """
 def processFamily(fileLocation):
+	fail = False;
 	with open(fileLocation, 'rb') as csvfile:
 		#familyFile = csv.reader(filePath);
 		#for row in csvfile:
@@ -34,10 +35,15 @@ def processFamily(fileLocation):
 			part = part.strip()
 			newPerson =processPerson(part)
 			family[int(newPerson.id)] = newPerson
-		TestFamily.runFamilyTests(family, genInfo[0][1])
+		tempFail = TestFamily.runFamilyTests(family, genInfo[0][1])
+		if  not tempFail:
+			noFail=True
 		childCareAdultInfo = genInfo[2][1].split(" ");
 		for person in family.keys():
-			TestPerson.runPersonTests(family[person], genInfo[0][1], family[int(childCareAdultInfo[0][1:])])
+			tempFail= TestPerson.runPersonTests(family[person], genInfo[0][1], family[int(childCareAdultInfo[0][1:])])
+			if  not tempFail:
+				fail=True
+	return fail
 		
 """
 processPerson

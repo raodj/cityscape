@@ -45,6 +45,14 @@
 #include "Buildings/Business.h"
 
 
+int calculateTravelTime(int start_x, int start_y, int end_x, int end_y, char transporationType){
+    if(std::abs(start_x-end_x)>std::abs(start_y-end_y)){
+        return std::abs(start_x-end_x);
+    }else{
+        return std::abs(start_y-end_y);
+    }
+}
+
 /** Checks to see if a there exist a building has a avalible slot for person in a given visitor type.
  \param[in] vistorType type of visitor (E=Employee, V=Standard Visitor, P=Patient)
  \param[in] radius radius limit (-1 means no limit).
@@ -55,7 +63,8 @@
 Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, int startTime, int endTime, int numberOfVisitors){
     int maxX=densityData.size()-1;
     int maxY=densityData[0].size()-1;
-    int r=0; //Radius
+    int r=0; //Current Radius
+    int travelTime = 0;
     //Adjusted Radius range for X,Y Values (Never go beyond or below Grid)
     int adjusted_actual_radMinY=y;
     int adjusted_actual_radMaxY=y;
@@ -162,14 +171,17 @@ Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, in
         }
         //std::cout<<actual_radMinX<<"-"<<actual_radMaxX<<" "<<actual_radMinY<<"-"<<actual_radMaxY<<std::endl;
         
+        travelTime = calculateTravelTime(x, y, x+r, y+r, 'T');
         //Check for Radius Limit
-        if( radius>=0 && r+1 >radius){
-          //  std::cout<<"Hit Radius Limit"<<std::endl;
+        if( (radius>=0 && r+1 >radius) || startTime+travelTime>endTime){
+            //std::cout<<"Hit Radius Limit"<<std::endl;
             return NULL;
         }
     }
     return NULL;
 }
+
+
 
 void displayBuildingStatistics(double businessSizeProbablities[6], double hospitalSizeProbablities[6], double schoolSizeProbablities[6], double daycareSizeProbablities[6], string fileLocation){
     std::ostringstream outputString;

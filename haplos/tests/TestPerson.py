@@ -9,6 +9,7 @@ import YoungChildTests
 
 
 noExtraTimeSlotsFail = False
+noTimeSlotsSequencialFail = False
 """
 runPersonTests
 person: Person Object
@@ -19,29 +20,38 @@ Run Specific Person Tests based on Schedule
 """
 def runPersonTests(person, familyNumber, childCareAdult):
 	global noExtraTimeSlotsFail
-	
+	global noTimeSlotsSequencialFail
 	#Non Schedule Specific Tests	
 	if noExtraTimeSlotsFail == False and noExtraTimeSlots(person) == False:
 		print "**Test Failed: Person "+person.id+" in Family "+familyNumber+" Has Extra Time Slots("+person.type+")"
 		noExtraTimeSlotsFail=True;
-		
+	
+	if noTimeSlotsSequencialFail == False and timeSlotsSequencial(person) == False:
+		print "**Test Failed: Person "+person.id+" in Family "+familyNumber+" Time Slots are not Sequencial("+person.type+")"
+		noTimeSlotsSequencialFail=True;
+	
+	tempFail = True	
 	#Run Schedule Specific Tests
 	if person.type == 'Employed Adult':
-		EmployedAdultTests.runAllTests(person, familyNumber)
+		tempFail = EmployedAdultTests.runAllTests(person, familyNumber)
 	else:
 		if person.type=="Unemployed Adult":
-			UnemployedAdultTests.runAllTests(person, familyNumber)
+			tempFail = UnemployedAdultTests.runAllTests(person, familyNumber)
 		else:
 			if person.type == "School Child":
-				SchoolChildTests.runAllTests(person, familyNumber)
+				tempFail = SchoolChildTests.runAllTests(person, familyNumber)
 			else:
 				if person.type == "Young School Child":
-					YoungSchoolChildTests.runAllTests(person, familyNumber, childCareAdult)
+					tempFail = YoungSchoolChildTests.runAllTests(person, familyNumber, childCareAdult)
 				else:
 					if person.type == "Young Child": 
-						YoungChildTests.runAllTests(person, familyNumber, childCareAdult)
+						tempFail = YoungChildTests.runAllTests(person, familyNumber, childCareAdult)
 					else:
 						print "**Test Failed: Person "+person.id+" in Family "+familyNumber+" Has Invalid Schedule Type"
+						return False
+	if not tempFail or noExtraTimeSlotsFail or noTimeSlotsSequencialFail:
+		return False
+	return True
 						
 def noExtraTimeSlots(person):
 	schedule=person.schedule
@@ -58,6 +68,15 @@ def noExtraTimeSlots(person):
 		lastLocation = timeSlot[0]
 	return True;
 
-					
-		
+
+def timeSlotsSequencial(person):
+	schedule=person.schedule
+	lastTimeSlot = 0;
+	for timeSlot in schedule:
+		if int(timeSlot[2]) < lastTimeSlot:
+			print "Test Failed on "+timeSlot[0]+" "+timeSlot[1]+" "+timeSlot[2]
+			print "Previous Time Slot Stopped At: "+str(lastTimeSlot)
+			return False
+		lastTimeSlot = int(timeSlot[2])
+	return True;		
 	

@@ -130,6 +130,8 @@ public:
     */
     std::string getSedacFileLocation() const;
     
+    
+    std::string getOutputFileLocation() const;
     /**
        The destructor.
        
@@ -142,6 +144,7 @@ public:
 private:
     std::string configFileLocation;
     std::string sedacFileLocation;
+    std::string outputFileLocation;
     std::unordered_map<std::string, double> variables;
 };
 

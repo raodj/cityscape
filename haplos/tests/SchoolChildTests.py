@@ -29,6 +29,10 @@ def runAllTests(person, familyNumber):
 	if SchoolChildToSchool8HourMinFail== False and atHomeFor8HoursMin(person) == False:
 		print "**Test Failed: Person "+person.id+" in Family "+familyNumber+" isn't Home for 8 Hours (School Child)."
 		SchoolChildToSchool8HourMinFail=True
+		
+	if SchoolChildGoesToSchoolFail or SchoolChildToSchoolOnWeekdaysOnlyFail or SchoolChildToSchool8HourMinFail:
+		return False
+	return True
 
 """
 goesToSchool
@@ -103,7 +107,7 @@ def atHomeFor8HoursMin(person):
 		if time[0] == str(day):
 			day=day+1
 		if(totalTimeSpentOut>144):
-			print "**Fail: Day "+str(day-1)+" Total: "+str(totalTimeSpentOut)+" "+timeSlot[3]
+			print "**Fail: Day "+str(day-1)+" Total: "+str(totalTimeSpentOut)+" "+timeSlot[3] + " " + timeSlot[2]
 			return False
 		lastTimeSlot=int(timeSlot[2])
 	return True;

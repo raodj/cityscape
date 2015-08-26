@@ -22,6 +22,9 @@ def runAllTests(person, familyNumber):
 	if employedAtHomeFor8HoursMinFailed==False and atHomeFor8HoursMin(person) == False  :
 		print "**Test Failed: Employeed Person "+person.id+" in Family "+familyNumber+" Not Home for 8 Hours."
 		employedAtHomeFor8HoursMinFailed=True;
+	if employedGoesToJobFailed or employedAtHomeFor8HoursMinFailed:
+		return False
+	return True
 
 """
 goesToJob
@@ -43,7 +46,7 @@ atHomeFor8HoursMin
 person: Person Object
 
 Tests that person is at home at least for 8 continuous hours every 24 hours 
-
+"""
 def atHomeFor8HoursMin(person):
 	day=1
 	schedule=person.schedule
@@ -64,11 +67,11 @@ def atHomeFor8HoursMin(person):
 		if time[0] == str(day):
 			day=day+1
 		if(totalTimeSpentOut>144):
-			print "**Fail: Day "+str(day-1)+" Total: "+str(totalTimeSpentOut)+" "+timeSlot[3]
+			print "**Fail: Day "+str(day-1)+" Total: "+str(totalTimeSpentOut)+" "+timeSlot[3] + " " + timeSlot[2]
 			return False
 		lastTimeSlot=int(timeSlot[2])
 	return True;
-"""
+
 
 """
 atHomeFor8HoursMin
@@ -78,7 +81,7 @@ Tests that person has been at home for 8 hours total every 24 hours. This is a
 modification to the Normal Test due to adults can get interruped during sleeping to 
 have to drop children off at school.
 """
-
+"""
 def atHomeFor8HoursMin(person):
 	day=1
 	schedule=person.schedule
@@ -93,9 +96,10 @@ def atHomeFor8HoursMin(person):
 			leftOver = int(timeSlot[2])%144;
 			timeSpentAthome = timeSpentAtHome - leftOver;
 			if(timeSpentAtHome<48):
-				print "**Fail: Day "+str(day-1)+" Total: "+str(timeSpentAtHome)+" "+timeSlot[3]
+				print "**Fail: Day "+str(day-1)+" Total: "+str(timeSpentAtHome)+" "+timeSlot[3]+ " " + timeSlot[2]
 				return False
 			timeSpentAtHome=leftOver;
 			day=day+1
 		lastTimeSlot=int(timeSlot[2])
 	return True;
+"""

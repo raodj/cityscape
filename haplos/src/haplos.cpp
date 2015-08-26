@@ -58,7 +58,7 @@
 
 using namespace std;
 
-std::string const outputFolder="output/";
+//std::string const outputFolder="output/";
 //std::string configFile="examples/config/VirginaData.hapl";
 //std::string configFile="examples/config/USAData.hapl";
 std::string configFile="examples/config/MicroWorldData.hapl";
@@ -101,6 +101,8 @@ int main(int argc, char* argv[]) {
     std::cout << "| |  | |/ ____ \\| |    | |___| |__| |____) |" << std::endl;
     std::cout << "|_|  |_/_/    \\_\\_|    |______\\____/|_____/" <<std::endl;
     bool produceImages=true;
+
+    
     //Command Line Paramaters
     if(argc>0){
         //Do Not Use Default
@@ -127,7 +129,8 @@ int main(int argc, char* argv[]) {
     
     //Read in Configuration File
     configuration= ConfigFile(configFile);
-    
+    std::string outputFolder = configuration.getOutputFileLocation();
+
     //Read in Density Data
     SedacReader sr = SedacReader();
     densityData = sr.readFile(configuration.getSedacFileLocation(),
@@ -158,7 +161,7 @@ int main(int argc, char* argv[]) {
                                  configuration["Age_65-Older_Probablity"]};
     
     //Family Size Probablties
-    double familySizeProbablities [7]={ configuration["Family_Size_1_Probablity"],
+    double familySizeProbablities [7] = { configuration["Family_Size_1_Probablity"],
                                         configuration["Family_Size_2_Probablity"],
                                         configuration["Family_Size_3_Probablity"],
                                         configuration["Family_Size_4_Probablity"],
@@ -173,28 +176,28 @@ int main(int argc, char* argv[]) {
                                          configuration["Business_Size_100-499_Probablity"],
                                          configuration["Business_Size_500_Probablity"]};
     
-    double hospitalSizeProbablities[6]={ configuration["Hospital_Size_0-4_Probablity"],
+    double hospitalSizeProbablities[6] = { configuration["Hospital_Size_0-4_Probablity"],
                                          configuration["Hospital_Size_5-9_Probablity"],
                                          configuration["Hospital_Size_10-19_Probablity"],
                                          configuration["Hospital_Size_20-99_Probablity"],
                                          configuration["Hospital_Size_100-499_Probablity"],
                                          configuration["Hospital_Size_500_Probablity"]};
     
-    double schoolSizeProbablities[6]={ configuration["School_Size_0-4_Probablity"],
+    double schoolSizeProbablities[6] = { configuration["School_Size_0-4_Probablity"],
                                        configuration["School_Size_5-9_Probablity"],
                                        configuration["School_Size_10-19_Probablity"],
                                        configuration["School_Size_20-99_Probablity"],
                                        configuration["School_Size_100-499_Probablity"],
                                        configuration["School_Size_500_Probablity"]};
    
-    double daycareSizeProbablities[6]={ configuration["Daycare_Size_0-4_Probablity"],
+    double daycareSizeProbablities[6] = { configuration["Daycare_Size_0-4_Probablity"],
                                         configuration["Daycare_Size_5-9_Probablity"],
                                         configuration["Daycare_Size_10-19_Probablity"],
                                         configuration["Daycare_Size_20-99_Probablity"],
                                         configuration["Daycare_Size_100-499_Probablity"],
                                         configuration["Daycare_Size_500_Probablity"]};
     
-    double scheduleTypeProbablities[11]={ configuration["Schedule_Young_Children_5-Younger_Probablity"],
+    double scheduleTypeProbablities[11] = { configuration["Schedule_Young_Children_5-Younger_Probablity"],
                                           configuration["Schedule_School_Children_5-13_Probablity"],
                                           configuration["Schedule_School_Children_14-17_Probablity"],
                                           configuration["Schedule_Employeed_Adults_18-24_Probablity"],
@@ -205,6 +208,13 @@ int main(int argc, char* argv[]) {
                                           configuration["Schedule_Unemployeed_Adults_45-64_Probablity"],
                                           configuration["Schedule_Employeed_Adults_65-Older_Probablity"],
                                           configuration["Schedule_Unemployeed_Adults_65-Older_Probablity"]};
+    
+    int radiusLimits[6] = { (int)configuration["Schedule_Young_Children_Radius_Limit"],
+                            (int)configuration["Schedule_School_Children_5-13_Radius_Limit"],
+                            (int)configuration["Schedule_School_Children_14-15_Radius_Limit"],
+                            (int)configuration["Schedule_School_Children_14-15_Radius_Limit"],
+                            (int)configuration["Schedule_Employeed_Radius_Limit"],
+                            (int)configuration["Schedule_Unemployeed_Radius_Limit"]};
         
     generator.seed(time(0));
         
@@ -217,7 +227,7 @@ int main(int argc, char* argv[]) {
 
         
     //Generate Schedules
-    generateSchedules(pop);
+    generateSchedules(pop, radiusLimits);
     /*int allBuildings=0;
     for(int i=0;i<densityData.size();i++){
         for(int j=0;j<densityData[0].size();j++){
@@ -251,7 +261,7 @@ int main(int argc, char* argv[]) {
 
                 }else{
                     imageData.at(x).at(y)=densityData.at(x).at(y).getCurrentPopulation();
-                    buildingData.at(x).at(y)=densityData.at(x).at(y).getNumberOfBuildings(NULL);
+                    buildingData.at(x).at(y)=densityData.at(x).at(y).getNumberOfBuildings('\0');
 
                 }
             }
@@ -266,20 +276,28 @@ int main(int argc, char* argv[]) {
                          buildingData.size(), buildingData[0].size(), 100);
     }
     
+    std::cout<<"Output Folder: "<< outputFolder<<std::endl;
+    std::string temp =outputFolder+"haplos_%Y%m%d_%H%M%S";
     //Create Output Directory
-    mkdir("output", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    char *outputPath = (char*)((temp).c_str());
+    std::string temp2 =outputFolder+"haplos_%Y%m%d_%H%M%S/imageFiles";
+
+    char *imageOutputPath = (char*)((temp2).c_str());
+    std::string temp3 =outputFolder+"haplos_%Y%m%d_%H%M%S/familyData";
+    char *familyDataPath = (char*)((temp3).c_str());
+    //mkdir("output", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     time_t now = time(0);
     tm *ltm = localtime(&now);
-    char buffer [80];
-    strftime(buffer,80,"output/haplos_%Y%m%d_%H%M%S",ltm);
+    char buffer [300];
+    strftime(buffer,300,outputPath,ltm);
     std::string saveLocationPath(buffer);
     mkdir(buffer, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     
-    strftime(buffer,80,"output/haplos_%Y%m%d_%H%M%S/imageFiles",ltm);
+    strftime(buffer,300,imageOutputPath,ltm);
     std::string imageFileLocationPath(buffer);
     mkdir(buffer, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     
-    strftime(buffer,80,"output/haplos_%Y%m%d_%H%M%S/familyData",ltm);
+    strftime(buffer,300,familyDataPath,ltm);
     std::string familyFileLocationPath(buffer);
     mkdir(buffer, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     
@@ -301,7 +319,7 @@ int main(int argc, char* argv[]) {
     //Generate Sample Image Generation Files
     std::cout<<"Generating Image Files."<<std::endl;
     ImageFileGenerator imgGen = ImageFileGenerator(&densityData, imageFileLocationPath);
-    imgGen.makeBuildingFile("building_All.hapi", NULL, headerInformation);
+    imgGen.makeBuildingFile("building_All.hapi", '\0', headerInformation);
     imgGen.makeBuildingFile("building_Daycares.hapi", 'D', headerInformation);
     imgGen.makeBuildingFile("building_Schools.hapi", 'S', headerInformation);
     imgGen.makeBuildingFile("building_Businesss.hapi", 'B', headerInformation);

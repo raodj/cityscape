@@ -76,6 +76,15 @@ void Schedule::addTimeSlot(TimeSlot t){
     plan.push_back(t);
 }
 
+void Schedule::removeTimeSlot(int i){
+    if(i==-1){
+        plan.pop_back();
+    }else{
+        plan.erase(plan.begin()+i);
+    }
+    
+}
+
 void Schedule::setScheduleType(int type){
     this->type=type;
 }
