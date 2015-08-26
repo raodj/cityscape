@@ -79,9 +79,18 @@ Schedule_Unemployeed_Adults_45-64_Probablity=0.292333923
 Schedule_Employeed_Adults_65-Older_Probablity=0.176932645
 Schedule_Unemployeed_Adults_65-Older_Probablity=0.823067355
 
+Schedule_Employeed_Radius_Limit=-1
+Schedule_Unemployeed_Radius_Limit=-1
+
 #School Aged Schedules
 Schedule_School_Children_14-17_Probablity=1
 Schedule_School_Children_5-13_Probablity=1
 
+Schedule_School_Children_5-13_Radius_Limit=-1
+Schedule_School_Children_14-15_Radius_Limit=2
+Schedule_School_Children_16-17_Radius_Limit=4
+
 #Young Children Schedules
 Schedule_Young_Children_5-Younger_Probablity=1
+
+Schedule_Young_Children_Radius_Limit=-1

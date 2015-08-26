@@ -89,7 +89,7 @@ int* Location::getCoordinates(){
 
 int Location::getNumberOfBuildings(char type) const{
 
-    if(type==NULL){
+    if(type=='\0'){
         //Get Count for All Buildings
         return buildings.size();
     }else{
@@ -156,22 +156,25 @@ Building* Location::hasAvaliableBuilding(char visitorType, int startTime, int en
             case 'V':
             {
                 int invalid=false;
-                for(int i = startTime; i<endTime; i++){
-                    if(it->second->getMaxVisitorCapacity()-it->second->getCurrentVisitorCapacity(i)<numberOfVisitors){
-                        invalid=true;
-                        break;
+                if(it->second->getMaxVisitorCapacity()> 0){
+                    for(int i = startTime; i<endTime; i++){
+                        if(it->second->getMaxVisitorCapacity()-it->second->getCurrentVisitorCapacity(i)<numberOfVisitors){
+                            invalid=true;
+                            break;
+                        }
                     }
-                }
-               // std::cout<<"FOUND Visitor"<<std::endl;
-                if(!invalid){
-                    return it->second;
+                   // std::cout<<"FOUND Visitor"<<std::endl;
+                    if(!invalid){
+                        //std::cout<<"\t\t Max Visitors At ("<<it->second->getID()<<") "<<it->second->getMaxVisitorCapacity()<<std::endl;
+                        return it->second;
+                    }
                 }
                 break;
             }
             case 'P':
                 if(it->second->getType()=='M'){
                     Medical* b = static_cast<Medical* >(it->second);
-                    if(b->getMaxPatientCapacity()-b->getCurrentPatientCapacity()>numberOfVisitors){
+                    if(b->getMaxPatientCapacity()-b->getCurrentPatientCapacity()>=numberOfVisitors){
                       //  std::cout<<"FOUND Patient"<<std::endl;
                         return it->second;
                     }
@@ -192,7 +195,7 @@ Building* Location::hasAvaliableBuilding(char visitorType, int startTime, int en
                 //Daycare
                 if(it->second->getType()=='D'){
                     Daycare* b = static_cast<Daycare* >(it->second);
-                    if(b->getMaxChildCapacity()-b->getChildCapacity()>numberOfVisitors){
+                    if(b->getMaxChildCapacity()-b->getChildCapacity()>=numberOfVisitors){
                         return it->second;
                     }
                     

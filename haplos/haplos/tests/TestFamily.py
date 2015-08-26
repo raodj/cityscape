@@ -15,7 +15,9 @@ def runFamilyTests(family, number):
 	if  hasAdultTest(family) is False and familyTestFailed is False:
 		print "**Test Failed: Family "+number+" Does not Have An Adult."
 		familyTestFailed=True;
-	
+	if familyTestFailed:
+		return False
+	return True
 
 """
 hasAdultTest

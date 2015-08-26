@@ -23,6 +23,9 @@ def runAllTests(person, familyNumber, childCareAdult):
 		print "**Test Failed: Person "+person.id+" in Family "+familyNumber+" Doesn't Follow Adult (Young)."
 		YoungChildFollowAdultFail=True
 
+	if youngChildDoesNotGoToJobFailed or YoungChildFollowAdultFail:
+		return False
+	return True
 """
 doNotGoToJob 
 person: Person Object

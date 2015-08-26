@@ -44,6 +44,7 @@
 ConfigFile::ConfigFile(){
 
 }
+
 ConfigFile::ConfigFile(const std::string& fileLocation) :
     configFileLocation(fileLocation) {
     std::cout << "Loading config file: " << configFileLocation << std::endl;
@@ -54,25 +55,33 @@ ConfigFile::ConfigFile(const std::string& fileLocation) :
     }
     std::string line="";
     sedacFileLocation="";
+    outputFileLocation="";
     
     while (getline(infile, line)) {
-	if (line.empty()) {
-	    continue;
-	}
-	if (line.at(0) != '#') {
-	    // Not Comment
-	    int equal_pos = line.find_first_of("=");
-	    if (sedacFileLocation.empty()) {
-		//SEDAC File not set
-		sedacFileLocation = line.substr(equal_pos+1);
-	    } else {
-		addVariable(line.substr(0, equal_pos),
-			    std::atof(line.substr(equal_pos + 1).c_str()));
-	    }
-	}
+        if (line.empty()) {
+            continue;
+        }
+        if (line.at(0) != '#') {
+            // Not Comment
+            int equal_pos = line.find_first_of("=");
+            if (sedacFileLocation.empty()) {
+                //SEDAC File not set
+                sedacFileLocation = line.substr(equal_pos+1);
+            } else {
+                if(outputFileLocation.empty()){
+                    outputFileLocation = line.substr(equal_pos+1);
+
+                }else{
+                    addVariable(line.substr(0, equal_pos),
+                                std::atof(line.substr(equal_pos + 1).c_str()));
+                }
+            
+            }
+        }
     }
     std::cout << "Configuration File Loaded Successfully." << std::endl;
   //  std::cout << *this << std::endl;
+    
 }
 
 void
@@ -93,6 +102,11 @@ ConfigFile::displayVariables(std::ostream& os) const {
 std::string
 ConfigFile::getSedacFileLocation() const {
     return sedacFileLocation;
+}
+
+std::string
+ConfigFile::getOutputFileLocation() const {
+    return outputFileLocation;
 }
 
 ConfigFile::~ConfigFile() {

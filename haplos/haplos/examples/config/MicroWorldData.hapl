@@ -2,11 +2,13 @@
 
 #####Population####
 #Data File Paths
+#Density_File=../examples/data/MicroWorld.asc
+#Output_Directory=../output/
 Density_File=examples/data/MicroWorld.asc
+Output_Directory=output/
 Density_File_Total_Population=104
 Max_Population_In_Area=10
-Population_Seed=1424220736
-#Population_Seed=1433625650
+Population_Seed=-1
 Total_Population=104
 #Temporarly Putting this Here Until the Image Time Line File is Done
 Lower_Left_Longitude=0
@@ -78,18 +80,18 @@ Schedule_Unemployeed_Adults_45-64_Probablity=0.292333923
 Schedule_Employeed_Adults_65-Older_Probablity=0.176932645
 Schedule_Unemployeed_Adults_65-Older_Probablity=0.823067355
 
-#Schedule_Employeed_Adults_18-24_Probablity=1.0
-#Schedule_Unemployeed_Adults_18-24_Probablity=0.0
-#Schedule_Employeed_Adults_25-44_Probablity=1.0
-#Schedule_Unemployeed_Adults_25-44_Probablity=0.0
-#Schedule_Employeed_Adults_45-64_Probablity=1.0
-#Schedule_Unemployeed_Adults_45-64_Probablity=0.0
-#Schedule_Employeed_Adults_65-Older_Probablity=1.0
-#Schedule_Unemployeed_Adults_65-Older_Probablity=0.0
+Schedule_Employeed_Radius_Limit=-1
+Schedule_Unemployeed_Radius_Limit=-1
 
 #School Aged Schedules
 Schedule_School_Children_14-17_Probablity=1
 Schedule_School_Children_5-13_Probablity=1
 
+Schedule_School_Children_5-13_Radius_Limit=-1
+Schedule_School_Children_14-15_Radius_Limit=2
+Schedule_School_Children_16-17_Radius_Limit=4
+
 #Young Children Schedules
 Schedule_Young_Children_5-Younger_Probablity=1
+
+Schedule_Young_Children_Radius_Limit=-1

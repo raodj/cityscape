@@ -277,7 +277,7 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
                 
         }
         int location = locationDistribution(generator);
-        std::cout<<"Creating Daycare "<< location%width<<","<<location/width<<std::endl;
+        //std::cout<<"Creating Daycare "<< location%width<<","<<location/width<<std::endl;
         daycareBuildings.push_back(Daycare(numberOfBuildings, location%width, location/width, 10, 10, capacity));
         numberChildrenDaycare-=capacity;
         if(numberChildrenDaycare<0){
@@ -409,11 +409,11 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
         if(hospital){
             //Medical was made
             medicalBuildings.push_back(Medical(numberOfBuildings, location%width, location/width, capacity, 10, 0));
-            allBuildings.insert({numberOfBuildings, &medicalBuildings.at(medicalBuildings.size()-1)});
+            //allBuildings.insert({numberOfBuildings, &medicalBuildings.at(medicalBuildings.size()-1)});
         }else{
             //Normal business was made
             businessBuildings.push_back(Business(numberOfBuildings,location%width, location/width, capacity, 10));
-            allBuildings.insert({numberOfBuildings, &businessBuildings.at(businessBuildings.size()-1)});
+            //allBuildings.insert({numberOfBuildings, &businessBuildings.at(businessBuildings.size()-1)});
             //std::cout<<numberOfBuildings<<": "<<newBuilding.getLocation()[0]<<" "<<newBuilding.getLocation()[1]<<std::endl;
         }
         totalBuinessPopulation+=capacity;
@@ -431,7 +431,6 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
         allBuildings.insert({businessBuildings.at(i).getID(), &businessBuildings.at(i)});
         densityData.at(businessBuildings.at(i).getLocation()[0]).at(businessBuildings.at(i).getLocation()[1]).addBuilding(&businessBuildings.at(i));
     }
-    std::cout<< numberOfEmployeedAdults<<"/"<<totalBuinessPopulation<<std::endl;
 
     std::cout<<"Buildings Generated: "<<numberOfBuildings<<std::endl;
     
