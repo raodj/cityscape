@@ -35,28 +35,25 @@
 #include <sstream>
 #include "Person.h"
 #include "Schedule/Schedule.h"
+#include "Schedule/TimeSlot.h"
 
 Person::Person(){
 	age=-1;
 	gender='n';
-	location[0]=-1;
-	location[1]=-1;
+    currentLocation=NULL;
     schedule = Schedule();
 }
 
-Person::Person(int a, char g, int x, int y, int id_number, int scheduleType) {
+Person::Person(int a, char g, int b, int id_number, int scheduleType) {
 	age=a;
 	gender=g;
-	location[0]=x;
-	location[1]=y;
+    currentLocation = b;
     id_num = id_number;
     schedule = Schedule(scheduleType);
 }
 
-void Person::setLocation(int x, int y){
-
-	location[0]=x;
-	location[1]=y;
+void Person::setLocation(int b){
+    currentLocation=b;
 }
 Person::Person(const Person &p){
     id_num=p.id_num;
@@ -64,8 +61,7 @@ Person::Person(const Person &p){
 	gender=' ';
 	age=p.age;
 	gender=p.gender;
-	location[0]=p.location[0];
-	location[1]=p.location[1];
+	currentLocation=p.currentLocation;
     schedule= p.schedule;
 }
 
@@ -92,14 +88,20 @@ int Person::getAge(){
 	return age;
 }
 
-int* Person::getLocation(){
-	return location;
+int Person::getLocation(){
+	return currentLocation;
 }
 
 int Person::getID(){
     return id_num;
 }
 
+/*void updateToNextTimeStep(int currentTime){
+    TimeSlot *nextSlot = schedule->peekNextLocation();
+    if(nextSlot->getEndTime() == currentTime){
+        this->setLocation(
+    }
+}*/
 Schedule* Person::getSchedule(){
     return &schedule;
 }

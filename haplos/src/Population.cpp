@@ -106,7 +106,7 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
         for( int b = 0; b<familySize; b++ ){
             //Always first Person in Family must be an Adult
             int *ageInformation=determineAge(((b == 0) ? true : false ));
-            Person newPerson= Person(ageInformation[0], determineGender(), -1, -1, i++, determineScheduleType(ageInformation[1]).getScheduleType());
+            Person newPerson= Person(ageInformation[0], determineGender(), NULL, i++, determineScheduleType(ageInformation[1]).getScheduleType());
             if(ageInformation[0]<18){
                 numberOfStudentsAssignedGrade[ageInformation[0]-5]++;
             }
@@ -147,8 +147,8 @@ int Population::getNumberOfFamilies(){
 
 void Population::setHomeLocationOfFamily(Building *home, int family){
     families.at(family).setHome(home);
-    int* location = families.at(family).getHome()->getLocation();
-    families.at(family).setLocation(location[0], location[1]);
+    int location = families.at(family).getHome()->getID();
+    families.at(family).setLocation(location);
 }
 
 Family* Population::getFamily(int family){

@@ -38,7 +38,6 @@
 //-----------------------------------------------------------
 #include "Schedule/Schedule.h"
 
-
 #include <vector>
 class Schedule;
 class Person {
@@ -52,12 +51,11 @@ public:
      
      \param[in] age Age of person.
      \param[in] gender Gender of person.
-     \param[in] x Row of where person is assigned.
-     \param[in] y Col of where person is assigned.
+     \param[in] b building id of where person current is
      \param[in] id_num Unique ID of person.
      \param[in] scheduleType Type of schedule assigned (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
      */
-	Person(int age , char gender, int x, int y, int id_num, int scheduleType);
+	Person(int age , char gender, int b, int id_num, int scheduleType);
     /** The copy constructor for this class.
      
      \param[in] p Another person.
@@ -82,14 +80,13 @@ public:
      
      \return An array consisting of [rows, cols]
      */
-	int* getLocation();
+	int getLocation();
     
     /** Set the locaton of a person.
      
-     \param[in] x Row of the location of a person.
-     \param[in] y Col of the location of a person.
+     \param[in] b building of id where person is
      */
-	void setLocation(int x, int y);
+	void setLocation(int b);
     
     /** Return the age of a person.
      
@@ -130,7 +127,7 @@ private:
 	int age;
 	char gender;
     int id_num;
-	int location[2];
+    int currentLocation;
     Schedule schedule;
 };
 

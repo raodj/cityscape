@@ -75,10 +75,9 @@ class Family {
         void addPerson(Person newPerson);
         
         /**Sets starting location for family
-         \param x X Location of Family.
-         \param y Y Location of family.
+         \param b ID of where family is
          */
-        void setLocation(int x, int y);
+        void setLocation(int b);
     
         /**Assign a Home Number to a Family
           \param[in] n pointer of new Home Building.

@@ -235,7 +235,11 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
         allBuildings.insert({schoolBuildings.at(i).getID(), &schoolBuildings.at(i)});
         densityData.at(schoolBuildings.at(i).getLocation()[0]).at(schoolBuildings.at(i).getLocation()[1]).addBuilding(&schoolBuildings.at(i));
     }
+    std::cout<<"\tNumber of Elementries: "<<eleTotal<<endl;
+    std::cout<<"\tNumber of Middle:  "<<middleTotal<<endl;
+    std::cout<<"\tNumber of High:  "<<highTotal<<std::endl;
     std::cout<<"Generate Daycares"<<std::endl;
+    std::cout<<"\tNumber of Young Children: "<<numberChildrenDaycare<<std::endl;
     while(numberChildrenDaycare>0){
         int capacity = 0;
         switch(businessSizeDistribution(generator)){
@@ -292,8 +296,8 @@ void generateBuildings(double businessSizeProbablities[6], double hospitalSizePr
         allBuildings.insert({daycareBuildings.at(i).getID(), &daycareBuildings.at(i)});
         densityData.at(daycareBuildings.at(i).getLocation()[0]).at(daycareBuildings.at(i).getLocation()[1]).addBuilding(&daycareBuildings.at(i));
     }
+    std::cout<<"\t Number Generated: "<<totalDaycares<<std::endl;
 
-   // std::cout<<"Number of Schools Generated (Elementry, Middle, High): "<<eleTotal<<" "<<middleTotal<<" "<<highTotal<<std::endl<<std::endl;
     std::cout<<"Generating Businesses"<<std::endl;
     //Create Businesses
     while(numberOfEmployeedAdults>totalBuinessPopulation){
