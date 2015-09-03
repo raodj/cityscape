@@ -49,6 +49,7 @@
 #include "Population.h"
 #include "ImageGeneration/XFigImageGenerator.h"
 #include "Files/ConfigFile.h"
+#include "Files/TimelineFile.h"
 #include "Files/ImageFileGenerator.h"
 
 #include "Buildings/Medical.h"
@@ -136,6 +137,9 @@ int main(int argc, char* argv[]) {
     densityData = sr.readFile(configuration.getSedacFileLocation(),
                               configuration["Density_File_Total_Population"],
                               configuration["Total_Population"]);
+    
+    //Read in Timeline File
+    TimelineFile tl = TimelineFile(configuration.getTimelineFileLocation(), configuration.getCustomFileTypes());
     
     //Extract out Pure Density Data
     std::vector<double> pureDensity;
@@ -316,6 +320,11 @@ int main(int argc, char* argv[]) {
     headerInformation.push_back(std::to_string(configuration["Cellsize_Width"])+","
                            +std::to_string(configuration["Cellsize_Height"]));
     
+    int currentTime = 0;
+    while(currentTime<configuration["Length_Of_Simulation"]){
+        
+        currentTime++;
+    }
     //Generate Sample Image Generation Files
     std::cout<<"Generating Image Files."<<std::endl;
     ImageFileGenerator imgGen = ImageFileGenerator(&densityData, imageFileLocationPath);
@@ -327,6 +336,15 @@ int main(int argc, char* argv[]) {
     imgGen.makeBuildingFile("building_Medical.hapi", 'M', headerInformation);
 
     imgGen.makePopFile("pop.hapi", headerInformation);
+    
+    
+    tl.getFilesToProduceAt(0);
+    tl.getFilesToProduceAt(5);
+    tl.getFilesToProduceAt(144);
+    tl.getFilesToProduceAt(1008);
+    tl.getFilesToProduceAt(4320*2);
+    tl.getFilesToProduceAt(52560);
+    tl.getFilesToProduceAt(2040);
     
     std::cout<<"Simulation Complete"<<std::endl;
     

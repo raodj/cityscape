@@ -107,9 +107,9 @@ void Family::addPerson(Person newPerson){
     
 }
 
-void Family::setLocation(int x, int y){
+void Family::setLocation(int x){
     for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){
-        it->setLocation(x, y);
+        it->setLocation(x);
     }
 }
 

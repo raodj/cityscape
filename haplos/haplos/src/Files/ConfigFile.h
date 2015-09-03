@@ -130,8 +130,26 @@ public:
     */
     std::string getSedacFileLocation() const;
     
+    /** Return the Output location.
+     
+     \return locaton of where output files will be stored
+     */
     
     std::string getOutputFileLocation() const;
+    
+    /** Return Custom File Types
+     
+     \return custom file types in CSV format
+     */
+    std::string getCustomFileTypes() const;
+
+    
+    /** Return Timeline File location.
+     
+     \return path to Timeline File.
+     */
+    std::string getTimelineFileLocation() const;
+    
     /**
        The destructor.
        
@@ -145,6 +163,8 @@ private:
     std::string configFileLocation;
     std::string sedacFileLocation;
     std::string outputFileLocation;
+    std::string timelineFileLocation;
+    std::string customFileTypes;
     std::unordered_map<std::string, double> variables;
 };
 

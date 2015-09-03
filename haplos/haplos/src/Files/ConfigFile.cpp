@@ -56,7 +56,8 @@ ConfigFile::ConfigFile(const std::string& fileLocation) :
     std::string line="";
     sedacFileLocation="";
     outputFileLocation="";
-    
+    timelineFileLocation="";
+    customFileTypes="";
     while (getline(infile, line)) {
         if (line.empty()) {
             continue;
@@ -68,14 +69,20 @@ ConfigFile::ConfigFile(const std::string& fileLocation) :
                 //SEDAC File not set
                 sedacFileLocation = line.substr(equal_pos+1);
             } else {
-                if(outputFileLocation.empty()){
-                    outputFileLocation = line.substr(equal_pos+1);
-
+                if(timelineFileLocation.empty()){
+                    timelineFileLocation=line.substr(equal_pos+1);
                 }else{
-                    addVariable(line.substr(0, equal_pos),
-                                std::atof(line.substr(equal_pos + 1).c_str()));
+                    if(outputFileLocation.empty()){
+                        outputFileLocation = line.substr(equal_pos+1);
+                    }else{
+                        if(customFileTypes.empty()){
+                            customFileTypes = line.substr(equal_pos+1);
+                        }else{
+                            addVariable(line.substr(0, equal_pos),
+                                        std::atof(line.substr(equal_pos + 1).c_str()));
+                        }
+                    }
                 }
-            
             }
         }
     }
@@ -107,6 +114,16 @@ ConfigFile::getSedacFileLocation() const {
 std::string
 ConfigFile::getOutputFileLocation() const {
     return outputFileLocation;
+}
+
+std::string
+ConfigFile::getTimelineFileLocation() const {
+    return timelineFileLocation;
+}
+
+std::string
+ConfigFile::getCustomFileTypes() const {
+    return customFileTypes;
 }
 
 ConfigFile::~ConfigFile() {

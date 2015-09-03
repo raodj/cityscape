@@ -72,6 +72,7 @@ void generateYoungChildSchedule(Person* p, Family *f, int radiusLimit){
     Schedule *childCareAdultSchedule = f->getChildCareAdult()->getSchedule();
     Daycare  *daycareLocaiton = f->getDaycare();
     //std::cout<<"---------------------- Young Child: "<<p->getID()<<" -------------------------"<<std::endl;
+    //std::cout<<childCareAdultSchedule->getScheduleType()<<std::endl;
     //Set Schedule Based on Child Care Adult
     int i=0;
     bool atDaycare=false;
@@ -86,22 +87,29 @@ void generateYoungChildSchedule(Person* p, Family *f, int radiusLimit){
             }
         }
         
-        if(slot->getLocation()==daycareLocaiton->getID() && slot->getVisitorType()== 'V' && nextSlot != NULL && nextSlot->getVisitorType()=='E'){
-            //std::cout<<"\t At Daycare or Parent is at Work: "<<slot->getEndTime()<<std::endl;
-            //std::cout<<"\t\tNot at Daycare Already"<<std::endl;
-            atDaycare=true;
-        }else{
-            if(slot->getLocation() == daycareLocaiton->getID() && slot->getVisitorType()== 'V' && atDaycare){
-                    //std::cout<<"\t\tGetting Picked Up from Daycare"<<std::endl;
-                    currentSchedule->addTimeSlot(TimeSlot(daycareLocaiton->getID(), slot->getEndTime(), 'D'));
-                    atDaycare=false;
+        if(childCareAdultSchedule->getScheduleType()!=4){
+            //Employeed Adult Responsible for Child Care
+            if(slot->getLocation()==daycareLocaiton->getID() && slot->getVisitorType()== 'V' && nextSlot != NULL && nextSlot->getVisitorType()=='E'){
+                //std::cout<<"\t At Daycare or Parent is at Work: "<<slot->getEndTime()<<std::endl;
+                //std::cout<<"\t\tNot at Daycare Already"<<std::endl;
+                atDaycare=true;
             }else{
-                //std::cout<<"Other Time Slot" <<slot->getEndTime()<<std::endl;
-                if(!atDaycare){
-                    //std::cout<<"Not currently attending Daycare"<<std::endl;
-                    currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
+                if(slot->getLocation() == daycareLocaiton->getID() && slot->getVisitorType()== 'V' && atDaycare){
+                        //std::cout<<"\t\tGetting Picked Up from Daycare"<<std::endl;
+                        currentSchedule->addTimeSlot(TimeSlot(daycareLocaiton->getID(), slot->getEndTime(), 'D'));
+                        atDaycare=false;
+                }else{
+                    //std::cout<<"Other Time Slot" <<slot->getEndTime()<<std::endl;
+                    if(!atDaycare){
+                        //std::cout<<"Not currently attending Daycare"<<std::endl;
+                        currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
+                    }
                 }
             }
+        }else{
+            //Unemployeed Adult Responsible for Child Care
+            //std::cout<<"Not currently attending Daycare"<<std::endl;
+            currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
         }
         i++;
     }
