@@ -68,6 +68,13 @@ class Medical : public Building {
          */
         void setCurrentPatientCapacity(int p);
     
+        void addPatient(Person *p);
+    
+        void removePatient(Person *p);
+    
+        using Building::getTotalNumberOfPeople;
+        int getTotalNumberOfPeople();
+    
         /** Returns a Human Readable Version on Information about the building.
          
          \return Human Readable String of Information about the Person
@@ -85,6 +92,7 @@ class Medical : public Building {
     private:
         int maxPatientCapacity;
         int currentPatientCapacity;
+        std::unordered_map<int, Person *> currentPatients;
 
 };
 

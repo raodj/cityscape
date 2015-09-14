@@ -40,7 +40,7 @@
 Person::Person(){
 	age=-1;
 	gender='n';
-    currentLocation=NULL;
+    currentLocation=-1;
     schedule = Schedule();
 }
 
@@ -96,12 +96,7 @@ int Person::getID(){
     return id_num;
 }
 
-/*void updateToNextTimeStep(int currentTime){
-    TimeSlot *nextSlot = schedule->peekNextLocation();
-    if(nextSlot->getEndTime() == currentTime){
-        this->setLocation(
-    }
-}*/
+
 Schedule* Person::getSchedule(){
     return &schedule;
 }
@@ -113,6 +108,15 @@ std::string Person::toString(){
     return outputString.str();
 }
 
+TimeSlot* Person::getCurrentTimeSlot(){
+    return schedule.getCurrentTimeSlot();
+}
+
+TimeSlot* Person::updateToNextTimeStep(){
+    TimeSlot* t = schedule.getNextLocation();
+    currentLocation = t->getLocation();
+    return t;
+}
 Person::~Person() {
 	// TODO Auto-generated destructor stub
     

@@ -55,7 +55,14 @@ class Daycare : public Building {
     
         int getMaxChildCapacity();
     
+        void addChild(Person *p);
+        void removeChild(Person *p);
+    
         void setChildCapacity(int c);
+    
+        using Building::getTotalNumberOfPeople;
+        int getTotalNumberOfPeople();
+
         /**
          The destructor.
          
@@ -69,5 +76,7 @@ class Daycare : public Building {
         int currentVisitorCapacity;
         int childCapacity;
         int maxChildCapacity;
+        std::unordered_map<int, Person *> currentChildren;
+    
     };
 #endif /* defined(__haplos__Business__) */

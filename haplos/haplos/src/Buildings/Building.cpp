@@ -96,10 +96,30 @@ void Building::setCurrentVisitorCapacity(int time, int c){
     currentVisitorCapacity[time]=c;
 }
 
-void Building::addVisitor(int startTime, int endTime){
+void Building::addVisitorTimeSlot(int startTime, int endTime){
     for(int i = startTime; i<endTime; i++){
         currentVisitorCapacity[i]++;
     }
+}
+
+void Building::addVisitor(Person *p){
+    currentVisitors[p->getID()] = p;
+}
+
+void Building::removeVisitor(Person *p){
+    currentVisitors.erase(p->getID());
+}
+
+void Building::addEmployee(Person *p){
+    currentEmployees[p->getID()] = p;
+}
+
+void Building::removeEmployee(Person *p){
+    currentEmployees.erase(p->getID());
+}
+
+int Building::getTotalNumberOfPeople(){
+    return currentEmployees.size() + currentVisitors.size();
 }
 
 void Building::setID(int id){

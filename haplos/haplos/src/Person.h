@@ -37,6 +37,7 @@
 //
 //-----------------------------------------------------------
 #include "Schedule/Schedule.h"
+#include "Schedule/TimeSlot.h"
 
 #include <vector>
 class Schedule;
@@ -114,6 +115,10 @@ public:
      \return A CSV string containg information about the person.
      */
     std::string toCSV();
+    
+    TimeSlot* getCurrentTimeSlot();
+    
+    TimeSlot* updateToNextTimeStep();
 
     /**
      The destructor.

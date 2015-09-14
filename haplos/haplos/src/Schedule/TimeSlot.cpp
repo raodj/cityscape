@@ -59,7 +59,7 @@ int TimeSlot::getDayEndTime(){
     return endTime-(day*144);
 }
 
-int TimeSlot::getVisitorType(){
+char TimeSlot::getVisitorType(){
     return visitorType;
 }
 

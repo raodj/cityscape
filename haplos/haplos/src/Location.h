@@ -43,6 +43,7 @@
 #include "Buildings/Medical.h"
 #include "Buildings/School.h"
 #include "Buildings/Daycare.h"
+#include "Buildings/TransportHub.h"
 
 #include "Family.h"
 class Person;
@@ -62,9 +63,10 @@ public:
      \param[in] y Col locaiton in grid.
      \param[in] m Max capacity of location.
      \param[in] d Density of Locaiton
+     \param[in] hubID Transportation Hub ID
      
      */
-	Location(int x, int y, float m, float d);
+	Location(int x, int y, float m, float d, int hubID);
     
     /** Adds a person to the location.
      
@@ -88,7 +90,7 @@ public:
      
      \return The number of people currently at location.
      */
-	int getCurrentPopulation() const;
+	int getCurrentPopulation();
     
     /** Return the coordinates of location.
      
@@ -140,6 +142,8 @@ public:
      */
 	void removePerson(int idNum);
     
+    TransportHub* getTransportHub();
+    
     void printTemp();
     
     /**
@@ -158,6 +162,7 @@ private:
     std::unordered_map<int,Person*> people;
     std::unordered_map<int, Building*> buildings;
     Building *tmp;
+    TransportHub tHub; 
 
 };
 

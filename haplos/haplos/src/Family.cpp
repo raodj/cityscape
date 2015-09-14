@@ -149,6 +149,67 @@ std::string Family::toString(){
     }
     return outputString.str();
 }
+
+void Family::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildings){
+    for (std::vector<Person>::iterator i = members.begin(); i!= members.end(); i++){
+        TimeSlot* oldLocation = i->getCurrentTimeSlot();
+        int buildingID = oldLocation->getLocation();
+        //Update Previous Location
+        switch(oldLocation->getVisitorType()){
+            case 'H':
+                //Home
+                allBuildings->at(buildingID)->removeVisitor(&(*i));
+                break;
+            case 'S':
+                //Student
+                static_cast<School* > (allBuildings->at(buildingID))->removeStudent(&(*i));
+                break;
+            case 'V':
+                //Visitor
+                allBuildings->at(buildingID)->removeVisitor(&(*i));
+                break;
+            case 'E':
+                //Employee
+                allBuildings->at(buildingID)->removeEmployee(&(*i));
+                break;
+            default:
+                //Other (Transport)
+                static_cast<TransportHub *> (allBuildings->at(buildingID))->removeVisitor(&(*i));
+                break;
+        }
+        
+        TimeSlot* newLocation=i->updateToNextTimeStep();
+        buildingID = newLocation->getLocation();
+        //Update to New Location
+        switch(newLocation->getVisitorType()){
+            case 'H':
+                //Home
+                allBuildings->at(buildingID)->addVisitor(&(*i));
+                break;
+            case 'S':
+                //Student
+                static_cast<School* > (allBuildings->at(buildingID))->addStudent(&(*i));
+
+                break;
+            case 'V':
+                //Visitor
+                allBuildings->at(buildingID)->addVisitor(&(*i));
+                break;
+            case 'E':
+                //Employee
+                allBuildings->at(buildingID)->addEmployee(&(*i));
+                break;
+            default:
+                //Other (Transport)
+                static_cast<TransportHub *> (allBuildings->at(buildingID))->addVisitor(&(*i));
+                break;
+        }
+        //Update Building Information
+        
+        
+    }
+    
+}
 Family::~Family() {
 	// TODO Auto-generated destructor stub
 }

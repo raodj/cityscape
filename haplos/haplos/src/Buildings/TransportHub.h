@@ -33,39 +33,43 @@
 // from <http://www.gnu.org/licenses/>.
 //
 //-----------------------------------------------------------
-#include "Daycare.h"
+
+#ifndef __haplos__TransportHub__
+#define __haplos__TransportHub__
 #include "Building.h"
-
-Daycare::Daycare(int i, int x, int y, int capacity, int visitorCapacity, int childCapacity) : Building('D', i, x, y, capacity, visitorCapacity){
-    this->maxChildCapacity=childCapacity;
-    this->childCapacity=0;
-}
-
-int Daycare::getChildCapacity(){
-    return childCapacity;
-}
-
-int Daycare::getMaxChildCapacity(){
-    return maxChildCapacity;
-}
-
-void Daycare::removeChild(Person *p){
-    currentChildren.erase(p->getID());
-}
-
-void Daycare::addChild(Person *p){
-    currentChildren[p->getID()] = p;
-}
-
-int Daycare::getTotalNumberOfPeople(){
-    return currentChildren.size()+Building::getTotalNumberOfPeople();
-}
-
-
-void Daycare::setChildCapacity(int c){
-    childCapacity=c;
-}
-
-Daycare::~Daycare(){
+#include <iostream>
+class TransportHub : public Building {
+    /*Class for Representing a Business Building*/
+public:
     
-}
+    TransportHub();
+    
+    /** The default constructor for this class.
+     
+     \param[in] buildID ID number of Building
+     \param[in] x row number of building
+     \param[in] y col number of building
+     */
+    TransportHub(int buildID, int x, int y);
+    
+    void addPrivateTransport(int homeNumber, Person *p);
+    
+    void removePrivateTransport(int homeNumber, Person *p);
+    
+    using Building::getTotalNumberOfPeople;
+    int getTotalNumberOfPeople();
+    
+    /**
+     The destructor.
+     
+     Currently the destructor does not have any specific task to
+     perform in this class.  However, it is defined for adherence
+     with conventions and for future extensions.
+     */
+    virtual ~TransportHub();
+private:
+    std::unordered_map<int, std::unordered_map<int, Person *>> privateTransport;
+
+    
+};
+#endif /* defined(__haplos__TransportHub__) */

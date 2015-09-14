@@ -63,7 +63,7 @@ class TimeSlot{
          */
         int getLocation();
     
-        int getVisitorType();
+        char getVisitorType();
     
         std::string toString();
     

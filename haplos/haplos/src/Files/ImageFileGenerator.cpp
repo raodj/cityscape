@@ -51,9 +51,11 @@ bool ImageFileGenerator::makePopFile(std::string fileName, std::vector<std::stri
     std::ostringstream outputString;
     int maxVal=0;
     int minVal=INT_MAX;
+    int  total = 0;
     for( int x=0; x < locationData->size(); x++ ){
         for( int y=0; y < locationData->at(0).size(); y++ ){
             int amount=locationData->at(x).at(y).getCurrentPopulation();
+            total += amount;
             if (amount>=maxVal){
                 maxVal=amount;
             }
@@ -76,7 +78,7 @@ bool ImageFileGenerator::makePopFile(std::string fileName, std::vector<std::stri
     for(std::vector<std::string>::iterator it = headerInformation.begin(); it != headerInformation.end(); ++it) {
         buildingStatsFile<<*it<<"\n";
     }
-    
+    buildingStatsFile<<total<<"\n";
     //Add Data
     buildingStatsFile << minVal<<","<<maxVal<<"\n"<<outputString.str();
     
@@ -115,7 +117,6 @@ bool ImageFileGenerator::makeBuildingFile(std::string fileName, char type, std::
     for(std::vector<std::string>::iterator it = headerInformation.begin(); it != headerInformation.end(); ++it) {
         buildingStatsFile<<*it<<"\n";
     }
-    
     //Add Data
     buildingStatsFile << minVal<<","<<maxVal<<"\n"<<outputString.str();
     

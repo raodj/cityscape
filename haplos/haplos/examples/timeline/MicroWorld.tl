@@ -1,4 +1,4 @@
-T 5 all_buildings
+T 5 all_buildings,population_density
 D 1 all_buildings,medical_buildings,business_buildings
 W 1 all_buildings,school_buildings
 M 2 medical_buildings,business_buildings

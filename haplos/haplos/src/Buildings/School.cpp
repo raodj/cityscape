@@ -74,18 +74,6 @@ School::School(int i, int x, int y, int capacity, int visitorCapacity) : Buildin
             std::cout<<"Invalid School Type"<<std::endl;
             break;
     }
-    for(int i =0; i<13;i++){
-        gradeCapacity[i]=0;
-    }
-    /*while(avalibleTeachers>0){
-        gradeMaxCapacity[currentGrade]+=30;
-        avalibleTeachers--;
-        if(currentGrade>=endGrade){
-            currentGrade=startGrade;
-        }else{
-            currentGrade++;
-        }
-    }*/
     
     this->studentCapacity = 0;
     this->studentMaxCapacity=avalibleTeachers*30;
@@ -138,19 +126,7 @@ School::School(int i, int x, int y, int capacity, int visitorCapacity, int force
             std::cout<<"Invalid School Type"<<std::endl;
             break;
     }
-    for(int i =0; i<13;i++){
-        gradeCapacity[i]=0;
-    }
 
-    /*while(avalibleTeachers>0){
-        gradeMaxCapacity[currentGrade]+=30;
-        avalibleTeachers--;
-        if(currentGrade>=endGrade){
-            currentGrade=startGrade;
-        }else{
-            currentGrade++;
-        }
-    }*/
     this->studentCapacity = 0;
     this->studentMaxCapacity=avalibleTeachers*30;
     
@@ -197,11 +173,22 @@ bool School::hasGradeAvaliable(int age, int numberOfStudents){
 }
 
 
-void School::addStudent(int grade){
+void School::assignStudentToSchool(int grade){
     //std::cout<<"Grade: "<<grade<<std::endl;
-    gradeCapacity[grade]=gradeCapacity[grade]+1;
     studentCapacity++;
     
+}
+
+int School::getTotalNumberOfPeople(){
+    return currentStudents.size()+Building::getTotalNumberOfPeople();
+}
+
+void School::removeStudent(Person *p){
+    currentStudents.erase(p->getID());
+}
+
+void School::addStudent(Person *p){
+    currentStudents[p->getID()] = p;
 }
 
 School::~School(){
