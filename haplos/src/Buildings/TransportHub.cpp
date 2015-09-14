@@ -33,39 +33,38 @@
 // from <http://www.gnu.org/licenses/>.
 //
 //-----------------------------------------------------------
-#include "Daycare.h"
+#include "TransportHub.h"
 #include "Building.h"
 
-Daycare::Daycare(int i, int x, int y, int capacity, int visitorCapacity, int childCapacity) : Building('D', i, x, y, capacity, visitorCapacity){
-    this->maxChildCapacity=childCapacity;
-    this->childCapacity=0;
-}
-
-int Daycare::getChildCapacity(){
-    return childCapacity;
-}
-
-int Daycare::getMaxChildCapacity(){
-    return maxChildCapacity;
-}
-
-void Daycare::removeChild(Person *p){
-    currentChildren.erase(p->getID());
-}
-
-void Daycare::addChild(Person *p){
-    currentChildren[p->getID()] = p;
-}
-
-int Daycare::getTotalNumberOfPeople(){
-    return currentChildren.size()+Building::getTotalNumberOfPeople();
+TransportHub::TransportHub() : Building(){
+    
 }
 
 
-void Daycare::setChildCapacity(int c){
-    childCapacity=c;
+TransportHub::TransportHub(int i, int x, int y) : Building('T', i, x, y, -1, -1){
 }
 
-Daycare::~Daycare(){
+int TransportHub::getTotalNumberOfPeople(){
+    int total =0;
+    
+    for(std::unordered_map<int, std::unordered_map<int, Person *>>::iterator i = privateTransport.begin(); i != privateTransport.end(); i++){
+        
+        total += (*i).second.size();
+    }
+    
+    return total+Building::getTotalNumberOfPeople();
+}
+
+void TransportHub::removePrivateTransport(int homeNumber, Person *p){
+    (privateTransport[homeNumber]).erase(p->getID());
+}
+
+void TransportHub::addPrivateTransport(int homeNumber, Person *p){
+    (privateTransport[homeNumber])[p->getID()] = p;
+}
+
+
+
+TransportHub::~TransportHub(){
     
 }

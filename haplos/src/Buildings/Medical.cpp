@@ -55,6 +55,18 @@ void Medical::setCurrentPatientCapacity(int p){
     this->currentPatientCapacity=p;
 }
 
+void Medical::removePatient(Person *p){
+    currentPatients.erase(p->getID());
+}
+
+void Medical::addPatient(Person *p){
+    currentPatients[p->getID()] = p;
+}
+
+int Medical::getTotalNumberOfPeople(){
+    return currentPatients.size()+Building::getTotalNumberOfPeople();
+}
+
 std::string Medical::toString(){
     std::string returnString=Building::toString();
     returnString += ","+std::to_string(maxPatientCapacity)+","+std::to_string(currentPatientCapacity);

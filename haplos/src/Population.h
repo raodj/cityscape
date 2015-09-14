@@ -41,6 +41,7 @@
 #include "Buildings/Building.h"
 #include "Schedule/Schedule.h"
 #include <vector>
+#include <unordered_map>
 #include <random>
 class Population {
     /** A class specifically repersenting a population.
@@ -105,6 +106,8 @@ class Population {
     
     
         int getNumberOfChildrenDaycare();
+    
+        void updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildings);
     
     std::string returnFirstTenFamiliesInfo(std::string fileLocation);
         /**

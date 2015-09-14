@@ -146,6 +146,9 @@ int main(int argc, char* argv[]) {
     pureDensity.resize(densityData.size() * densityData[0].size());
     for( int x=0; x < densityData.size(); x++ ){
         for( int y=0; y < densityData[0].size(); y++ ){
+            densityData.at(x).at(y).getTransportHub()->setID(numberOfBuildings);
+            allBuildings[numberOfBuildings] = densityData.at(x).at(y).getTransportHub();
+            numberOfBuildings++;
             if(densityData.at(x).at(y).getMaxPopulation()==0){
                 pureDensity[x*y]=0;
                 
@@ -262,7 +265,6 @@ int main(int argc, char* argv[]) {
                     imageData.at(x).at(y)=-1;
                     buildingData.at(x).at(y)=-1;
 
-
                 }else{
                     imageData.at(x).at(y)=densityData.at(x).at(y).getCurrentPopulation();
                     buildingData.at(x).at(y)=densityData.at(x).at(y).getNumberOfBuildings('\0');
@@ -321,13 +323,61 @@ int main(int argc, char* argv[]) {
                            +std::to_string(configuration["Cellsize_Height"]));
     
     int currentTime = 0;
+    std::cout<<"Simulation Running"<<std::endl;
     while(currentTime<configuration["Length_Of_Simulation"]){
+      //  std::cout<<"Current Time: "<<currentTime<<std::endl;
+        //Update Population
+        pop.updateToNextTimeStep(&allBuildings);
         
+        //Generate Any Images Needed
+        std::vector<std::string> files =tl.getFilesToProduceAt(currentTime);
+        if(!files.empty()){
+            ImageFileGenerator imgGen = ImageFileGenerator(&densityData, imageFileLocationPath);
+            for(std::vector<std::string>::iterator i = files.begin(); i!= files.end(); i++){
+                char type = '\0';
+                bool customFile = false;
+                if(std::strcmp(i->c_str(), "population_density") != 0){
+                    if(std::strcmp(i->c_str(), "all_buildings") == 0){
+                        type='\0';
+                    }else{
+                        if(std::strcmp(i->c_str(), "medical_buildings") == 0){
+                            type='M';
+                        }else{
+                            if(std::strcmp(i->c_str(), "business_buildings") == 0){
+                                type='B';
+                            }else{
+                                if(std::strcmp(i->c_str(), "school_buildings") == 0){
+                                    type='S';
+                                }else{
+                                    if(std::strcmp(i->c_str(), "home_buildings") == 0){
+                                        type='H';
+                                    }else{
+                                        customFile =true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if(!customFile){
+                        imgGen.makeBuildingFile(i->append("_"+std::to_string(currentTime)+".hapi"), type, headerInformation);
+                    }
+
+                }
+                   else{
+                       imgGen.makePopFile(i->append("_"+std::to_string(currentTime)+".hapi"), headerInformation);
+
+                   }
+
+            }
+        }
+        
+        
+
         currentTime++;
     }
     //Generate Sample Image Generation Files
-    std::cout<<"Generating Image Files."<<std::endl;
-    ImageFileGenerator imgGen = ImageFileGenerator(&densityData, imageFileLocationPath);
+    //std::cout<<"Generating Image Files."<<std::endl;
+    /*ImageFileGenerator imgGen = ImageFileGenerator(&densityData, imageFileLocationPath);
     imgGen.makeBuildingFile("building_All.hapi", '\0', headerInformation);
     imgGen.makeBuildingFile("building_Daycares.hapi", 'D', headerInformation);
     imgGen.makeBuildingFile("building_Schools.hapi", 'S', headerInformation);
@@ -336,7 +386,7 @@ int main(int argc, char* argv[]) {
     imgGen.makeBuildingFile("building_Medical.hapi", 'M', headerInformation);
 
     imgGen.makePopFile("pop.hapi", headerInformation);
-    
+    */
     
     tl.getFilesToProduceAt(0);
     tl.getFilesToProduceAt(5);

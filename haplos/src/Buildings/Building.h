@@ -40,7 +40,7 @@
 #include "../Person.h"
 
 #include <iostream>
-#include <vector>
+#include <unordered_map>
 
 
 class Person;
@@ -114,7 +114,15 @@ class Building {
          */
         void setLocation(int x, int y);
     
-        void addVisitor(int startTime, int endTime);
+        void addVisitor(Person *p);
+    
+        void removeVisitor(Person *p);
+    
+        void addEmployee(Person *p);
+    
+        void removeEmployee(Person *p);
+    
+        void addVisitorTimeSlot(int startTime, int endTime);
         /** Return the coordinates of the current location of entity
          
          \return An array consisting of [rows, cols]
@@ -126,6 +134,9 @@ class Building {
          \return the Char repreenting the type of building
          */
         char getType() const;
+    
+        int getTotalNumberOfPeople();
+
     
         /** Returns a Human Readable Version on Information about the building.
          
@@ -147,8 +158,8 @@ class Building {
         int currentCapacity;
         int visitorCapacity;
         int currentVisitorCapacity[1008]; //Visitor Capacity at each time incriment for a week
-        std::vector<Person *>currentEmployees[336];
-        std::vector<Person *>currentVisitors;
+        std::unordered_map<int, Person *>currentEmployees;
+        std::unordered_map<int, Person *>currentVisitors;
         int idNumber;
         int location[2];
     

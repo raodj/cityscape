@@ -91,7 +91,14 @@ class School : public Building{
     
         /*Add a Student to a grade
          */
-        void addStudent(int grade);
+        void assignStudentToSchool(int grade);
+    
+        void addStudent(Person *p);
+    
+        void removeStudent(Person *p);
+    
+        using Building::getTotalNumberOfPeople;
+        int getTotalNumberOfPeople();
         /**
          The destructor.
          
@@ -102,14 +109,13 @@ class School : public Building{
         virtual ~School();
     private:
         int maxVisitorCapacity;
-        int gradeCapacity[13];
-        int gradeMaxCapacity[13];
         int studentCapacity;
         int studentMaxCapacity;
         int schoolStart;
         int schoolEnd;
         int startGrade;
         int endGrade;
+        std::unordered_map <int, Person *> currentStudents;
     
     
 };

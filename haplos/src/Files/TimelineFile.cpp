@@ -45,7 +45,7 @@ TimelineFile::TimelineFile(){
 
 TimelineFile::TimelineFile(const std::string& fileLocation, std::string customFileTypes):
 timeLineLocation(fileLocation) {
-    //std::cout << "Loading timeline file: " << timeLineLocation << std::endl;
+    std::cout << "Loading timeline file: " << timeLineLocation << std::endl;
     std::ifstream infile(timeLineLocation);
     std::locale loc;
     std::string line="";
@@ -80,73 +80,59 @@ timeLineLocation(fileLocation) {
                 switch(line.at(0)){
                     case 'T':
                         //Timestep
-                        //std::cout<<"Time Step Interval: "<<std::endl;
                         timeStepInterval = std::atoi(tokens.at(1).c_str());
                         while(std::getline(filesToProduce, temp, ',')){
                             fileTimeStep.push_back(this->lowerCaseString(temp));
                         }
-                        //std::cout<<"\tInterval "<<timeStepInterval<<std::endl;
                         break;
                     case 'D':
                         //Day
-                        //std::cout<<"Day Interval: "<<std::endl;
                         dayInterval = std::atoi(tokens.at(1).c_str());
                         while(std::getline(filesToProduce, temp, ',')){
                             fileDay.push_back(this->lowerCaseString(temp));
                         }
-                        //std::cout<<"\tInterval "<<dayInterval<<std::endl;
                         break;
                     case 'W':
                         //Week
-                        //std::cout<<"Week Interval: "<<std::endl;
                         weekInterval = std::atoi(tokens.at(1).c_str());
                         while(std::getline(filesToProduce, temp, ',')){
                             fileWeek.push_back(this->lowerCaseString(temp));
                         }
-                        //std::cout<<"\tInterval "<<dayInterval<<std::endl;
                     case 'M':
                         //Month
-                        //std::cout<<"Month Interval: "<<std::endl;
                         monthInterval = std::atoi(tokens.at(1).c_str());
                         while(std::getline(filesToProduce, temp, ',')){
                             fileMonth.push_back(this->lowerCaseString(temp));
                         }
-                        //std::cout<<"\tInterval "<<monthInterval<<std::endl;
                         break;
                     case 'Y':
                         //Year
-                        //std::cout<<"Year Interval: "<<std::endl;
                         yearInterval = std::atoi(tokens.at(1).c_str());
                         while(std::getline(filesToProduce, temp, ',')){
                             fileYear.push_back(this->lowerCaseString(temp));
                         }
-                        //std::cout<<"\tInterval "<<yearInterval<<std::endl;
                         break;
                     default:
                         std::cout<<"Invalid Timeline Interval Type: "<<line.at(0)<<std::endl;
                 }
             }else{
                 //One time interval
-                //std::cout<<"One Time File: "<<std::endl;
                 std::istringstream filesToProduce(tokens.at(1));
                 //singleFiles[std::atoi(tokens.at(0).c_str())] = std::vector<std::string>;
                 while(std::getline(filesToProduce, temp, ',')){
                     singleFiles[std::atoi(tokens.at(0).c_str())].push_back(this->lowerCaseString(temp));
                 }
-                //std::cout<<"\tInterval: "<<tokens.at(0)<<std::endl;
-                //std::cout<<"\tFile: "<<tokens.at(1)<<std::endl;
             }
         }
     }
     
     //std::cout<<"Results from Load"<<std::endl;
     //std::cout<<this->displayTimeLineInformation()<<std::endl;
-    //std::cout << "Timeline File Loaded Successfully." << std::endl;
+    std::cout << "Timeline File Loaded Successfully." << std::endl;
     
 }
 
 std::vector<std::string> TimelineFile::getFilesToProduceAt(int time){
-    //std::cout<<"Time: "<<time<<std::endl;
     std::unordered_map<std::string, bool> filesProduced;
     for(std::vector<std::string>::iterator it = allowedFileTypes.begin(); it != allowedFileTypes.end(); ++it){
         filesProduced[*it] = false;
@@ -154,44 +140,37 @@ std::vector<std::string> TimelineFile::getFilesToProduceAt(int time){
     std::vector<std::string> returnVector;
     
     if(time%timeStepInterval==0){
-        //std::cout<<"Creating Time"<<std::endl;
         this->getFilesToReturn(fileTimeStep, &filesProduced);
     }
     
     if(time%(dayInterval*144) == 0){
-        //std::cout<<"Creating Day"<<std::endl;
         this->getFilesToReturn(fileDay, &filesProduced);
     }
     
     if(time%(weekInterval*1008)==0){
-        //std::cout<<"Creating Week"<<std::endl;
         this->getFilesToReturn(fileWeek, &filesProduced);
         
     }
     
     if(time%(monthInterval*4320)==0){
-        //std::cout<<"Creating Month"<<std::endl;
         this->getFilesToReturn(fileMonth, &filesProduced);
     }
     
     if(time%(yearInterval*52560)==0){
-        //std::cout<<"Creating Year"<<std::endl;
         this->getFilesToReturn(fileYear, &filesProduced);
 
     }
+    
     if(singleFiles.count(time)>0){
-        //std::cout<<"Creating Single"<<std::endl;
         this->getFilesToReturn(singleFiles[time], &filesProduced);
 
     }
-    //std::cout<<"Returning Files: "<<std::endl;
+    
     for(std::vector<std::string>::iterator it = allowedFileTypes.begin(); it != allowedFileTypes.end(); ++it){
         if(filesProduced[*it]){
-            //std::cout<<*it<<",";
             returnVector.push_back(*it);
         }
     }
-    //std::cout<<std::endl;
     
     return returnVector;
 }
@@ -203,7 +182,7 @@ void TimelineFile::getFilesToReturn(std::vector<std::string> filesToProduce, std
                 fileProduced->at(*it) = true;
             }
         }else{
-            //std::cout<<"Invalid File Type: "<<*it<<std::endl;
+            std::cout<<"Invalid File Type: "<<*it<<std::endl;
         }
     }
 }

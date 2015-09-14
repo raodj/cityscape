@@ -47,9 +47,10 @@ Location::Location(){
     density=0;
 	coordinates[0]=-1;
 	coordinates[1]=-1;
+
 }
 
-Location::Location(int x, int y, float m, float d) {
+Location::Location(int x, int y, float m, float d, int hubID) {
 	// TODO Auto-generated constructor stub
 	if(m>=0){
         numberOfPeople=0;
@@ -60,11 +61,40 @@ Location::Location(int x, int y, float m, float d) {
     density=d;
 	coordinates[0]=x;
 	coordinates[1]=y;
-
+    tHub = TransportHub(hubID, x, y);
 }
 
-int Location::getCurrentPopulation() const {
-	return numberOfPeople;
+int Location::getCurrentPopulation() {
+    int total = 0;
+    for ( auto it = buildings.begin(); it != buildings.end(); ++it ){
+        switch(it->second->getType()){
+            case 'B':
+                //Business
+                total += it->second->getTotalNumberOfPeople();
+                break;
+            case 'M':
+                //Medical
+                total += (static_cast<Medical *> (it->second))->getTotalNumberOfPeople();
+                break;
+            case 'S':
+                //School
+                total += (static_cast<School *> (it->second))->getTotalNumberOfPeople();
+                break;
+            case 'D':
+                //Daycare
+                total += (static_cast<Daycare *> (it->second))->getTotalNumberOfPeople();
+                break;
+            default:
+                //Standard Building without Specific Type
+                total += it->second->getTotalNumberOfPeople();
+                break;
+        }
+        
+    }
+    
+    
+    
+	return total+tHub.getTotalNumberOfPeople();
 }
 
 float Location::getDensity() const{
@@ -137,6 +167,10 @@ void Location::addPerson(Person *p){
 void Location::removePerson(int idNum){
     people.erase(idNum);
 	numberOfPeople--;
+}
+
+TransportHub* Location::getTransportHub(){
+        return &tHub;
 }
 
 Building* Location::hasAvaliableBuilding(char visitorType, int startTime, int endTime, int numberOfVisitors){

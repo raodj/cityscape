@@ -59,6 +59,7 @@ std::vector<std::vector<Location> > SedacReader::readFile(std::string fileName, 
         std::string line;
         std::ifstream infile;
 		infile.open (fileName.c_str());
+        int buildingID= 0;
     
 		if (infile.fail()) {
             std::cout << "Unable to Open SEDAC Data File at" << fileName.c_str() << std::endl;
@@ -115,7 +116,9 @@ std::vector<std::vector<Location> > SedacReader::readFile(std::string fileName, 
 					densityData.at(currentRow).at(currentColumn) = Location(currentRow,
                                                                             currentColumn,
                                                                             density*actualPopulationSize,
-                                                                            density);
+                                                                            density,buildingID);
+                    buildingID++;
+                    
                     densityData.at(currentRow).at(currentColumn).getDensity();
 
 		    		currentColumn++;

@@ -102,22 +102,23 @@ TimeSlot* Schedule::getLocationAt(int time){
     }
 }
 
+TimeSlot* Schedule::getCurrentTimeSlot(){
+    return &plan[currentTimeSlot];
+}
+
 TimeSlot* Schedule::getNextLocation(){
     currentTimeStep++;
     if( currentTimeStep==MAXTIMESTEPS-1 ){
         currentTimeStep=0;
+        currentTimeSlot=0;
     }else{
        currentTimeStep++;
     }
-    if(plan[currentTimeSlot].getEndTime()<currentTimeStep){
-        //Stay in Current Time Slot
-        return &plan[currentTimeSlot];
-    }else{
+    if(plan[currentTimeSlot].getEndTime()>=currentTimeStep){
         //Move to Next Time Slot
         currentTimeSlot++;
-        return &plan[currentTimeSlot];
-        
     }
+    return &plan[currentTimeSlot];
     
 }
 

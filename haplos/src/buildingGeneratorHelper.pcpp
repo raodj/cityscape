@@ -114,8 +114,14 @@ void assignHomes(Population &pop){
     
 }
 
-void generateBuildings(double businessSizeProbablities[6], double hospitalSizeProbablities[6], double schoolSizeProbablities[6], std::vector<double> locationProbablties, int const width,
-                       int const numberOfEmployeedAdults, int* numberOfStudentsPerGrade, int numberChildrenDaycare ){
+void generateBuildings(double businessSizeProbablities[6],
+                       double hospitalSizeProbablities[6],
+                       double schoolSizeProbablities[6],
+                       std::vector<double> locationProbablties,
+                       int const width,
+                       int const numberOfEmployeedAdults,
+                       int* numberOfStudentsPerGrade,
+                       int numberChildrenDaycare ){
     std::cout<< "Generating Buildings" <<std::endl;
 
     //Set Random Generator Seed

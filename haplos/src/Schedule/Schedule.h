@@ -92,7 +92,12 @@ class Schedule {
         void setScheduleType(int type);
     
         TimeSlot* getLocationAt(int time);
-
+    
+        /**Return current TimeSlot element without advancing the current time
+         return pointer to current TimeSlot element in scheduel
+         */
+        TimeSlot* getCurrentTimeSlot();
+    
         /**Advance current time step and Get Location for Next Time Step
             return building ID or transport ID for next timestep
          */

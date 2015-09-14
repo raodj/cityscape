@@ -38,9 +38,11 @@
 //-----------------------------------------------------------
 
 #include <vector>
+#include <unordered_map>
 #include "Person.h"
 #include "Buildings/Building.h"
 #include "Buildings/School.h"
+#include "Buildings/TransportHub.h"
 #include "Buildings/Daycare.h"
 
 class Building;
@@ -122,6 +124,8 @@ class Family {
         Person* getChildCareAdult();
     
         std::string toString();
+    
+        void updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildings);
         /**
          The destructor.
          

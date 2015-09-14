@@ -98,20 +98,24 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
 
     }
     
-    while( i < size ){
+    while( i < size){
         int familySize= generateFamilySize();
        // std::cout<< "Family Size: "<< familySize << std::endl;
 
         Family newFamily = Family();
+        if(familySize > size-i ){
+            familySize = size-i;
+        }
         for( int b = 0; b<familySize; b++ ){
             //Always first Person in Family must be an Adult
             int *ageInformation=determineAge(((b == 0) ? true : false ));
-            Person newPerson= Person(ageInformation[0], determineGender(), NULL, i++, determineScheduleType(ageInformation[1]).getScheduleType());
+            Person newPerson= Person(ageInformation[0], determineGender(), -1, i++, determineScheduleType(ageInformation[1]).getScheduleType());
             if(ageInformation[0]<18){
                 numberOfStudentsAssignedGrade[ageInformation[0]-5]++;
             }
             newFamily.addPerson(newPerson);
         }
+        
         
         if(newFamily.getHasYoungChild()>0 && newFamily.getChildCareAdult()->getSchedule()->getScheduleType()!=4){
             //std::cout<<"Family Needs Day Care"<<std::endl;
@@ -138,6 +142,8 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
         fflush(stdout);
     }
     std::cout<< std::endl;
+    std::cout<<"Total of "<<i<<" People Generated."<<std::endl;
+
 }
 
 int Population::getNumberOfFamilies(){
@@ -497,6 +503,12 @@ std::string Population::returnFirstTenFamiliesInfo(std::string fileLocation){
     
    
     return returnString;
+}
+
+void Population::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildings){
+    for (std::vector<Family>::iterator i = families.begin(); i!= families.end(); i++){
+        i->updateToNextTimeStep(allBuildings);
+    }
 }
 
 Population::~Population() {
