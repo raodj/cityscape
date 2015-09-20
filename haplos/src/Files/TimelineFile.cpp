@@ -52,6 +52,7 @@ timeLineLocation(fileLocation) {
 
     if (!infile.good()) {
         std::cerr << "Unable to Open Timeline File." << std::endl;
+        exit(0);
         return;
     }
     

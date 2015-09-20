@@ -51,7 +51,8 @@ ConfigFile::ConfigFile(const std::string& fileLocation) :
     std::ifstream infile(configFileLocation);
     if (!infile.good()) {
         std::cerr << "Unable to Open Configuration File." << std::endl;
-	return;
+        exit(0);
+        return;
     }
     std::string line="";
     sedacFileLocation="";
