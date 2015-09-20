@@ -45,11 +45,11 @@
 #include "Buildings/Business.h"
 
 
-int calculateTravelTime(int start_x, int start_y, int end_x, int end_y, char transporationType){
+int calculateTravelTime(int start_x, int start_y, int end_x, int end_y,  int transportRate ){
     if(std::abs(start_x-end_x)>std::abs(start_y-end_y)){
-        return std::abs(start_x-end_x);
+        return std::ceil(std::abs(start_x-end_x)/(double)transportRate);
     }else{
-        return std::abs(start_y-end_y);
+        return std::ceil(std::abs(start_y-end_y)/(double)transportRate);
     }
 }
 
@@ -60,7 +60,7 @@ int calculateTravelTime(int start_x, int start_y, int end_x, int end_y, char tra
  \param[in] endTime end time of slot (required for standard visitor
  \return pointer to building that has avaliable visitor slot
  */
-Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, int startTime, int endTime, int numberOfVisitors){
+Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, int startTime, int endTime, int numberOfVisitors, int transportRate){
     int maxX=densityData.size()-1;
     int maxY=densityData[0].size()-1;
     int r=0; //Current Radius
@@ -171,7 +171,7 @@ Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, in
         }
         //std::cout<<actual_radMinX<<"-"<<actual_radMaxX<<" "<<actual_radMinY<<"-"<<actual_radMaxY<<std::endl;
         
-        travelTime = calculateTravelTime(x, y, x+r, y+r, 'T');
+        travelTime = calculateTravelTime(x, y, x+r, y+r,  transportRate);
         //Check for Radius Limit
         if( (radius>=0 && r+1 >radius) || startTime+travelTime>endTime){
             //std::cout<<"Hit Radius Limit"<<std::endl;

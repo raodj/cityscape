@@ -222,25 +222,45 @@ int main(int argc, char* argv[]) {
                             (int)configuration["Schedule_School_Children_14-15_Radius_Limit"],
                             (int)configuration["Schedule_Employeed_Radius_Limit"],
                             (int)configuration["Schedule_Unemployeed_Radius_Limit"]};
-        
+    
+    double transportProbablities[3] = { configuration["Private_Transport_Percentage"],
+                                        configuration["Public_Transport_Percentage"],
+                                        configuration["Walking_Transport_Percentage"]};
+    
+    int transportRate[3] = { (int)configuration["Public_Transport_Rate"],
+                              (int)configuration["Private_Transport_Rate"],
+                              (int)configuration["Walking_Transport_Rate"]};
+    
+    int transportRadius[2] = { (int)configuration["Max_Public_Transport_Distance"],
+                               (int)configuration["Max_Walking_Distance"]};
+    
+    //Set Seed
     generator.seed(time(0));
         
     //Create Population
-    Population pop = Population(configuration["Total_Population"], ageProbablities, familySizeProbablities, configuration["Male_Probablity"], scheduleTypeProbablities, progressDisplay, configuration["Population_Seed"]);
+    Population pop = Population(configuration["Total_Population"],
+                                ageProbablities,
+                                familySizeProbablities,
+                                configuration["Male_Probablity"],
+                                scheduleTypeProbablities,
+                                progressDisplay,
+                                configuration["Population_Seed"]);
    
     //Assign Locations to Population
     assignHomes(pop);
-    generateBuildings(businessSizeProbablities, hospitalSizeProbablities, schoolSizeProbablities, pureDensity, densityData.size(), pop.getNumberOfEmployeedAdults(), pop.getNumberOfStudentsPerGrade(), pop.getNumberOfChildrenDaycare());
+    generateBuildings(businessSizeProbablities,
+                      hospitalSizeProbablities,
+                      schoolSizeProbablities,
+                      pureDensity,
+                      densityData.size(),
+                      pop.getNumberOfEmployeedAdults(),
+                      pop.getNumberOfStudentsPerGrade(),
+                      pop.getNumberOfChildrenDaycare());
 
         
     //Generate Schedules
-    generateSchedules(pop, radiusLimits);
-    /*int allBuildings=0;
-    for(int i=0;i<densityData.size();i++){
-        for(int j=0;j<densityData[0].size();j++){
-            allBuildings+=densityData.at(i).at(j).getNumberOfBuildings(NULL);
-        }
-    }*/
+    generateSchedules(pop, radiusLimits, transportProbablities, transportRadius, transportRate);
+    
     if(produceImages){
         #ifdef HAVE_MAGICK
             ImageGen ig(outputFolder);
@@ -309,7 +329,11 @@ int main(int argc, char* argv[]) {
     
     //Create Files
     pop.displayStatistics(saveLocationPath);
-    displayBuildingStatistics(businessSizeProbablities, hospitalSizeProbablities, schoolSizeProbablities, daycareSizeProbablities, saveLocationPath);
+    displayBuildingStatistics(businessSizeProbablities,
+                              hospitalSizeProbablities,
+                              schoolSizeProbablities,
+                              daycareSizeProbablities,
+                              saveLocationPath);
     
     //Display 10 Families Entirely (Useful for Schedule Testing).
     pop.returnFirstTenFamiliesInfo(familyFileLocationPath);

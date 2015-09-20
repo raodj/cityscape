@@ -63,6 +63,7 @@ std::vector<std::vector<Location> > SedacReader::readFile(std::string fileName, 
     
 		if (infile.fail()) {
             std::cout << "Unable to Open SEDAC Data File at" << fileName.c_str() << std::endl;
+            exit(0);
 			return densityData;
 		}
 		//Get Number of Rows
