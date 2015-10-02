@@ -8,6 +8,7 @@
 Density_File=examples/data/MicroWorld.asc
 Timeline_File=examples/timeline/Microworld.tl
 Output_Directory=output/
+
 #Output File Parameters and Header Information
 Custom_Output_Files=Custom_File_1,Custom_File_2
 Lower_Left_Longitude=0
@@ -20,9 +21,9 @@ Length_Of_Simulation=10;
 
 ###Population Configuration###
 #General Configuration
-Density_File_Total_Population=104
+Density_File_Total_Population=89
 Max_Population_In_Area=10
-#Population_Seed=1441577796
+#Population_Seed=1443683913
 Population_Seed=-1
 Total_Population=104
 
