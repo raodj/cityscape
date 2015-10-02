@@ -34,11 +34,15 @@ while(noFails and maxRuns >= runCount ):
 	subprocess.call(["clear"])
 	print "---Executing Run "+str(runCount)+"---"
 	print "Rerunning HAPLOS"
-	subprocess.call("../haplos -c ../examples/config/MicroWorldData.hapl -ni -npd > ../output/commandLineOutput.txt", shell=True);
+	subprocess.call("../haplos -c ../examples/config/MicroWorldData.hapl -ni -npd > ../output/commandLineOutput.txt 2>&1", shell=True);
 	print "HAPLOS Complete"
 	folders=os.listdir("../output/");
+	if not os.path.exists("../output/complete.txt"):
+		print "Program never completed. Exiting.\n";
+		sys.exit()
+
 	for folder in folders:
-		if not folder.startswith('.') and folder != "commandLineOutput.txt":
+		if not folder.startswith('.') and folder != "commandLineOutput.txt" and folder != "complete.txt":
 			fail = False
 			files=os.listdir("../output/"+folder+"/familyData");
 			for file in files:
@@ -49,6 +53,10 @@ while(noFails and maxRuns >= runCount ):
 			if not noFails: 
 				print "Failure Occurred"
 				sys.exit();
+			#time.sleep(3);
 			print "Test Succcessfull Cleaning Up Directory: "+folder
-			subprocess.call("rm -rf ../output/"+folder, shell=True); 
+			subprocess.call("rm -rf ../output/"+folder, shell=True)
+			subprocess.call("rm -rf ../output/complete.txt", shell=True)
+
+				
 	runCount= runCount + 1;

@@ -223,8 +223,8 @@ int main(int argc, char* argv[]) {
                             (int)configuration["Schedule_Employeed_Radius_Limit"],
                             (int)configuration["Schedule_Unemployeed_Radius_Limit"]};
     
-    double transportProbablities[3] = { configuration["Private_Transport_Percentage"],
-                                        configuration["Public_Transport_Percentage"],
+    double transportProbablities[3] = { configuration["Public_Transport_Percentage"],
+                                        configuration["Private_Transport_Percentage"],
                                         configuration["Walking_Transport_Percentage"]};
     
     int transportRate[3] = { (int)configuration["Public_Transport_Rate"],
@@ -411,15 +411,10 @@ int main(int argc, char* argv[]) {
 
     imgGen.makePopFile("pop.hapi", headerInformation);
     */
-    
-    tl.getFilesToProduceAt(0);
-    tl.getFilesToProduceAt(5);
-    tl.getFilesToProduceAt(144);
-    tl.getFilesToProduceAt(1008);
-    tl.getFilesToProduceAt(4320*2);
-    tl.getFilesToProduceAt(52560);
-    tl.getFilesToProduceAt(2040);
-    
+    std::ofstream completeFile;
+    completeFile.open(outputFolder+"/complete.txt");
+    completeFile.close();
+
     std::cout<<"Simulation Complete"<<std::endl;
     
     return 0;

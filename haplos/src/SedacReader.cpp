@@ -113,15 +113,14 @@ std::vector<std::vector<Location> > SedacReader::readFile(std::string fileName, 
 		    int currentColumn=0;
 		    for (vector<std::string>::iterator i = tokens.begin();i != tokens.end();++i) {
 		    	if (currentColumn<cols) {
-                    float density=((std::atof((*i).c_str()))/sedacPopulationSize);
+                    float density=(std::atof((*i).c_str()))/sedacPopulationSize;
 					densityData.at(currentRow).at(currentColumn) = Location(currentRow,
                                                                             currentColumn,
-                                                                            density*actualPopulationSize,
-                                                                            density,buildingID);
+                                                                            ceil(density*actualPopulationSize),
+                                                                            density,
+                                                                            buildingID);
                     buildingID++;
                     
-                    densityData.at(currentRow).at(currentColumn).getDensity();
-
 		    		currentColumn++;
 		    	}
                 else {

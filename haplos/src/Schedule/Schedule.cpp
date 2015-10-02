@@ -39,6 +39,7 @@
 Schedule::Schedule() {
     type=0;
     currentTimeStep=0;
+    currentTimeSlot=0;
     this->jobLocationID=-1;
     
 
@@ -48,6 +49,7 @@ Schedule::Schedule() {
 Schedule::Schedule(int type){
     this->type=type;
     currentTimeStep=0;
+    currentTimeSlot=0;
     this->jobLocationID=-1;
 }
 
@@ -108,13 +110,13 @@ TimeSlot* Schedule::getCurrentTimeSlot(){
 
 TimeSlot* Schedule::getNextLocation(){
     currentTimeStep++;
-    if( currentTimeStep==MAXTIMESTEPS-1 ){
+    if( currentTimeStep>=MAXTIMESTEPS-1 ){
         currentTimeStep=0;
         currentTimeSlot=0;
     }else{
        currentTimeStep++;
     }
-    if(plan[currentTimeSlot].getEndTime()>=currentTimeStep){
+    if(plan[currentTimeSlot].getEndTime()<=currentTimeStep){
         //Move to Next Time Slot
         currentTimeSlot++;
     }

@@ -47,7 +47,7 @@ void assignHomes(Population &pop){
     int y=0;
     int notAssigned=0;
     float oldRatio=0;
-    std::cout << "Assigning Locations to Population" << std::endl;
+    std::cout << "Assigning Homes to Population" << std::endl;
     if(progressDisplay){
         printf("Percentage Complete: %3d%%", 0 );
     }
@@ -76,6 +76,7 @@ void assignHomes(Population &pop){
         
         if (y>=densityData[0].size()-1) {
             //No More Locations Avaliable
+            std::cout<<"No Locations Avaliable"<<std::endl;
             break;
         }
         //Set Location of Family
@@ -125,7 +126,10 @@ void generateBuildings(double businessSizeProbablities[6],
     std::cout<< "Generating Buildings" <<std::endl;
 
     //Set Random Generator Seed
-    generator.seed(time(0));
+    int seed = time(0);
+    //int seed = 1443683913;
+    generator.seed(seed);
+    std::cout<<"Building Seed: "<<seed<<std::endl;
     //Set Distribution
     std::discrete_distribution<int> businessSizeDistribution{ businessSizeProbablities[0],
         businessSizeProbablities[1],
@@ -136,12 +140,15 @@ void generateBuildings(double businessSizeProbablities[6],
     std::discrete_distribution<int> locationDistribution(locationProbablties.begin(), locationProbablties.end());
     
     std::vector<double> stuff=locationDistribution.probabilities();
+    std::cout<<"Distributions Created"<<std::endl;
     //Set Tailies for Print out
     int totalBuinessPopulation=0;
     
     int elementrySchoolPopulation = numberOfStudentsPerGrade[0]+numberOfStudentsPerGrade[1]+numberOfStudentsPerGrade[2]+numberOfStudentsPerGrade[3]+numberOfStudentsPerGrade[4]+numberOfStudentsPerGrade[5];
     int middleSchoolPopulation=numberOfStudentsPerGrade[6]+numberOfStudentsPerGrade[7]+numberOfStudentsPerGrade[8];
     int highSchoolPopulation = numberOfStudentsPerGrade[9]+numberOfStudentsPerGrade[10]+numberOfStudentsPerGrade[11]+numberOfStudentsPerGrade[12];
+    
+    std::cout<<"Populations Created"<<std::endl;
     // std::cout<<"Elementry: "<<elementrySchoolPopulation<<std::endl;
     // std::cout<<"Middle: " << middleSchoolPopulation<<std::endl;
     // std::cout<<"High: "<<highSchoolPopulation<<endl<<std::endl;
@@ -302,7 +309,7 @@ void generateBuildings(double businessSizeProbablities[6],
         allBuildings.insert({daycareBuildings.at(i).getID(), &daycareBuildings.at(i)});
         densityData.at(daycareBuildings.at(i).getLocation()[0]).at(daycareBuildings.at(i).getLocation()[1]).addBuilding(&daycareBuildings.at(i));
     }
-    std::cout<<"\t Number Generated: "<<totalDaycares<<std::endl;
+    std::cout<<"\tNumber Generated: "<<totalDaycares<<std::endl;
 
     std::cout<<"Generating Businesses"<<std::endl;
     //Create Businesses
