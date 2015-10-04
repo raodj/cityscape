@@ -40,6 +40,7 @@
 #include "Schedule/TimeSlot.h"
 
 #include <vector>
+#include <unordered_map>
 class Schedule;
 class Person {
     /** A class specifically repersenting a single person.
@@ -103,10 +104,15 @@ public:
     
     Schedule* getSchedule();
     
+    void setCustomAttribute(std::string key, std::string value);
+    
+    std::string getCustomAttribute(std::string key);
+    
     /** Returns a Human Readable Version on Information about the Person and Schedule.
      
      \return Human Readable String of Information about the Person
      */
+    
     std::string toString();
     
     /** Returns a CSV version of Informationabout the Person. This inclues ID number, 
@@ -134,6 +140,7 @@ private:
     int id_num;
     int currentLocation;
     Schedule schedule;
+    std::unordered_map<std::string, std::string> customAttributes;
 };
 
 #endif /* PERSON_H_ */

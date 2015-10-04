@@ -117,6 +117,15 @@ TimeSlot* Person::updateToNextTimeStep(){
     currentLocation = t->getLocation();
     return t;
 }
+
+void Person::setCustomAttribute(std::string key, std::string value){
+    customAttributes[key] = value;
+}
+
+std::string Person::getCustomAttribute(std::string key){
+    return customAttributes[key];
+}
+
 Person::~Person() {
 	// TODO Auto-generated destructor stub
     
