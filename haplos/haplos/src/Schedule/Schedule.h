@@ -1,5 +1,3 @@
-
-
 #ifndef __haplos__Schedule__
 #define __haplos__Schedule__
 //------------------------------------------------------------

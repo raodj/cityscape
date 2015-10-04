@@ -51,6 +51,7 @@
 #include "Files/ConfigFile.h"
 #include "Files/TimelineFile.h"
 #include "Files/ImageFileGenerator.h"
+#include "Schedule/ScheduleGenerator.h"
 
 #include "Buildings/Medical.h"
 #include "Buildings/School.h"
@@ -89,7 +90,6 @@ int numberOfBuildings=0;
 
 #include "buildingHelper.pcpp"
 #include "buildingGeneratorHelper.pcpp"
-#include "scheduleGeneratorHelper.pcpp"
 
 
 
@@ -259,7 +259,10 @@ int main(int argc, char* argv[]) {
 
         
     //Generate Schedules
-    generateSchedules(pop, radiusLimits, transportProbablities, transportRadius, transportRate);
+    ScheduleGenerator scheduleGen = ScheduleGenerator (&densityData, &allBuildings,
+                                                       generator, progressDisplay);
+    scheduleGen.generateSchedules(pop, radiusLimits, transportProbablities, transportRadius, transportRate);
+    //generateSchedules(pop, radiusLimits, transportProbablities, transportRadius, transportRate);
     
     if(produceImages){
         #ifdef HAVE_MAGICK

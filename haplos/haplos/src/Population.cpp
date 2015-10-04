@@ -511,6 +511,8 @@ void Population::updateToNextTimeStep(std::unordered_map<int, Building*> *allBui
     }
 }
 
+
+
 Population::~Population() {
 	// TODO Auto-generated destructor stub
 }
