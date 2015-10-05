@@ -52,6 +52,8 @@
 #include "Files/TimelineFile.h"
 #include "Files/ImageFileGenerator.h"
 #include "Schedule/ScheduleGenerator.h"
+#include "Buildings/BuildingGenerator.h"
+
 
 #include "Buildings/Medical.h"
 #include "Buildings/School.h"
@@ -60,9 +62,6 @@
 
 using namespace std;
 
-//std::string const outputFolder="output/";
-//std::string configFile="examples/config/VirginaData.hapl";
-//std::string configFile="examples/config/USAData.hapl";
 std::string configFile="examples/config/MicroWorldData.hapl";
 std::vector< School > schoolBuildings;
 std::vector< Business > businessBuildings;
@@ -87,10 +86,6 @@ int totalHospitals=0;
 int totalBusinesses=0;
 int totalDaycares=0;
 int numberOfBuildings=0;
-
-#include "buildingHelper.pcpp"
-#include "buildingGeneratorHelper.pcpp"
-
 
 
 int main(int argc, char* argv[]) {
@@ -247,17 +242,22 @@ int main(int argc, char* argv[]) {
                                 configuration["Population_Seed"]);
    
     //Assign Locations to Population
-    assignHomes(pop);
-    generateBuildings(businessSizeProbablities,
-                      hospitalSizeProbablities,
-                      schoolSizeProbablities,
-                      pureDensity,
-                      densityData.size(),
-                      pop.getNumberOfEmployeedAdults(),
-                      pop.getNumberOfStudentsPerGrade(),
-                      pop.getNumberOfChildrenDaycare());
+    
+    BuildingGenerator buildingGen = BuildingGenerator(generator, numberOfBuildings, &schoolBuildings,
+                                                      &daycareBuildings, &medicalBuildings,
+                                                      &businessBuildings, &otherBuildings, &allBuildings, &densityData,
+                                                      progressDisplay);
+    
+    buildingGen.assignHomes(pop);
+    buildingGen.generateBuildings(businessSizeProbablities,
+                                  hospitalSizeProbablities,
+                                  schoolSizeProbablities,
+                                  pureDensity,
+                                  densityData.size(),
+                                  pop.getNumberOfEmployeedAdults(),
+                                  pop.getNumberOfStudentsPerGrade(),
+                                  pop.getNumberOfChildrenDaycare());
 
-        
     //Generate Schedules
     ScheduleGenerator scheduleGen = ScheduleGenerator (&densityData, &allBuildings,
                                                        generator, progressDisplay);
@@ -332,7 +332,7 @@ int main(int argc, char* argv[]) {
     
     //Create Files
     pop.displayStatistics(saveLocationPath);
-    displayBuildingStatistics(businessSizeProbablities,
+    buildingGen.displayBuildingStatistics(businessSizeProbablities,
                               hospitalSizeProbablities,
                               schoolSizeProbablities,
                               daycareSizeProbablities,
