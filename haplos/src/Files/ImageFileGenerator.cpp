@@ -37,7 +37,6 @@
 //-----------------------------------------------------------
 #include "ImageFileGenerator.h"
 
-
 ImageFileGenerator::ImageFileGenerator(){
 
 }
@@ -46,6 +45,50 @@ ImageFileGenerator::ImageFileGenerator(std::vector< std::vector < Location > > *
     this->locationData= locationData;
     this->outputLocation=outputLocation;
 }
+
+
+bool ImageFileGenerator::makeCustomFile(std::string fileType, std::string fileName, std::vector<std::string> headerInformation, Policy *policy){
+    std::ostringstream outputString;
+    int maxVal=0;
+    int minVal=INT_MAX;
+    int  total = 0;
+    for( int x=0; x < locationData->size(); x++ ){
+        for( int y=0; y < locationData->at(0).size(); y++ ){
+            int amount=policy->getCustomFileTypeData(&(locationData->at(x).at(y)), fileType);
+            total += amount;
+            if (amount>=maxVal){
+                maxVal=amount;
+            }
+            if(minVal>=amount){
+                minVal=amount;
+            }
+            
+            if(y!=0){
+                outputString<<",";
+            }
+            outputString<<amount;
+        }
+        outputString<<"\n";
+    }
+    
+    std::ofstream buildingStatsFile;
+    buildingStatsFile.open(outputLocation+"/"+fileName);
+    
+    //Add Header Information
+    for(std::vector<std::string>::iterator it = headerInformation.begin(); it != headerInformation.end(); ++it) {
+        buildingStatsFile<<*it<<"\n";
+    }
+    buildingStatsFile<<total<<"\n";
+    //Add Data
+    buildingStatsFile << minVal<<","<<maxVal<<"\n"<<outputString.str();
+    
+    
+    buildingStatsFile.close();
+    return true;
+    
+}
+
+
 
 bool ImageFileGenerator::makePopFile(std::string fileName, std::vector<std::string> headerInformation){
     std::ostringstream outputString;

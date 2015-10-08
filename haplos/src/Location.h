@@ -92,6 +92,10 @@ public:
      */
 	int getCurrentPopulation();
     
+    
+    std::unordered_map<int,Person*>* getPeople();
+
+    
     /** Return the coordinates of location.
      
      \return An array containing the coordinates of the location [row, col]
