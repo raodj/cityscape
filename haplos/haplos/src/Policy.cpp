@@ -39,12 +39,56 @@ Policy::Policy(){
 
 }
 
-void Policy::updatePopulation(Population p){
-    std::cout<<"Updating Custom Attributes"<<std::endl;
+//Required Method
+void Policy::setupCustomAttributes(Population *p){
+    int numberOfFamilies = p->getNumberOfFamilies();
+    int infectedID = 55;
+    
+    for (int i = 0; i < numberOfFamilies; i++){
+        Family *f = p->getFamily(i);
+        int numberOfPeople = f->getNumberOfPeople();
+        for(int j =0 ; j < numberOfPeople; j++){
+            Person *p = f->getPerson(j);
+            if(p->getID() == infectedID){
+                p->setCustomAttribute("infected", "1");
+
+            }else{
+                p->setCustomAttribute("infected", "0");
+            }
+            
+            p->setCustomAttribute("immune", "0");
+        }
+        
+    }
+}
+
+//Required Method
+void Policy::updatePopulation(Population *p, std::vector< std::vector < Location > > *densityData){
     
 }
 
-void Policy::scheduleModificcation(Family f){
+//Required Method
+int Policy::getCustomFileTypeData(Location *l, std::string fileType){
+    std::unordered_map<int,Person*> *people = l->getPeople();
+    int total = 0;
+    if(fileType == "immune"){
+        for(auto p = people->begin(); p != people->end(); p++){
+            if(p->second->getCustomAttribute("immune") == "1"){
+                total++;
+            }
+        }
+    }else{
+        for(auto p = people->begin(); p != people->end(); p++){
+            if(p->second->getCustomAttribute("infected") == "1"){
+                total++;
+            }
+        }
+    }
+    return total;
+}
+
+
+void Policy::scheduleModification(Family f){
     
     
 }

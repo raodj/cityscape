@@ -10,7 +10,7 @@ Timeline_File=examples/timeline/Microworld.tl
 Output_Directory=output/
 
 #Output File Parameters and Header Information
-Custom_Output_Files=Custom_File_1,Custom_File_2
+Custom_Output_Files=Infected,Immune
 Lower_Left_Longitude=0
 Lower_Left_Laditude=0
 Cellsize_Width=0.0416666666667

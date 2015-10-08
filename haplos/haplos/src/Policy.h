@@ -38,16 +38,21 @@
 #include "Population.h"
 #include "Family.h"
 #include "Person.h"
+#include "Location.h"
 
 class Policy {
     
 public:
     Policy();
-    
-    void updatePopulation(Population p);
+    void setupCustomAttributes(Population *p);
+    void updatePopulation(Population *p, std::vector< std::vector < Location > > *densityData);
+    int getCustomFileTypeData(Location *l, std::string fileType);
     
     
 private:
     void scheduleModification(Family f);
 
-}
+};
+
+
+#endif /* POLICY_H_ */

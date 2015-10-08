@@ -53,6 +53,7 @@
 #include "Files/ImageFileGenerator.h"
 #include "Schedule/ScheduleGenerator.h"
 #include "Buildings/BuildingGenerator.h"
+#include "Policy.h"
 
 
 #include "Buildings/Medical.h"
@@ -96,6 +97,10 @@ int main(int argc, char* argv[]) {
     std::cout << "|  __  | / /\\ \\ |  ___/| |   | |  | |\\___ \\" << std::endl;
     std::cout << "| |  | |/ ____ \\| |    | |___| |__| |____) |" << std::endl;
     std::cout << "|_|  |_/_/    \\_\\_|    |______\\____/|_____/" <<std::endl;
+    
+    //Create Policy Object
+    Policy policy =  Policy();
+    
     bool produceImages=true;
 
     
@@ -264,6 +269,7 @@ int main(int argc, char* argv[]) {
     scheduleGen.generateSchedules(pop, radiusLimits, transportProbablities, transportRadius, transportRate);
     //generateSchedules(pop, radiusLimits, transportProbablities, transportRadius, transportRate);
     
+    policy.setupCustomAttributes(&pop);
     if(produceImages){
         #ifdef HAVE_MAGICK
             ImageGen ig(outputFolder);
@@ -355,7 +361,7 @@ int main(int argc, char* argv[]) {
       //  std::cout<<"Current Time: "<<currentTime<<std::endl;
         //Update Population
         pop.updateToNextTimeStep(&allBuildings);
-        
+        policy.updatePopulation(&pop, &densityData);
         //Generate Any Images Needed
         std::vector<std::string> files =tl.getFilesToProduceAt(currentTime);
         if(!files.empty()){
@@ -387,6 +393,9 @@ int main(int argc, char* argv[]) {
                     }
                     if(!customFile){
                         imgGen.makeBuildingFile(i->append("_"+std::to_string(currentTime)+".hapi"), type, headerInformation);
+                    }else{
+                        imgGen.makeCustomFile(i->c_str(), i->append("_"+std::to_string(currentTime)+".hapi"), headerInformation,
+                                              &policy);
                     }
 
                 }

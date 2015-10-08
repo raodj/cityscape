@@ -97,6 +97,10 @@ int Location::getCurrentPopulation() {
 	return total+tHub.getTotalNumberOfPeople();
 }
 
+std::unordered_map<int,Person*>* Location::getPeople(){
+    return &people;
+}
+
 float Location::getDensity() const{
     return density;
 }
