@@ -1,4 +1,4 @@
-D 1 Infected,Immune
+D 5 infectious,immune,exposed
 #Single Files
 100 all_buildings
 200 all_buildings

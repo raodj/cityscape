@@ -47,9 +47,6 @@
 
 using namespace std;
 
-static std::default_random_engine generator;   //Random Generator for Distributions
-
-
 Population::Population(int s, double *ageProbablities, double *familySizeProbablites, double mProb, double
     *scheduleProbablities, bool progressDisplay, int popSeed) {
     numberOfMales=0;
@@ -144,6 +141,11 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
     std::cout<< std::endl;
     std::cout<<"Total of "<<i<<" People Generated."<<std::endl;
 
+}
+
+int Population::getPopulationSize(){
+    return size;
+    
 }
 
 int Population::getNumberOfFamilies(){
