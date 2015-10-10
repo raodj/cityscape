@@ -35,6 +35,8 @@
 //-----------------------------------------------------------
 
 #include "Family.h"
+#include "Buildings/Medical.h"
+#include "Buildings/TransportHub.h"
 #include <vector>
 #include <sstream>
 
@@ -151,7 +153,9 @@ std::string Family::toString(){
 }
 
 void Family::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildings){
+   // std::cout<<"Family: "<<homeNumber->getID()<<std::endl;
     for (std::vector<Person>::iterator i = members.begin(); i!= members.end(); i++){
+        //std::cout<<"\t"<<i->getID()<<std::endl;
         TimeSlot* oldLocation = i->getCurrentTimeSlot();
         int buildingID = oldLocation->getLocation();
         //Update Previous Location
@@ -162,7 +166,11 @@ void Family::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildin
                 break;
             case 'S':
                 //Student
-                static_cast<School* > (allBuildings->at(buildingID))->removeStudent(&(*i));
+                static_cast<School *> (allBuildings->at(buildingID))->removeStudent(&(*i));
+                break;
+            case 'D':
+                //Child
+                static_cast<Daycare *> (allBuildings->at(buildingID))->removeChild(&(*i));
                 break;
             case 'V':
                 //Visitor
@@ -172,9 +180,21 @@ void Family::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildin
                 //Employee
                 allBuildings->at(buildingID)->removeEmployee(&(*i));
                 break;
-            default:
-                //Other (Transport)
+            case 'P':
+                //Patient
+                static_cast<Medical *> (allBuildings->at(buildingID))->removePatient(&(*i));
+                break;
+            case 'T':
                 static_cast<TransportHub *> (allBuildings->at(buildingID))->removeVisitor(&(*i));
+                break;
+            case 'W':
+                static_cast<TransportHub *> (allBuildings->at(buildingID))->removeEmployee(&(*i));
+                break;
+            case 'C':
+                static_cast<TransportHub *> (allBuildings->at(buildingID))->removePrivateTransport(homeNumber->getID(), &(*i));
+                break;
+            default:
+                std::cout<< "Invalid Visitor Type in Old: "<<oldLocation->getVisitorType()<<std::endl;
                 break;
         }
         
@@ -189,7 +209,10 @@ void Family::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildin
             case 'S':
                 //Student
                 static_cast<School* > (allBuildings->at(buildingID))->addStudent(&(*i));
-
+                break;
+            case 'D':
+                //Child
+                static_cast<Daycare* > (allBuildings->at(buildingID))->addChild(&(*i));
                 break;
             case 'V':
                 //Visitor
@@ -199,10 +222,23 @@ void Family::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildin
                 //Employee
                 allBuildings->at(buildingID)->addEmployee(&(*i));
                 break;
-            default:
-                //Other (Transport)
+            case 'P':
+                //Patient
+                static_cast<Medical* > (allBuildings->at(buildingID))->addPatient(&(*i));
+                break;
+            case 'T':
                 static_cast<TransportHub *> (allBuildings->at(buildingID))->addVisitor(&(*i));
                 break;
+            case 'W':
+                static_cast<TransportHub *> (allBuildings->at(buildingID))->addEmployee(&(*i));
+                break;
+            case 'C':
+                static_cast<TransportHub *> (allBuildings->at(buildingID))->addPrivateTransport(homeNumber->getID(), &(*i));
+                break;
+            default:
+                std::cout<< "Invalid Visitor Type in New: "<<oldLocation->getVisitorType()<<std::endl;
+                break;
+
         }
         //Update Building Information
         

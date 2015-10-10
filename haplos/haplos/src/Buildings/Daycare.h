@@ -58,6 +58,8 @@ class Daycare : public Building {
         void addChild(Person *p);
         void removeChild(Person *p);
     
+        std::unordered_map<int, Person *> getChildren();
+    
         void setChildCapacity(int c);
     
         using Building::getTotalNumberOfPeople;

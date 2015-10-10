@@ -129,5 +129,6 @@ class Schedule {
         int currentTimeSlot;
         int numberOfTimeSlots;
         int jobLocationID;
+        bool loop;
 };
 #endif /* defined(__haplos__Schedule__) */

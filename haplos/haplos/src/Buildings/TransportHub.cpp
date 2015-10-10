@@ -63,6 +63,11 @@ void TransportHub::addPrivateTransport(int homeNumber, Person *p){
     (privateTransport[homeNumber])[p->getID()] = p;
 }
 
+std::unordered_map<int, Person *> TransportHub::getPrivateTransport(int homeNumber){
+    return privateTransport[homeNumber];
+}
+
+
 
 
 TransportHub::~TransportHub(){

@@ -191,6 +191,11 @@ void School::addStudent(Person *p){
     currentStudents[p->getID()] = p;
 }
 
+std::unordered_map<int, Person *> School::getStudents(){
+    return currentStudents;
+    
+}
+
 School::~School(){
     
 }

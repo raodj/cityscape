@@ -63,6 +63,11 @@ void Medical::addPatient(Person *p){
     currentPatients[p->getID()] = p;
 }
 
+std::unordered_map<int, Person *> Medical::getPatients(){
+    return currentPatients;
+    
+}
+
 int Medical::getTotalNumberOfPeople(){
     return currentPatients.size()+Building::getTotalNumberOfPeople();
 }

@@ -72,6 +72,8 @@ class Medical : public Building {
     
         void removePatient(Person *p);
     
+        std::unordered_map<int, Person *> getPatients();
+    
         using Building::getTotalNumberOfPeople;
         int getTotalNumberOfPeople();
     
