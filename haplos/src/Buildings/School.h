@@ -97,6 +97,8 @@ class School : public Building{
     
         void removeStudent(Person *p);
     
+        std::unordered_map<int, Person *> getStudents();
+    
         using Building::getTotalNumberOfPeople;
         int getTotalNumberOfPeople();
         /**

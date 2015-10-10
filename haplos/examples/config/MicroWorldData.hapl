@@ -17,7 +17,7 @@ Cellsize_Width=0.0416666666667
 Cellsize_Height=0.0416666666667
 
 ###General Settings###
-Length_Of_Simulation=10;
+Length_Of_Simulation=2016;
 
 ###Population Configuration###
 #General Configuration

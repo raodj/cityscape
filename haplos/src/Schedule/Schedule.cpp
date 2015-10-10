@@ -41,6 +41,7 @@ Schedule::Schedule() {
     currentTimeStep=0;
     currentTimeSlot=0;
     this->jobLocationID=-1;
+    loop = false;
     
 
 }
@@ -51,6 +52,7 @@ Schedule::Schedule(int type){
     currentTimeStep=0;
     currentTimeSlot=0;
     this->jobLocationID=-1;
+    loop = false;
 }
 
 void Schedule::setJobLocation(int jobLocationID){
@@ -105,20 +107,28 @@ TimeSlot* Schedule::getLocationAt(int time){
 }
 
 TimeSlot* Schedule::getCurrentTimeSlot(){
+    //std::cout<<"\t\tCurrent Time Slot"<<currentTimeSlot<<std::endl;
+    //std::cout<<"\t\tTotal Time Slots"<<plan.size()<<std::endl;
     return &plan[currentTimeSlot];
 }
 
 TimeSlot* Schedule::getNextLocation(){
-    currentTimeStep++;
-    if( currentTimeStep>=MAXTIMESTEPS-1 ){
+    if( currentTimeStep>=MAXTIMESTEPS-1){
         currentTimeStep=0;
-        currentTimeSlot=0;
+        loop = false;
     }else{
        currentTimeStep++;
     }
-    if(plan[currentTimeSlot].getEndTime()<=currentTimeStep){
-        //Move to Next Time Slot
-        currentTimeSlot++;
+    if(!loop){
+        if(plan[currentTimeSlot].getEndTime()<=currentTimeStep && currentTimeSlot!= plan.size()-1){
+            //Move to Next Time Slot
+            currentTimeSlot++;
+        }else{
+            if(plan[currentTimeSlot].getEndTime()<=currentTimeStep){
+                currentTimeSlot = 0;
+                loop = true;
+            }
+        }
     }
     return &plan[currentTimeSlot];
     

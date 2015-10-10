@@ -102,6 +102,14 @@ void Building::addVisitorTimeSlot(int startTime, int endTime){
     }
 }
 
+std::unordered_map<int, Person *>Building::getVisitors(){
+    return currentVisitors;
+}
+
+std::unordered_map<int, Person *>Building::getEmployees(){
+    return currentEmployees;
+}
+
 void Building::addVisitor(Person *p){
     currentVisitors[p->getID()] = p;
 }

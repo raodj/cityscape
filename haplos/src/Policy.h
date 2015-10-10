@@ -45,9 +45,10 @@ class Policy {
 public:
     Policy();
     void setupCustomAttributes(Population *p);
-    void updatePopulation(Population *p, std::vector< std::vector < Location > > *densityData);
+    void updatePopulation(Population *p, std::unordered_map<int, Building*> *allBuildings, int currentTime);
     int getCustomFileTypeData(Location *l, std::string fileType);
-    
+    std::unordered_map<int, Person *> getPossibleContacts(TimeSlot *t, int homeNumber, std::unordered_map<int, Building*> *allBuildings);
+
     
 private:
     void scheduleModification(Family f);

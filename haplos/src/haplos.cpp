@@ -361,7 +361,7 @@ int main(int argc, char* argv[]) {
       //  std::cout<<"Current Time: "<<currentTime<<std::endl;
         //Update Population
         pop.updateToNextTimeStep(&allBuildings);
-        policy.updatePopulation(&pop, &densityData);
+        policy.updatePopulation(&pop, &allBuildings, currentTime);
         //Generate Any Images Needed
         std::vector<std::string> files =tl.getFilesToProduceAt(currentTime);
         if(!files.empty()){

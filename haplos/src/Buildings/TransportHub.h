@@ -56,6 +56,8 @@ public:
     
     void removePrivateTransport(int homeNumber, Person *p);
     
+    std::unordered_map<int, Person *> getPrivateTransport(int homeNumber);
+    
     using Building::getTotalNumberOfPeople;
     int getTotalNumberOfPeople();
     

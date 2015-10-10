@@ -123,6 +123,10 @@ class Building {
         void removeEmployee(Person *p);
     
         void addVisitorTimeSlot(int startTime, int endTime);
+    
+        std::unordered_map<int, Person *> getEmployees();
+    
+        std::unordered_map<int, Person *> getVisitors();
         /** Return the coordinates of the current location of entity
          
          \return An array consisting of [rows, cols]

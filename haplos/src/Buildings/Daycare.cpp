@@ -57,6 +57,11 @@ void Daycare::addChild(Person *p){
     currentChildren[p->getID()] = p;
 }
 
+std::unordered_map<int, Person *>Daycare::getChildren(){
+    return currentChildren;
+    
+}
+
 int Daycare::getTotalNumberOfPeople(){
     return currentChildren.size()+Building::getTotalNumberOfPeople();
 }

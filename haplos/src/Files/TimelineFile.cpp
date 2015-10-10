@@ -40,6 +40,11 @@
 
 
 TimelineFile::TimelineFile(){
+    timeStepInterval = INT_MAX;
+    dayInterval = INT_MAX;
+    weekInterval = INT_MAX;
+    monthInterval = INT_MAX;
+    yearInterval = INT_MAX;
     
 }
 
@@ -49,6 +54,11 @@ timeLineLocation(fileLocation) {
     std::ifstream infile(timeLineLocation);
     std::locale loc;
     std::string line="";
+    timeStepInterval = INT_MAX;
+    dayInterval = INT_MAX;
+    weekInterval = INT_MAX;
+    monthInterval = INT_MAX;
+    yearInterval = INT_MAX;
 
     if (!infile.good()) {
         std::cerr << "Unable to Open Timeline File." << std::endl;
@@ -77,44 +87,46 @@ timeLineLocation(fileLocation) {
 
             if(std::isalpha(line.at(0), loc)){
                 //Output at Specific Intervals
-                std::istringstream filesToProduce(tokens.at(2));
-                switch(line.at(0)){
-                    case 'T':
-                        //Timestep
-                        timeStepInterval = std::atoi(tokens.at(1).c_str());
-                        while(std::getline(filesToProduce, temp, ',')){
-                            fileTimeStep.push_back(this->lowerCaseString(temp));
-                        }
-                        break;
-                    case 'D':
-                        //Day
-                        dayInterval = std::atoi(tokens.at(1).c_str());
-                        while(std::getline(filesToProduce, temp, ',')){
-                            fileDay.push_back(this->lowerCaseString(temp));
-                        }
-                        break;
-                    case 'W':
-                        //Week
-                        weekInterval = std::atoi(tokens.at(1).c_str());
-                        while(std::getline(filesToProduce, temp, ',')){
-                            fileWeek.push_back(this->lowerCaseString(temp));
-                        }
-                    case 'M':
-                        //Month
-                        monthInterval = std::atoi(tokens.at(1).c_str());
-                        while(std::getline(filesToProduce, temp, ',')){
-                            fileMonth.push_back(this->lowerCaseString(temp));
-                        }
-                        break;
-                    case 'Y':
-                        //Year
-                        yearInterval = std::atoi(tokens.at(1).c_str());
-                        while(std::getline(filesToProduce, temp, ',')){
-                            fileYear.push_back(this->lowerCaseString(temp));
-                        }
-                        break;
-                    default:
-                        std::cout<<"Invalid Timeline Interval Type: "<<line.at(0)<<std::endl;
+                if(tokens.size()==3){
+                    std::istringstream filesToProduce(tokens.at(2));
+                    switch(line.at(0)){
+                        case 'T':
+                            //Timestep
+                            timeStepInterval = std::atoi(tokens.at(1).c_str());
+                            while(std::getline(filesToProduce, temp, ',')){
+                                fileTimeStep.push_back(this->lowerCaseString(temp));
+                            }
+                            break;
+                        case 'D':
+                            //Day
+                            dayInterval = std::atoi(tokens.at(1).c_str());
+                            while(std::getline(filesToProduce, temp, ',')){
+                                fileDay.push_back(this->lowerCaseString(temp));
+                            }
+                            break;
+                        case 'W':
+                            //Week
+                            weekInterval = std::atoi(tokens.at(1).c_str());
+                            while(std::getline(filesToProduce, temp, ',')){
+                                fileWeek.push_back(this->lowerCaseString(temp));
+                            }
+                        case 'M':
+                            //Month
+                            monthInterval = std::atoi(tokens.at(1).c_str());
+                            while(std::getline(filesToProduce, temp, ',')){
+                                fileMonth.push_back(this->lowerCaseString(temp));
+                            }
+                            break;
+                        case 'Y':
+                            //Year
+                            yearInterval = std::atoi(tokens.at(1).c_str());
+                            while(std::getline(filesToProduce, temp, ',')){
+                                fileYear.push_back(this->lowerCaseString(temp));
+                            }
+                            break;
+                        default:
+                            std::cout<<"Invalid Timeline Interval Type: "<<line.at(0)<<std::endl;
+                    }
                 }
             }else{
                 //One time interval
