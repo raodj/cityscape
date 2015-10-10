@@ -35,31 +35,79 @@
 #include "Policy.h"
 #include "Population.h"
 #include <iterator>
+#include <cstdlib>
+#include <algorithm>
+
 Policy::Policy(){
+    //Set Policy Seed
+    int seed = time(0);
+    generator.seed(seed);
+    std::cout<<"Policy Seed: "<<seed<<std::endl;
 
 }
 
 //Required Method
 void Policy::setupCustomAttributes(Population *p){
     int numberOfFamilies = p->getNumberOfFamilies();
-    int infectedID = 55;
-    
+    int infectiousID = rand() % p->getPopulationSize();
+    std::cout<<"Initial Infection: "<<infectiousID<<std::endl;
     for (int i = 0; i < numberOfFamilies; i++){
         Family *f = p->getFamily(i);
         int numberOfPeople = f->getNumberOfPeople();
         for(int j =0 ; j < numberOfPeople; j++){
             Person *p = f->getPerson(j);
-            if(p->getID() == infectedID){
-                p->setCustomAttribute("infected", "0");
+            if(p->getID() == infectiousID){
+                setExposedStatus(p, 0);
 
             }else{
-                p->setCustomAttribute("infected", "");
+                p->setCustomAttribute("exposed", "");
+
             }
-            
+            p->setCustomAttribute("infectious", "");
             p->setCustomAttribute("immune", "0");
         }
         
     }
+}
+
+
+void Policy::determineExposedStatus(Person *p, int currentTime){
+    //SEIR Model from Nsoesie etc (2012)
+    
+    //Transmission Probablity Per Second of Exposure
+    double t = 0.000046;
+    
+    //1 Haplos Time Unit = 10 Minutes
+    int haplosUnitToSeconds = 36000;
+    
+    double exposedProbablity  = std::pow((1 - t),haplosUnitToSeconds);
+    double exposed =  (double)(rand() / (double)RAND_MAX);
+    if(exposed<exposedProbablity){
+        //Person was exposed successfully
+        //Duration of Exposed State (1,2,3 Days)
+        setExposedStatus(p, currentTime);
+    }
+}
+
+void Policy::setExposedStatus(Person *p, int currentTime){
+    std::discrete_distribution<int> exposedToinfectious{0.3,0.5,0.2};
+    int haplosDay = 144;
+    int blah = exposedToinfectious(generator);
+    int exposedLength = (blah*haplosDay)+currentTime;
+    p->setCustomAttribute("exposed", std::to_string(exposedLength));
+}
+
+void Policy::setInfectiousStatus(Person *p, int currentTime){
+    //SEIR Model from Nsoesie etc (2012)
+
+    //Duration of Infectious State (3,4,5,6 Days)
+    std::discrete_distribution<int> infectiousToImmune{0.3,0.4,0.2,0.1};
+    
+    int haplosDay = 144;
+    int blah =infectiousToImmune(generator);
+    int infectionLength = ((blah+3)*haplosDay)+currentTime;
+    p->setCustomAttribute("infectious", std::to_string(infectionLength));
+    
 }
 
 //Required Method
@@ -70,29 +118,46 @@ void Policy::updatePopulation(Population *p, std::unordered_map<int, Building*> 
         int numberOfPeople = f->getNumberOfPeople();
         for(int j =0 ; j < numberOfPeople; j++){
             Person *p = f->getPerson(j);
-            if(p->getCustomAttribute("infected") != ""){
+            if(p->getCustomAttribute("infectious") != ""){
+                //Determine if Person has infectious other people
                 TimeSlot *t = p->getCurrentTimeSlot();
                 std::unordered_map<int, Person *> contacts = getPossibleContacts(t, f->getHome()->getID(), allBuildings);
-                if(contacts.size()>1){
-                    std::unordered_map<int, Person *>::iterator it = contacts.find(p->getID());
-                    if(std::next(it) != contacts.end() && std::next(it)->second->getCustomAttribute("immune") != "1"
-                       && std::next(it)->second->getCustomAttribute("infected") == "" ){
-                        std::next(it)->second->setCustomAttribute("infected", std::to_string(currentTime));
+                if(contacts.size()>2){
+                    //std::cout<<"Contact Size: "<<contacts.size()<<std::endl;
+                    int numberOfContacts = 1;
+                    int currentContact = 0;
+                    while (currentContact < numberOfContacts){
+                       // std::cout<<"CurrentContacts: "<<currentContact<<std::endl;
+                        auto randomContact = std::next(std::begin(contacts), (rand() % contacts.size()-1));
+                        while(randomContact->second->getID() == p->getID()){
+                            //std::cout<< (rand() % (contacts.size()-1))<< std::endl;
+                            randomContact = std::next(std::begin(contacts), (rand() % (contacts.size()-1)));
+                            //std::cout<<randomContact->second->getID()<<" "<<p->getID()<<std::endl;
+                        }
 
+                        ///std::cout<<p->getID()<<" "<<randomContact->second->getID()<<std::endl;
+                        if(randomContact->second->getCustomAttribute("immune") != "1"
+                           && randomContact->second->getCustomAttribute("exposed") == "" ){
+                                //Update Infection Status of Contact
+                                determineExposedStatus(randomContact->second, currentTime);
+                        }
+                        currentContact++;
                     }
-                   
-                    /*(std::prev(it) != contacts->begin()){
-                        std::prev(it)->second->setCustomAttribute("infected", currentTime)
-                        
-                    }*/
                 }
-                
-                if(std::stoi(p->getCustomAttribute("infected"))+432 <= currentTime){
+                //std::cout<<"Done"<<std::endl;
+                //Update Infected Status if Needed
+                //std::cout<<std::stoi(p->getCustomAttribute("infectious")) <<" "<<currentTime<< std::endl;
+                if(std::stoi(p->getCustomAttribute("infectious")) <= currentTime){
                     p->setCustomAttribute("immune", "1");
-                    p->setCustomAttribute("infected", "");
-                    
                 }
                 
+            }//end of Infectious check
+            
+            //Updated Exposed Status if Needed
+            if(p->getCustomAttribute("exposed")!= "" && p->getCustomAttribute("infectious") == ""){
+                if(std::stoi(p->getCustomAttribute("exposed")) <= currentTime){
+                    setInfectiousStatus(p, currentTime);
+                }
             }
             
         }
@@ -113,7 +178,7 @@ int Policy::getCustomFileTypeData(Location *l, std::string fileType){
         }
     }else{
         for(auto p = people->begin(); p != people->end(); p++){
-            if(p->second->getCustomAttribute("infected") != ""){
+            if(p->second->getCustomAttribute(fileType) != ""){
                 total++;
             }
         }
@@ -131,31 +196,40 @@ std::unordered_map<int, Person *> Policy::getPossibleContacts(TimeSlot *t, int h
     int locationID =t->getLocation();
     char visType = t->getVisitorType();
     std::unordered_map<int, Person *> returnVector;
-    if(visType == 'V' || visType == 'T' || visType == 'H'){
-        returnVector = allBuildings->at(locationID)->getVisitors();
-    }
+    std::unordered_map<int, Person *> tmp;
     
-    if(visType == 'E' || visType == 'W'){
-        returnVector = allBuildings->at(locationID)->getEmployees();
+    if(visType == 'V' || visType == 'H' || visType == 'T' || visType == 'S' || visType == 'D' || visType =='P' || visType =='P'){
+        tmp = allBuildings->at(locationID)->getVisitors();
+        returnVector.insert(tmp.begin(), tmp.end());
+    }
+   
+    
+    if(visType == 'E' || visType == 'V' || visType =='S' || visType == 'D' || visType == 'P' || visType == 'W'){
+        tmp =  allBuildings->at(locationID)->getEmployees();
+        returnVector.insert(tmp.begin(), tmp.end());
     }
     
     if(visType == 'C'){
-        returnVector = (static_cast<TransportHub *>(allBuildings->at(locationID)))->getPrivateTransport(homeNumber);
+        tmp = (static_cast<TransportHub *>(allBuildings->at(locationID)))->getPrivateTransport(homeNumber);
+        returnVector.insert(tmp.begin(), tmp.end());
+    }
+    
+    if(visType == 'S' || allBuildings->at(locationID)->getType() == 'S' ){
+        tmp = (static_cast<School *>(allBuildings->at(locationID)))->getStudents();
+        returnVector.insert(tmp.begin(), tmp.end());
 
     }
     
-    if(visType == 'S'){
-        returnVector = (static_cast<School *>(allBuildings->at(locationID)))->getStudents();
+    if(visType == 'D' || allBuildings->at(locationID)->getType() == 'D' ){
+        tmp = (static_cast<Daycare *>(allBuildings->at(locationID)))->getChildren();
+        returnVector.insert(tmp.begin(), tmp.end());
 
     }
     
-    if(visType == 'D'){
-        returnVector = (static_cast<Daycare *>(allBuildings->at(locationID)))->getChildren();
+    if(visType == 'P' || allBuildings->at(locationID)->getType() == 'M' ){
+        tmp= (static_cast<Medical *>(allBuildings->at(locationID)))->getPatients();
+        returnVector.insert(tmp.begin(), tmp.end());
 
-    }
-    
-    if(visType == 'P'){
-        returnVector= (static_cast<Medical *>(allBuildings->at(locationID)))->getPatients();
     }
 
     return returnVector;

@@ -85,6 +85,13 @@ class Population {
          */
         Family* getFamily(int family);
     
+    
+        /** Get Number of People in Population
+         
+         \return Number of People in Population
+         */
+        int getPopulationSize();
+    
         /** Get Number of Families Created
          
          \return Number of Families in Population
@@ -156,7 +163,8 @@ class Population {
         int numberOfPeopleAssignedSchedule[11]={};
         int numberOfStudentsAssignedGrade[13]={};
         int numberOfChildrenDaycare=0;
-    
+        std::default_random_engine generator;
+
         std::vector < Family > families;    //Families in Population.
 };
 

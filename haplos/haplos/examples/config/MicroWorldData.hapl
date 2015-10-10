@@ -10,14 +10,14 @@ Timeline_File=examples/timeline/Microworld.tl
 Output_Directory=output/
 
 #Output File Parameters and Header Information
-Custom_Output_Files=Infected,Immune
+Custom_Output_Files=infectious,immune,exposed
 Lower_Left_Longitude=0
 Lower_Left_Laditude=0
 Cellsize_Width=0.0416666666667
 Cellsize_Height=0.0416666666667
 
 ###General Settings###
-Length_Of_Simulation=2016;
+Length_Of_Simulation=20160;
 
 ###Population Configuration###
 #General Configuration

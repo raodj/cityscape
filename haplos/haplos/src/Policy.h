@@ -39,6 +39,8 @@
 #include "Family.h"
 #include "Person.h"
 #include "Location.h"
+#include <random>
+#include <cstdlib>
 
 class Policy {
     
@@ -52,6 +54,10 @@ public:
     
 private:
     void scheduleModification(Family f);
+    void setExposedStatus(Person *p, int currentTime);
+    void setInfectiousStatus(Person *p, int currentTime);
+    void determineExposedStatus(Person *p, int currentTime);
+    std::default_random_engine generator;
 
 };
 
