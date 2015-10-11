@@ -392,7 +392,7 @@ int main(int argc, char* argv[]) {
                         }
                     }
                     if(!customFile){
-                        imgGen.makeBuildingFile(i->append("_"+std::to_string(currentTime)+".hapi"), type, headerInformation);
+                        imgGen.makeBuildingFile(i->c_str(), i->append("_"+std::to_string(currentTime)+".hapi"), type, headerInformation);
                     }else{
                         imgGen.makeCustomFile(i->c_str(), i->append("_"+std::to_string(currentTime)+".hapi"), headerInformation,
                                               &policy);
@@ -400,7 +400,7 @@ int main(int argc, char* argv[]) {
 
                 }
                    else{
-                       imgGen.makePopFile(i->append("_"+std::to_string(currentTime)+".hapi"), headerInformation);
+                       imgGen.makePopFile(i->c_str(), i->append("_"+std::to_string(currentTime)+".hapi"), headerInformation);
 
                    }
 
