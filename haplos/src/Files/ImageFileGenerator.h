@@ -41,6 +41,8 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "../Location.h"
 #include "../Policy.h"
 
@@ -49,10 +51,10 @@ class ImageFileGenerator {
 public:
     ImageFileGenerator();
     ImageFileGenerator(std::vector< std::vector < Location > > *locationData, std::string outputLocaiton);
-    bool makePopFile(std::string fileName, std::vector<std::string> headerInformation);
+    bool makePopFile(std::string folderName, std::string fileName, std::vector<std::string> headerInformation);
     bool makeCustomFile(std::string fileType, std::string fileName, std::vector<std::string> headerInformation,
                            Policy *policy);
-    bool makeBuildingFile(std::string fileName, char type, std::vector<std::string> headerInformation);
+    bool makeBuildingFile(std::string folderName, std::string fileName, char type, std::vector<std::string> headerInformation);
     
 private:
     

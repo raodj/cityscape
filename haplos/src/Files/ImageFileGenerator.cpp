@@ -36,6 +36,8 @@
 //
 //-----------------------------------------------------------
 #include "ImageFileGenerator.h"
+#include <sys/types.h>
+#include <sys/stat.h>
 
 ImageFileGenerator::ImageFileGenerator(){
 
@@ -71,8 +73,15 @@ bool ImageFileGenerator::makeCustomFile(std::string fileType, std::string fileNa
         outputString<<"\n";
     }
     
+    //Make Folder for Files if Needed
+    struct stat info;
+    std::string folderLocation =outputLocation+"/"+fileType;
+    if(stat(folderLocation.c_str(), &info) != 0){
+        mkdir(folderLocation.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    }
+    
     std::ofstream buildingStatsFile;
-    buildingStatsFile.open(outputLocation+"/"+fileName);
+    buildingStatsFile.open(folderLocation+"/"+fileName);
     
     //Add Header Information
     for(std::vector<std::string>::iterator it = headerInformation.begin(); it != headerInformation.end(); ++it) {
@@ -90,7 +99,7 @@ bool ImageFileGenerator::makeCustomFile(std::string fileType, std::string fileNa
 
 
 
-bool ImageFileGenerator::makePopFile(std::string fileName, std::vector<std::string> headerInformation){
+bool ImageFileGenerator::makePopFile(std::string folderName, std::string fileName, std::vector<std::string> headerInformation){
     std::ostringstream outputString;
     int maxVal=0;
     int minVal=INT_MAX;
@@ -114,8 +123,15 @@ bool ImageFileGenerator::makePopFile(std::string fileName, std::vector<std::stri
         outputString<<"\n";
     }
     
+    //Make Folder for Files if Needed
+    struct stat info;
+    std::string folderLocation =outputLocation+"/"+folderName;
+    if(stat(folderLocation.c_str(), &info) != 0){
+        mkdir(folderLocation.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    }
+    
     std::ofstream buildingStatsFile;
-    buildingStatsFile.open(outputLocation+"/"+fileName);
+    buildingStatsFile.open(folderLocation+"/"+fileName);
 
     //Add Header Information
     for(std::vector<std::string>::iterator it = headerInformation.begin(); it != headerInformation.end(); ++it) {
@@ -131,7 +147,7 @@ bool ImageFileGenerator::makePopFile(std::string fileName, std::vector<std::stri
     
 }
 
-bool ImageFileGenerator::makeBuildingFile(std::string fileName, char type, std::vector<std::string> headerInformation){
+bool ImageFileGenerator::makeBuildingFile(std::string folderName, std::string fileName, char type, std::vector<std::string> headerInformation){
     std::ostringstream outputString;
     int maxVal=0;
     int minVal=INT_MAX;
@@ -153,8 +169,16 @@ bool ImageFileGenerator::makeBuildingFile(std::string fileName, char type, std::
         outputString<<"\n";
     }
 
+    
+    //Make Folder for Files if Needed
+    struct stat info;
+    std::string folderLocation =outputLocation+"/"+folderName;
+    if(stat(folderLocation.c_str(), &info) != 0){
+        mkdir(folderLocation.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    }
+    
     std::ofstream buildingStatsFile;
-    buildingStatsFile.open(outputLocation+"/"+fileName);
+    buildingStatsFile.open(folderLocation+"/"+fileName);
 
     //Add Header Information
     for(std::vector<std::string>::iterator it = headerInformation.begin(); it != headerInformation.end(); ++it) {
