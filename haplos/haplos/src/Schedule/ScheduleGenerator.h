@@ -42,35 +42,90 @@
 
 class ScheduleGenerator {
     public:
-        ScheduleGenerator(std::vector< std::vector < Location > > *densityData, std::unordered_map<int, Building*> *allBuildings,
-                          std::default_random_engine generator, bool progressDisplay);
-        void generateSchedules(Population &pop, int *radiusLimit, double *transportProbablities,
-                               int *transportRadiusLimits,int *transportRate );
+        ScheduleGenerator(std::vector< std::vector < Location > > *densityData,
+                          std::unordered_map<int, Building*> *allBuildings,
+                          std::default_random_engine generator,
+                          bool progressDisplay);
+        void generateSchedules(Population &pop,
+                               int *radiusLimit,
+                               double *transportProbablities,
+                               int *transportRadiusLimits,
+                               int *transportRate,
+                               double *olderSchoolChildSchoolDayVisitorProbablities,
+                               double *olderSchoolChildWeekendVisitorProbablities,
+                               double *adultNoworkVisitorProbablites,
+                               double *adultWorkVisitorProbablities,
+                               double *adultUnemployeedVisitorProbablities);
+        void generatePersonSchedule(Family *currentFamily,
+                                    Person *p1,
+                                    int *radiusLimit,
+                                    double *transportProbablities,
+                                    int *transportRadiusLimits,
+                                    int *transportRates,
+                                    double *primaryVisitorTypeProb,
+                                    double *secondaryVisitorTypeProbs,
+                                    bool specialLocationFlag);
     private:
-        void generatePersonSchedule(Family *currentFamily, Person *p1, int *radiusLimit,
-                                    double *transportProbablities,int *transportRadiusLimits, int *transportRates);
+
         //Schedue Types
-        void generateYoungChildSchedule(Person* p, Family *f, int radiusLimit);
-        void generateYoungSchoolAgedChildSchedule(Person *p, Family *f, int radiusLimit);
-        void generateSchoolAgedChildSchedule(Person *p, Family *f, int radiusLimit, double *transportProbablities,
-                                             int *transportRadiusLimits, int *transportRates);
+        void generateYoungChildSchedule(Person* p,
+                                        Family *f,
+                                        int radiusLimit);
+        void generateYoungSchoolAgedChildSchedule(Person *p,
+                                                  Family *f,
+                                                  int radiusLimit,
+                                                  bool goToSchool);
+        void generateSchoolAgedChildSchedule(Person *p,
+                                             Family *f,
+                                             int radiusLimit,
+                                             double *transportProbablities,
+                                             int *transportRadiusLimits,
+                                             int *transportRates,
+                                             double *schoolDayVistorTypeProbablities,
+                                             double *weekendVistorTypeProbablities,
+                                             bool goToSchool);
+    
         void generateEmployeedAdultSchedule(Person *p, Family *f, int schoolChildModification,
                                             bool youngChildModification, int radiusLimit,
                                             double *transportProbablities, int *transportRadiusLimits,
-                                            int *transportRates);
+                                            int *transportRates, double *visitorTypeProbablities_work,
+                                            double *visitorTypeProbablities_noWork,
+                                            bool goToWork);
         void generateUnemployeedAdultSchedule(Person *p, Family *f, bool childModification, int radiusLimit,
-                                              double *transportProbablities, int *transportRadiusLimits, int *transportRates);
+                                              double *transportProbablities, int *transportRadiusLimits,
+                                              int *transportRates, double *visitorTypeProbablities);
         //Helper Methods
-        char determineTransportationType(int distance, int timeLimit, double *transportProbablities, int *transportRadiusLimits,
-                                     int *transportRates);
-        int getTransportRate (char transportType, int *transportRates);
-        bool sort_schoolTimes(const std::pair<int, School*>& firstElem, const std::pair<int, School*>& secondElem);
+        char determineTransportationType(int distance,
+                                         int timeLimit,
+                                         double *transportProbablities,
+                                         int *transportRadiusLimits,
+                                         int *transportRates);
+        int getTransportRate (char transportType,
+                              int *transportRates);
+        bool sort_schoolTimes(const std::pair<int, School*>& firstElem,
+                              const std::pair<int, School*>& secondElem);
         std::vector <std::pair<int, School*> > getSchoolTimes(Family *f);
-        int addMoveTo(Schedule *s, Building *start, Building *end, char visitorType, int endTime,
-                                         char transportType, int transportRate, int transportID);
-        int calculateTravelTime(int start_x, int start_y, int end_x, int end_y,  int transportRate );
-        Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, int startTime, int endTime,
-                                        int numberOfVisitors, int transportRate);
+        int addMoveTo(Schedule *s,
+                      Building *start,
+                      Building *end,
+                      char visitorType,
+                      int endTime,
+                      char transportType,
+                      int transportRate,
+                      int transportID);
+        int calculateTravelTime(int start_x,
+                                int start_y,
+                                int end_x,
+                                int end_y,
+                                int transportRate );
+        Building* findAvaliableBuilding(int x,
+                                        int y,
+                                        char typeOfVisitor,
+                                        int radius,
+                                        int startTime,
+                                        int endTime,
+                                        int numberOfVisitors,
+                                        int transportRate);
         void assignJobSchoolLocations(Family *f);
     
         //Variables

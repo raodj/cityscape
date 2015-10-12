@@ -36,6 +36,7 @@
 //-----------------------------------------------------------
 
 #include "Population.h"
+#include "Schedule/Schedule.h"
 #include "Family.h"
 #include "Person.h"
 #include "Location.h"
@@ -50,14 +51,15 @@ public:
     void updatePopulation(Population *p, std::unordered_map<int, Building*> *allBuildings, int currentTime);
     int getCustomFileTypeData(Location *l, std::string fileType);
     std::unordered_map<int, Person *> getPossibleContacts(TimeSlot *t, int homeNumber, std::unordered_map<int, Building*> *allBuildings);
-
+    void modifySchedule(Family *f, Person *p);
+    void revertToOldSchedule(Family *f, Person *p);
     
 private:
-    void scheduleModification(Family f);
     void setExposedStatus(Person *p, int currentTime);
     void setInfectiousStatus(Person *p, int currentTime);
     void determineExposedStatus(Person *p, int currentTime);
     std::default_random_engine generator;
+    std::unordered_map<int, Schedule> oldSchedules;
 
 };
 

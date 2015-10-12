@@ -102,10 +102,30 @@ public:
      */
     int getID(void);
     
+    /** Set the Schedule of a person.
+     
+     \param[in] s is the new schedule
+     */
+    void setSchedule(Schedule s);
+    
+    /** Return the Schedule of a person.
+     
+     \return Pointer to the schedule object
+     */
     Schedule* getSchedule();
     
+    /** Set the Custom Attribute of a person.
+     
+     \param[in] key the name of the custom attribute to set.
+     \param[in] value the value of the custom attribute.
+     */
     void setCustomAttribute(std::string key, std::string value);
     
+    /** Return the value of the custom attribute
+     
+     \param[in] key the custom attribute to retrive.
+     \return The value of the custom attribute.
+     */
     std::string getCustomAttribute(std::string key);
     
     /** Returns a Human Readable Version on Information about the Person and Schedule.

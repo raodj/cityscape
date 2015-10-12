@@ -71,45 +71,6 @@ void Policy::setupCustomAttributes(Population *p){
 }
 
 
-void Policy::determineExposedStatus(Person *p, int currentTime){
-    //SEIR Model from Nsoesie etc (2012)
-    
-    //Transmission Probablity Per Second of Exposure
-    double t = 0.000046;
-    
-    //1 Haplos Time Unit = 10 Minutes
-    int haplosUnitToSeconds = 36000;
-    
-    double exposedProbablity  = std::pow((1 - t),haplosUnitToSeconds);
-    double exposed =  (double)(rand() / (double)RAND_MAX);
-    if(exposed<exposedProbablity){
-        //Person was exposed successfully
-        //Duration of Exposed State (1,2,3 Days)
-        setExposedStatus(p, currentTime);
-    }
-}
-
-void Policy::setExposedStatus(Person *p, int currentTime){
-    std::discrete_distribution<int> exposedToinfectious{0.3,0.5,0.2};
-    int haplosDay = 144;
-    int blah = exposedToinfectious(generator);
-    int exposedLength = (blah*haplosDay)+currentTime;
-    p->setCustomAttribute("exposed", std::to_string(exposedLength));
-}
-
-void Policy::setInfectiousStatus(Person *p, int currentTime){
-    //SEIR Model from Nsoesie etc (2012)
-
-    //Duration of Infectious State (3,4,5,6 Days)
-    std::discrete_distribution<int> infectiousToImmune{0.3,0.4,0.2,0.1};
-    
-    int haplosDay = 144;
-    int blah =infectiousToImmune(generator);
-    int infectionLength = ((blah+3)*haplosDay)+currentTime;
-    p->setCustomAttribute("infectious", std::to_string(infectionLength));
-    
-}
-
 //Required Method
 void Policy::updatePopulation(Population *p, std::unordered_map<int, Building*> *allBuildings, int currentTime){
     int numberOfFamilies = p->getNumberOfFamilies();
@@ -157,6 +118,7 @@ void Policy::updatePopulation(Population *p, std::unordered_map<int, Building*> 
             if(p->getCustomAttribute("exposed")!= "" && p->getCustomAttribute("infectious") == ""){
                 if(std::stoi(p->getCustomAttribute("exposed")) <= currentTime){
                     setInfectiousStatus(p, currentTime);
+                    //modifySchedule(f);
                 }
             }
             
@@ -186,9 +148,67 @@ int Policy::getCustomFileTypeData(Location *l, std::string fileType){
     return total;
 }
 
-
-void Policy::scheduleModification(Family f){
+//Required Method
+void Policy::modifySchedule(Family *f, Person *p){
+  /*  Schedule *oldSchedule = p->getSchedule();
+    oldSchedules[p->getID()] = Schedule(oldSchedule);
+    //1= school aged child, 2=older school aged child, 3=working adult
+    vector<TimeSlot> *t = oldSchedule->getPlan();
     
+    int scheduleType = oldSchedule->getType();
+    for(int i = 0; i< t.size(); i++){
+        TimeSlot slot1 = t.at(i);
+        if(slot.getVisitorType() == 'S' || slot.getVisitorType() == 'D' || slot.getVisitorType() == 'E'){
+            
+        }
+    }
+    
+    */
+}
+
+//Requried Method
+void Policy::revertToOldSchedule(Family *f, Person *p){
+    
+    
+}
+
+//Helper methods specific to this type of Model
+void Policy::determineExposedStatus(Person *p, int currentTime){
+    //SEIR Model from Nsoesie etc (2012)
+    
+    //Transmission Probablity Per Second of Exposure
+    double t = 0.000046;
+    
+    //1 Haplos Time Unit = 10 Minutes
+    int haplosUnitToSeconds = 36000;
+    
+    double exposedProbablity  = std::pow((1 - t),haplosUnitToSeconds);
+    double exposed =  (double)(rand() / (double)RAND_MAX);
+    if(exposed<exposedProbablity){
+        //Person was exposed successfully
+        //Duration of Exposed State (1,2,3 Days)
+        setExposedStatus(p, currentTime);
+    }
+}
+
+void Policy::setExposedStatus(Person *p, int currentTime){
+    std::discrete_distribution<int> exposedToinfectious{0.3,0.5,0.2};
+    int haplosDay = 144;
+    int blah = exposedToinfectious(generator);
+    int exposedLength = (blah*haplosDay)+currentTime;
+    p->setCustomAttribute("exposed", std::to_string(exposedLength));
+}
+
+void Policy::setInfectiousStatus(Person *p, int currentTime){
+    //SEIR Model from Nsoesie etc (2012)
+    
+    //Duration of Infectious State (3,4,5,6 Days)
+    std::discrete_distribution<int> infectiousToImmune{0.3,0.4,0.2,0.1};
+    
+    int haplosDay = 144;
+    int blah =infectiousToImmune(generator);
+    int infectionLength = ((blah+3)*haplosDay)+currentTime;
+    p->setCustomAttribute("infectious", std::to_string(infectionLength));
     
 }
 

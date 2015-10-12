@@ -84,6 +84,9 @@ class Schedule {
          */
         void removeTimeSlot(int i);
     
+        std::vector<TimeSlot>* getPlan();
+    
+    
         /**Change the schedule type (this will remake schedule).
          param[in] type type to change to (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
          */

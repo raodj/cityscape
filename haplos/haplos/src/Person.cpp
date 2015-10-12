@@ -96,6 +96,9 @@ int Person::getID(){
     return id_num;
 }
 
+void Person::setSchedule(Schedule s){
+    schedule = Schedule(s);
+}
 
 Schedule* Person::getSchedule(){
     return &schedule;
