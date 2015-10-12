@@ -507,6 +507,7 @@ std::string Population::returnFirstTenFamiliesInfo(std::string fileLocation){
     return returnString;
 }
 
+
 void Population::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildings){
     for (std::vector<Family>::iterator i = families.begin(); i!= families.end(); i++){
         i->updateToNextTimeStep(allBuildings);

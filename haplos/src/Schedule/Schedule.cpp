@@ -112,6 +112,11 @@ TimeSlot* Schedule::getCurrentTimeSlot(){
     return &plan[currentTimeSlot];
 }
 
+
+std::vector<TimeSlot>* Schedule::getPlan(){
+    return &plan;
+}
+
 TimeSlot* Schedule::getNextLocation(){
     if( currentTimeStep>=MAXTIMESTEPS-1){
         currentTimeStep=0;

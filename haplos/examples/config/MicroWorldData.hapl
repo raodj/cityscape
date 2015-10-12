@@ -2,12 +2,12 @@
 
 #####File Input and Output Configuration####
 #Data File Paths
-#Density_File=../examples/data/MicroWorld.asc
-#Timeline_File=../examples/timeline/Microworld.tl
-#Output_Directory=../output/
-Density_File=examples/data/MicroWorld.asc
-Timeline_File=examples/timeline/Microworld.tl
-Output_Directory=output/
+Density_File=../examples/data/MicroWorld.asc
+Timeline_File=../examples/timeline/Microworld.tl
+Output_Directory=../output/
+#Density_File=examples/data/MicroWorld.asc
+#Timeline_File=examples/timeline/Microworld.tl
+#Output_Directory=output/
 
 #Output File Parameters and Header Information
 Custom_Output_Files=infectious,immune,exposed
@@ -17,7 +17,7 @@ Cellsize_Width=0.0416666666667
 Cellsize_Height=0.0416666666667
 
 ###General Settings###
-Length_Of_Simulation=20160;
+Length_Of_Simulation=1;
 
 ###Population Configuration###
 #General Configuration
@@ -104,6 +104,18 @@ Schedule_Unemployeed_Adults_65-Older_Probablity=0.823067355
 Schedule_Employeed_Radius_Limit=-1
 Schedule_Unemployeed_Radius_Limit=-1
 
+Schedule_Adult_Employeed_Work_Home_Probablity=0.05
+Schedule_Adult_Employeed_Work_Out_Probablity=0.05
+Schedule_Adult_Employeed_Work_Job_Probablity=0.9
+
+Schedule_Adult_Employeed_No_Work_Home_Probablity=0.5
+Schedule_Adult_Employeed_No_Work_Out_Probablity=0.5
+Schedule_Adult_Employeed_No_Work_Job_Probablity=0
+
+Schedule_Adult_UnEmployeed_Job_Probablity=0
+Schedule_Adult_UnEmployeed_Out_Probablity=0.5
+Schedule_Adult_UnEmployeed_Probablity=0.5
+
 #School Aged Schedules
 Schedule_School_Children_14-17_Probablity=1
 Schedule_School_Children_5-13_Probablity=1
@@ -111,6 +123,14 @@ Schedule_School_Children_5-13_Probablity=1
 Schedule_School_Children_5-13_Radius_Limit=-1
 Schedule_School_Children_14-15_Radius_Limit=2
 Schedule_School_Children_16-17_Radius_Limit=4
+
+Schedule_Older_School_School_Day_Home_Probablity=0.8
+Schedule_Older_School_School_Day_Out_Probablity=0.2
+Schedule_Older_School_School_Day_Job_Probablity=0
+
+Schedule_Older_School_Weekend_Home_Probablity=0.8
+Schedule_Older_School_Weekend_Out_Probablity=0.2
+Schedule_Older_School_Weekend_Job_Probablity=0
 
 #Young Children Schedules
 Schedule_Young_Children_5-Younger_Probablity=1

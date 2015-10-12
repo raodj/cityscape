@@ -234,9 +234,31 @@ int main(int argc, char* argv[]) {
     int transportRadius[2] = { (int)configuration["Max_Public_Transport_Distance"],
                                (int)configuration["Max_Walking_Distance"]};
     
+    double adultWorkVisitorProbablities[3] = { configuration["Schedule_Adult_Employeed_Work_Job_Probablity"],
+                                            configuration["Schedule_Adult_Employeed_Work_Out_Probablity"],
+                                            configuration["Schedule_Adult_Employeed_Work_Home_Probablity"]};
+    
+    double adultNoWorkVisitorProbablities[3] = { configuration["Schedule_Adult_Employeed_No_Work_Job_Probablity"],
+                                              configuration["Schedule_Adult_Employeed_No_Work_Out_Probablity"],
+                                              configuration["Schedule_Adult_Employeed_No_Work_Home_Probablity"]};
+    
+    double adultUnemployeedVisitorProbablities[3]  = { configuration["Schedule_Adult_UnEmployeed_Job_Probablity"],
+                                                       configuration["Schedule_Adult_UnEmployeed_Out_Probablity"],
+                                                       configuration["Schedule_Adult_UnEmployeed_Probablity"]};
+    
+    double olderSchoolSchoolDayProbablities[3] = { configuration["Schedule_Older_School_School_Day_Job_Probablity"],
+                                                configuration["Schedule_Older_School_School_Day_Out_Probablity"],
+                                                configuration["Schedule_Older_School_School_Day_Home_Probablity"]};
+    
+    double olderSchoolWeekendProbablities[3] = { configuration["Schedule_Older_School_Weekend_Job_Probablity"],
+                                              configuration["Schedule_Older_School_Weekend_Out_Probablity"],
+                                              configuration["Schedule_Older_School_Weekend_Home_Probablity"]};
+                      
+
+
     //Set Seed
     generator.seed(time(0));
-        
+
     //Create Population
     Population pop = Population(configuration["Total_Population"],
                                 ageProbablities,
@@ -248,9 +270,15 @@ int main(int argc, char* argv[]) {
    
     //Assign Locations to Population
     
-    BuildingGenerator buildingGen = BuildingGenerator(generator, numberOfBuildings, &schoolBuildings,
-                                                      &daycareBuildings, &medicalBuildings,
-                                                      &businessBuildings, &otherBuildings, &allBuildings, &densityData,
+    BuildingGenerator buildingGen = BuildingGenerator(generator,
+                                                      numberOfBuildings,
+                                                      &schoolBuildings,
+                                                      &daycareBuildings,
+                                                      &medicalBuildings,
+                                                      &businessBuildings,
+                                                      &otherBuildings,
+                                                      &allBuildings,
+                                                      &densityData,
                                                       progressDisplay);
     
     buildingGen.assignHomes(pop);
@@ -264,10 +292,20 @@ int main(int argc, char* argv[]) {
                                   pop.getNumberOfChildrenDaycare());
 
     //Generate Schedules
-    ScheduleGenerator scheduleGen = ScheduleGenerator (&densityData, &allBuildings,
-                                                       generator, progressDisplay);
-    scheduleGen.generateSchedules(pop, radiusLimits, transportProbablities, transportRadius, transportRate);
-    //generateSchedules(pop, radiusLimits, transportProbablities, transportRadius, transportRate);
+    ScheduleGenerator scheduleGen = ScheduleGenerator (&densityData,
+                                                       &allBuildings,
+                                                       generator,
+                                                       progressDisplay);
+    scheduleGen.generateSchedules(pop,
+                                  radiusLimits,
+                                  transportProbablities,
+                                  transportRadius,
+                                  transportRate,
+                                  olderSchoolSchoolDayProbablities,
+                                  olderSchoolWeekendProbablities,
+                                  adultWorkVisitorProbablities,
+                                  adultNoWorkVisitorProbablities,
+                                  adultUnemployeedVisitorProbablities);
     
     policy.setupCustomAttributes(&pop);
     if(produceImages){
