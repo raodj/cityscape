@@ -65,6 +65,9 @@ class School : public Building{
          */
         School(int i, int x, int y, int capacity, int visitorCapacity, int forceSchoolType);
     
+        School(int i, int x, int y, int capacity, int visitorCapacity, int childMax,  int forceSchoolType, int schoolStart, int schoolEnd) ;
+
+    
         /**Get time of day when school will start (based on a 144 hour time units)
          \return Time of School Starting
          */
@@ -101,6 +104,9 @@ class School : public Building{
     
         using Building::getTotalNumberOfPeople;
         int getTotalNumberOfPeople();
+    
+        std::string exportString();
+    
         /**
          The destructor.
          
@@ -117,6 +123,7 @@ class School : public Building{
         int schoolEnd;
         int startGrade;
         int endGrade;
+        int schoolType;
         std::unordered_map <int, Person *> currentStudents;
     
     

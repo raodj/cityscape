@@ -57,6 +57,8 @@ class Family {
          \param[in] size Size of family.
          */
         Family();
+    
+        Family(Building *home, Daycare *daycare);
         
         /** Get a member of a family.
          \param id  id of family memember to retrive.
@@ -124,6 +126,8 @@ class Family {
         Person* getChildCareAdult();
     
         std::string toString();
+    
+        std::string exportFamily();
     
         void updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildings);
         /**

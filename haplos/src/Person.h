@@ -135,6 +135,8 @@ public:
     
     std::string toString();
     
+    std::string exportPerson();
+    
     /** Returns a CSV version of Informationabout the Person. This inclues ID number, 
         Age, Gender and Schedule Type.
      

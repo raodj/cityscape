@@ -46,6 +46,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 class BuildingGenerator{
     public:
@@ -64,7 +65,13 @@ class BuildingGenerator{
         void displayBuildingStatistics(double businessSizeProbablities[6], double hospitalSizeProbablities[6],
                                        double schoolSizeProbablities[6], double daycareSizeProbablities[6],
                                        std::string fileLocation);
+    
+    void exportBuildings(std::string fileLocation);
+
+    void importBuildings(std::string fileLocation);
     private:
+        void updateStatistics(char buildingType, int capacity);
+
         std::default_random_engine generator;
         bool progressDisplay;
         std::vector< School > *schoolBuildings;

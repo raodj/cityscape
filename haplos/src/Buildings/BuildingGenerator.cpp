@@ -130,31 +130,22 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
             case 2:
                 //10-19
                 capacity = (int)rand() % 9 + 10;
-                totalSchoolSize[2]++;
-                
                 break;
             case 3:
                 //20-99
                 capacity = (int)rand() % 79 + 20;
-                totalSchoolSize[3]++;
-                
                 break;
             case 4:
                 //100-499
                 capacity = (int)rand() % 399 + 100;
-                totalSchoolSize[4]++;
-                
                 break;
             case 5:
                 //500
                 capacity=500;
-                totalSchoolSize[5]++;
-                
                 break;
             default:
                 //Need a minimum of 6 teachers (0.20 will not be teachers)
                 capacity = (int)rand() % 9 + 10;
-                totalSchoolSize[2]++;
                 break;
                 
         }
@@ -168,7 +159,6 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
                 elementrySchoolPopulation=0;
             }
             eleTotal++;
-            numberOfBuildings++;
         }else{
             if(middleSchoolPopulation>0){
                 //Make Middle School
@@ -179,7 +169,6 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
                     middleSchoolPopulation=0;
                 }
                 middleTotal++;
-                numberOfBuildings++;
             }else{
                 if(highSchoolPopulation>0){
                     //Make High School
@@ -190,12 +179,11 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
                         highSchoolPopulation=0;
                     }
                     highTotal++;
-                    numberOfBuildings++;
                 }
             }
         }
-        totalSchools++;
         totalBuinessPopulation+=capacity;
+        updateStatistics('S', capacity);
     }
     for(int i = 0; i< schoolBuildings->size();i++){
         //Set up Pointers
@@ -213,17 +201,14 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
             case 0:
                 //4
                 capacity = 4;
-                totalDaycareSize[0]++;
                 break;
             case 1:
                 //5-9
                 capacity = (int)rand() % 4 + 5;
-                totalDaycareSize[1]++;
                 break;
             case 2:
                 //10-19
                 capacity = (int)rand() % 9 + 10;
-                totalDaycareSize[2]++;
                 break;
                 /*case 3: Anything greater than 20 seems kind of Silly
                  //20-99
@@ -243,7 +228,6 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
             default:
                 //Genrate a midsize Daycare
                 capacity = (int)rand() % 4 + 5;
-                totalDaycareSize[1]++;
                 break;
                 
         }
@@ -254,9 +238,8 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
         if(numberChildrenDaycare<0){
             numberChildrenDaycare=0;
         }
-        totalDaycares++;
-        numberOfBuildings++;
-        
+        updateStatistics('D', capacity);
+
     }
     for(int i = 0; i< daycareBuildings->size();i++){
         //Set up Pointers
@@ -278,14 +261,7 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
                 capacity = (int)rand() % 4 + 1;
                 if(hospitalSizeDistribution0(generator)){
                     //Make Medical
-                    totalHospitals++;
-                    totalHospitalSize[0]++;
                     hospital=true;
-                }
-                else{
-                    //Make Normal Business
-                    totalBusinesses++;
-                    totalBusinessSize[0]++;
                 }
                 break;
             }
@@ -295,14 +271,7 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
                 capacity = (int)rand() % 4 + 5;
                 if(hospitalSizeDistribution1(generator)){
                     //Make Medical
-                    totalHospitals++;
-                    totalHospitalSize[1]++;
                     hospital=true;
-                }
-                else{
-                    //Make Normal Business
-                    totalBusinesses++;
-                    totalBusinessSize[1]++;
                 }
                 break;
             }
@@ -312,14 +281,7 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
                 capacity = (int)rand() % 9 + 10;
                 if(hospitalSizeDistribution2(generator)){
                     //Make Medical
-                    totalHospitals++;
-                    totalHospitalSize[2]++;
                     hospital=true;
-                }
-                else{
-                    //Make Business
-                    totalBusinesses++;
-                    totalBusinessSize[2]++;
                 }
                 break;
             }
@@ -329,14 +291,7 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
                 capacity = (int)rand() % 79 + 20;
                 if(hospitalSizeDistribution3(generator)){
                     //Make Medical
-                    totalHospitals++;
-                    totalHospitalSize[3]++;
                     hospital=true;
-                }
-                else{
-                    //Make Normal Business
-                    totalBusinesses++;
-                    totalBusinessSize[3]++;
                 }
                 break;
             }
@@ -346,14 +301,7 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
                 capacity = (int)rand() % 399 + 100;
                 if(hospitalSizeDistribution4(generator)){
                     //Make Medical
-                    totalHospitals++;
-                    totalHospitalSize[4]++;
                     hospital=true;
-                }
-                else{
-                    //Make Normal Business
-                    totalBusinesses++;
-                    totalBusinessSize[4]++;
                 }
                 break;
             }
@@ -363,14 +311,7 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
                 capacity = 500;
                 if(hospitalSizeDistribution5(generator)){
                     //Make Medical
-                    totalHospitals++;
-                    totalHospitalSize[5]++;
                     hospital=true;
-                }
-                else{
-                    //Make Normal Business
-                    totalBusinesses++;
-                    totalBusinessSize[5]++;
                 }
                 break;
             }
@@ -381,14 +322,16 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
             //Medical was made
             medicalBuildings->push_back(Medical(numberOfBuildings, location%width, location/width, capacity, 10, 0));
             //allBuildings.insert({numberOfBuildings, &medicalBuildings.at(medicalBuildings.size()-1)});
+            updateStatistics('M', capacity);
         }else{
             //Normal business was made
             businessBuildings->push_back(Business(numberOfBuildings,location%width, location/width, capacity, 10));
             //allBuildings.insert({numberOfBuildings, &businessBuildings.at(businessBuildings.size()-1)});
             //std::cout<<numberOfBuildings<<": "<<newBuilding.getLocation()[0]<<" "<<newBuilding.getLocation()[1]<<std::endl;
+            updateStatistics('B', capacity);
+
         }
         totalBuinessPopulation+=capacity;
-        numberOfBuildings++;
     }
     
     for(int i = 0; i< medicalBuildings->size();i++){
@@ -530,5 +473,190 @@ void BuildingGenerator::displayBuildingStatistics(double businessSizeProbablitie
         buildingStatsFile << outputString.str();
         buildingStatsFile.close();
         
+    }
+}
+
+void BuildingGenerator::exportBuildings(std::string fileLocation){
+        std::ostringstream outputString;
+        
+        for(auto i = schoolBuildings->begin(); i != schoolBuildings->end(); i++){
+            outputString << i->exportString();
+        }
+        
+        for(auto i = businessBuildings->begin(); i != businessBuildings->end(); i++){
+            outputString << i->exportString();
+        }
+        
+        for(auto i = daycareBuildings->begin(); i != daycareBuildings->end(); i++){
+            outputString << i->exportString();
+        }
+    
+        for(auto i = medicalBuildings->begin(); i != medicalBuildings->end(); i++){
+            outputString << i->exportString();
+        }
+        
+        for(auto i = otherBuildings->begin(); i != otherBuildings->end(); i++){
+            outputString << i->exportString();
+        }
+        
+        ofstream buildingExportFile;
+        buildingExportFile.open(fileLocation+"/buildingExport.hpb");
+        buildingExportFile << outputString.str();
+        buildingExportFile.close();
+}
+
+void BuildingGenerator::importBuildings(std::string fileLocation){
+    std::ifstream in(fileLocation);
+    std::string s((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    std::stringstream ss(s);
+    std::string item;
+    std::getline(ss, item, '*');
+    while (std::getline(ss, item, '*')) {
+        //Process Building Element
+        std::stringstream rows(item);
+        std::string r;
+        std::getline(rows, r, '\n');
+        char type=(r.c_str())[0];
+        std::getline(rows, r, '\n');
+        int id = std::stoi(r);
+        std::getline(rows, r, '\n');
+        int maxCap = std::stoi(r);
+        std::getline(rows, r, '\n');
+        int maxVis = std::stoi(r);
+        std::string loc;
+        std::getline(rows, r, '\n');
+        std::stringstream locationString(r);
+        std::getline(locationString, loc, ',');
+        int loc_x = std::stoi(loc);
+        std::getline(locationString, loc, ',');
+        int loc_y = std::stoi(loc);
+        switch(type){
+            case 'M':{
+                //Medical
+                std::getline(rows, r, '\n');
+                int patCap = std::stoi(r);
+                medicalBuildings->push_back(Medical(id, loc_x, loc_y, maxCap, maxVis, patCap));
+                break;}
+            case 'S':{
+                //School
+                std::getline(rows, r, '\n');
+                int schoolType = std::stoi(r);
+                std::getline(rows, r, '\n');
+                int studCap = std::stoi(r);
+                std::getline(rows, r, '\n');
+                int startTime = std::stoi(r);
+                std::getline(rows, r, '\n');
+                int endTime = std::stoi(r);
+                schoolBuildings->push_back(School(id, loc_x, loc_y, maxCap, maxVis, studCap, schoolType, startTime, endTime));
+                break;}
+            case 'B':{
+                //Business
+                businessBuildings->push_back(Business(id, loc_x, loc_y, maxCap, maxVis));
+                break;
+            case 'D':
+                //Daycare
+                std::getline(rows, r, '\n');
+                int childCap = std::stoi(r);
+                daycareBuildings->push_back(Daycare(id, loc_x, loc_y, maxCap, maxVis, childCap));
+                break;}
+            default:{
+                //Standard Building
+                otherBuildings->push_back(Building(type,id, loc_x, loc_y, maxCap, maxVis));
+                break;
+            }
+        }
+        updateStatistics(type, maxCap);
+    }
+
+    for(int i = 0; i< otherBuildings->size();i++){
+        //Set up Pointers
+        allBuildings->insert({otherBuildings->at(i).getID(), &(otherBuildings->at(i))});
+        densityData->at(otherBuildings->at(i).getLocation()[0]).at(otherBuildings->at(i).getLocation()[1]).addBuilding(&(otherBuildings->at(i)));
+        allBuildings->insert({otherBuildings->at(i).getID(),
+            &(otherBuildings->at(i))});
+    }
+    
+    for(int i = 0; i< daycareBuildings->size();i++){
+        //Set up Pointers
+        allBuildings->insert({daycareBuildings->at(i).getID(), &(daycareBuildings->at(i))});
+        densityData->at(daycareBuildings->at(i).getLocation()[0]).at(daycareBuildings->at(i).getLocation()[1]).addBuilding(&(daycareBuildings->at(i)));
+        allBuildings->insert({daycareBuildings->at(i).getID(),
+            &(daycareBuildings->at(i))});
+
+    }
+    
+    for(int i = 0; i< schoolBuildings->size();i++){
+        //Set up Pointers
+        allBuildings->insert({schoolBuildings->at(i).getID(), &(schoolBuildings->at(i))});
+        densityData->at(schoolBuildings->at(i).getLocation()[0]).at(schoolBuildings->at(i).getLocation()[1]).addBuilding(&(schoolBuildings->at(i)));
+        allBuildings->insert({schoolBuildings->at(i).getID(),
+            &(schoolBuildings->at(i))});
+    }
+    
+    for(int i = 0; i< medicalBuildings->size();i++){
+        //Set up Pointers
+        allBuildings->insert({medicalBuildings->at(i).getID(), &(medicalBuildings->at(i))});
+        densityData->at(medicalBuildings->at(i).getLocation()[0]).at(medicalBuildings->at(i).getLocation()[1]).addBuilding(&(medicalBuildings->at(i)));
+        allBuildings->insert({medicalBuildings->at(i).getID(),
+            &(medicalBuildings->at(i))});
+    }
+    
+    for(int i = 0; i< businessBuildings->size();i++){
+        //Set up Pointers
+        allBuildings->insert({businessBuildings->at(i).getID(), &(businessBuildings->at(i))});
+        densityData->at(businessBuildings->at(i).getLocation()[0]).at(businessBuildings->at(i).getLocation()[1]).addBuilding(&(businessBuildings->at(i)));
+        allBuildings->insert({businessBuildings->at(i).getID(),
+            &(businessBuildings->at(i))});
+    }
+    
+    std::cout<<"\tImported Buildings Successfully"<<std::endl;
+    std::cout<<"\tBusinesses: "<<businessBuildings->size()<<std::endl;
+    std::cout<<"\tDaycares: "<<daycareBuildings->size()<<std::endl;
+    std::cout<<"\tMedical: "<<medicalBuildings->size()<<std::endl;
+    std::cout<<"\tSchools: "<<schoolBuildings->size()<<std::endl;
+    std::cout<<"\tOther Buildigns: "<<otherBuildings->size()<<std::endl;
+    std::cout<<"\tTotal: "<<allBuildings->size()<<std::endl;
+}
+
+void BuildingGenerator::updateStatistics(char buildingType, int capacity){
+    int capacityLevel = 0;
+    numberOfBuildings++;
+    if(capacity > 4 && capacity < 10){
+        capacityLevel = 1;
+    }else{
+        if(capacity > 9 && capacity < 20){
+            capacityLevel = 2;
+        }else{
+            if(capacityLevel > 19 && capacity < 100){
+                capacityLevel = 3;
+            }else{
+                if(capacityLevel > 99 && capacity < 500){
+                    capacityLevel = 4;
+                }else{
+                    if (capacityLevel > 499){
+                        capacityLevel = 5;
+                    }
+                }
+            }
+        }
+    }
+    
+    switch(buildingType){
+        case 'M':
+            totalHospitalSize[capacityLevel]++;
+            totalHospitals++;
+            break;
+        case 'B':
+            totalBusinessSize[capacityLevel]++;
+            totalBusinesses++;
+            break;
+        case 'S':
+            totalSchoolSize[capacityLevel]++;
+            totalSchools++;
+            break;
+        case 'D':
+            totalDaycareSize[capacityLevel]++;
+            totalDaycares++;
+            break;
     }
 }

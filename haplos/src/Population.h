@@ -63,13 +63,18 @@ class Population {
          \param[in] familysize1Prob Probably of creating a family of size 5.
          \param[in] familysize1Prob Probably of creating a family of size 6.
          \param[in] familysize1Prob Probably of creating a family of size 7.
-         \param[in] progressDisplay Display progress of creating population.
          \param[in] popSeed Seed used to generate Population (-1 will use a random seed based on time)
 
          */
         Population(int size, double *ageProbablities, double *familySizeProbablities,
-                   double maleProbablity, double *scheduleProbablities, bool progressDisplay, int popSeed);
+                   double maleProbablity, double *scheduleProbablities, int popSeed);
     
+        /** Generates population
+
+        \param[in] progressDisplay Display progress of creating population.
+         
+         */
+        void generatePopulation(bool progressDisplay);
         /** Display Statistics about population to Console.
          */
         void displayStatistics(std::string fileLocation);
@@ -116,7 +121,12 @@ class Population {
     
         void updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildings);
     
-    std::string returnFirstTenFamiliesInfo(std::string fileLocation);
+    
+        void exportPopulation(std::string fileLocation);
+    
+        void importPopulation(std::string fileLocation, std::unordered_map<int, Building*> *allBuildings);
+    
+        std::string returnFirstTenFamiliesInfo(std::string fileLocation);
         /**
          The destructor.
          
@@ -142,11 +152,13 @@ class Population {
             \return 'E'=Employeed Schedule, 'U'= Unemployeed Schedule, 'S' = School schedule,
                     'Y'= Young Child Schedule
          */
-        Schedule determineScheduleType(int ageGroup);
+        int determineScheduleType(int ageGroup);
     
         /** Set age for population of person in population.
          */
         int generateFamilySize();
+    
+        void updateStatistics(int age, int scheduleType, char gender);
     
         int size;   //Size of Population to Generate
     

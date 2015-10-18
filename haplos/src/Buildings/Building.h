@@ -142,6 +142,8 @@ class Building {
         int getTotalNumberOfPeople();
 
     
+        std::string exportString();
+    
         /** Returns a Human Readable Version on Information about the building.
          
          \return Human Readable String of Information about the Person

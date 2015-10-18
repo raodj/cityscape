@@ -36,6 +36,7 @@
 //-----------------------------------------------------------
 #include <iostream>
 #include <vector>
+#include <sstream>
 
 #include "TimeSlot.h"
 class TimeSlot;
@@ -110,6 +111,8 @@ class Schedule {
         TimeSlot* peekNextLocation();
     
         std::string toString();
+    
+    std::string exportSchedule();
         /**
          The destructor.
          

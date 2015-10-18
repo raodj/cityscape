@@ -64,6 +64,8 @@ class Daycare : public Building {
     
         using Building::getTotalNumberOfPeople;
         int getTotalNumberOfPeople();
+    
+        std::string exportString();
 
         /**
          The destructor.

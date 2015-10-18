@@ -72,6 +72,11 @@ std::string TimeSlot::toString(){
     return "\""+std::to_string(buildingID)+"\",\""+visitorType+"\",\""+std::to_string(endTime)+"\",\""+ std::to_string(day)+"("+std::to_string(hour)+":"+std::to_string(minutes)+")\"";
 }
 
+
+std::string TimeSlot::exportTimeSlot(){
+    return std::to_string(buildingID)+","+visitorType+","+std::to_string(endTime)+"\n";
+}
+
 TimeSlot::~TimeSlot(){
     
 }

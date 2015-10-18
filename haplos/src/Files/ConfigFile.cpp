@@ -59,6 +59,8 @@ ConfigFile::ConfigFile(const std::string& fileLocation) :
     outputFileLocation="";
     timelineFileLocation="";
     customFileTypes="";
+    populationImport="";
+    buildingImport="";
     while (getline(infile, line)) {
         if (line.empty()) {
             continue;
@@ -76,11 +78,19 @@ ConfigFile::ConfigFile(const std::string& fileLocation) :
                     if(outputFileLocation.empty()){
                         outputFileLocation = line.substr(equal_pos+1);
                     }else{
-                        if(customFileTypes.empty()){
-                            customFileTypes = line.substr(equal_pos+1);
+                        if(buildingImport.empty()){
+                            buildingImport = line.substr(equal_pos+1);
                         }else{
-                            addVariable(line.substr(0, equal_pos),
-                                        std::atof(line.substr(equal_pos + 1).c_str()));
+                            if(populationImport.empty()){
+                                populationImport = line.substr(equal_pos+1);
+                            }else{
+                                if(customFileTypes.empty()){
+                                    customFileTypes = line.substr(equal_pos+1);
+                                }else{
+                                    addVariable(line.substr(0, equal_pos),
+                                                std::atof(line.substr(equal_pos + 1).c_str()));
+                                }
+                            }
                         }
                     }
                 }
@@ -125,6 +135,16 @@ ConfigFile::getTimelineFileLocation() const {
 std::string
 ConfigFile::getCustomFileTypes() const {
     return customFileTypes;
+}
+
+std::string
+ConfigFile::getBuildingImport() const {
+    return buildingImport;
+}
+
+std::string
+ConfigFile::getPopulationImport() const {
+    return populationImport;
 }
 
 ConfigFile::~ConfigFile() {

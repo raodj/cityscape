@@ -2,12 +2,16 @@
 
 #####File Input and Output Configuration####
 #Data File Paths
-Density_File=../examples/data/MicroWorld.asc
-Timeline_File=../examples/timeline/Microworld.tl
-Output_Directory=../output/
-#Density_File=examples/data/MicroWorld.asc
-#Timeline_File=examples/timeline/Microworld.tl
-#Output_Directory=output/
+#Density_File=../examples/data/MicroWorld.asc
+#Timeline_File=../examples/timeline/Microworld.tl
+#Output_Directory=../output/
+Density_File=examples/data/MicroWorld.asc
+Timeline_File=examples/timeline/Microworld.tl
+Output_Directory=output/
+#Building_Import=-1
+#Population_Import=-1
+Building_Import=output/buildingExport.hpb
+Population_Import=output/populationExport.hpe
 
 #Output File Parameters and Header Information
 Custom_Output_Files=infectious,immune,exposed

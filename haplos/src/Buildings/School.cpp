@@ -42,7 +42,7 @@ School::School(int i, int x, int y, int capacity, int visitorCapacity) : Buildin
     //20% of School are not Teachers (teachers can have up to 30 students)
     int avalibleTeachers = (int)capacity * 0.20;
     //Schools very rarely offer all grades, split at elementry, middle, and high
-    int schoolType = (int)rand() % 2;
+    schoolType = (int)rand() % 2;
     
     int currentGrade =0;
     int endGrade=0;
@@ -94,11 +94,12 @@ School::School(int i, int x, int y, int capacity, int visitorCapacity, int force
     //20% of School are not Teachers (teachers can have up to 30 students)
     int avalibleTeachers = (int)ceil(capacity * 0.20);
     //Schools very rarely offer all grades, split at elementry, middle, and high
-    int schoolType =forceSchoolType;
+    schoolType =forceSchoolType;
     //std::cout<<"Avalaible teachers: "<<avalibleTeachers<<std::endl;
     int currentGrade =0;
     endGrade=0;
     startGrade=0;
+    
     
     switch(schoolType){
         case 0:
@@ -142,7 +143,16 @@ School::School(int i, int x, int y, int capacity, int visitorCapacity, int force
 }
 
 
-                                   
+School::School(int i, int x, int y, int capacity, int visitorCapacity, int childMax,  int forceSchoolType, int schoolStart, int schoolEnd) : Building('S', i, x, y, capacity, visitorCapacity){
+    int avalibleTeachers = (int)ceil(capacity * 0.20);
+    schoolType =forceSchoolType;
+    this->studentCapacity = 0;
+    this->studentMaxCapacity=childMax;
+    this->schoolStart = schoolStart;
+    this->schoolEnd = schoolEnd;
+}
+
+
 int School::getSchoolStartTime(){
     return schoolStart;
 }
@@ -194,6 +204,21 @@ void School::addStudent(Person *p){
 std::unordered_map<int, Person *> School::getStudents(){
     return currentStudents;
     
+}
+
+std::string School::exportString(){
+    std::string returnString = "*";
+    returnString += std::string(1, getType())+"\n";
+    returnString += std::to_string(getID())+"\n";
+    returnString += std::to_string(getMaxCapacity())+"\n";
+    returnString += std::to_string(getMaxVisitorCapacity())+"\n";
+    int *l = getLocation();
+    returnString += std::to_string(l[0])+","+std::to_string(l[1])+"\n";
+    returnString += std::to_string(schoolType)+"\n";
+    returnString += std::to_string(studentMaxCapacity)+"\n";
+    returnString += std::to_string(schoolStart)+"\n"+std::to_string(schoolEnd)+"\n";
+
+    return returnString;
 }
 
 School::~School(){
