@@ -129,6 +129,17 @@ std::string Person::getCustomAttribute(std::string key){
     return customAttributes[key];
 }
 
+std::string Person::exportPerson(){
+    std::ostringstream outputString;
+    outputString << "*";
+    outputString << id_num<< std::endl;
+    outputString << age<< std::endl;
+    outputString << gender<< std::endl;
+    outputString << std::to_string(schedule.getScheduleType())<<std::endl;
+    outputString << schedule.exportSchedule();
+    return outputString.str();
+}
+
 Person::~Person() {
 	// TODO Auto-generated destructor stub
     

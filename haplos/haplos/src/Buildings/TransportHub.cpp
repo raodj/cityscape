@@ -67,9 +67,6 @@ std::unordered_map<int, Person *> TransportHub::getPrivateTransport(int homeNumb
     return privateTransport[homeNumber];
 }
 
-
-
-
 TransportHub::~TransportHub(){
     
 }

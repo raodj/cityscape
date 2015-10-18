@@ -53,6 +53,17 @@ Family::Family() {
     daycare=NULL;
 }
 
+Family::Family(Building *h, Daycare *d ){
+    hasAdult=false;
+    hasYoungChild=0;
+    hasYoungSchoolChild=false;
+    hasSchoolChild=false;
+    numberOfPeople=0;
+    homeNumber=h;
+    childCareAdultPos=0;
+    daycare=d;
+}
+
 Person* Family::getPerson(int id){
     return &members[id];
     
@@ -152,10 +163,26 @@ std::string Family::toString(){
     return outputString.str();
 }
 
+
+
+std::string Family::exportFamily(){
+    std::ostringstream outputString;
+    outputString << "%";
+    outputString << homeNumber->getID() << std::endl;
+    int daycareID = -1;
+    if(daycare != NULL){
+        daycareID = daycare->getID();
+    }
+    outputString << daycareID << std::endl;
+    for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){
+       outputString << it->exportPerson();
+    }
+    return outputString.str();
+    
+}
 void Family::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildings){
    // std::cout<<"Family: "<<homeNumber->getID()<<std::endl;
     for (std::vector<Person>::iterator i = members.begin(); i!= members.end(); i++){
-        //std::cout<<"\t"<<i->getID()<<std::endl;
         TimeSlot* oldLocation = i->getCurrentTimeSlot();
         int buildingID = oldLocation->getLocation();
         //Update Previous Location

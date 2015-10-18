@@ -102,6 +102,7 @@ int main(int argc, char* argv[]) {
     Policy policy =  Policy();
     
     bool produceImages=true;
+    bool exportFiles = false;
 
     
     //Command Line Paramaters
@@ -124,6 +125,10 @@ int main(int argc, char* argv[]) {
                 if((arg=="--noProgressDisplay")|| (arg=="-npd")){
                     progressDisplay=false;
                 }
+                if((arg=="--export")|| (arg=="-e")){
+                    exportFiles=true;
+                }
+
             }
         }
     }
@@ -132,31 +137,7 @@ int main(int argc, char* argv[]) {
     configuration= ConfigFile(configFile);
     std::string outputFolder = configuration.getOutputFileLocation();
 
-    //Read in Density Data
-    SedacReader sr = SedacReader();
-    densityData = sr.readFile(configuration.getSedacFileLocation(),
-                              configuration["Density_File_Total_Population"],
-                              configuration["Total_Population"]);
-    
-    //Read in Timeline File
-    TimelineFile tl = TimelineFile(configuration.getTimelineFileLocation(), configuration.getCustomFileTypes());
-    
-    //Extract out Pure Density Data
-    std::vector<double> pureDensity;
-    pureDensity.resize(densityData.size() * densityData[0].size());
-    for( int x=0; x < densityData.size(); x++ ){
-        for( int y=0; y < densityData[0].size(); y++ ){
-            densityData.at(x).at(y).getTransportHub()->setID(numberOfBuildings);
-            allBuildings[numberOfBuildings] = densityData.at(x).at(y).getTransportHub();
-            numberOfBuildings++;
-            if(densityData.at(x).at(y).getMaxPopulation()==0){
-                pureDensity[x*y]=0;
-                
-            }else{
-                pureDensity[x*y]=densityData.at(x).at(y).getDensity();
-            }
-        }
-    }
+
 
     //Age Probablities
     double ageProbablities [7]={ configuration["Age_5-Younger_Probablity"],
@@ -258,17 +239,33 @@ int main(int argc, char* argv[]) {
 
     //Set Seed
     generator.seed(time(0));
-
-    //Create Population
-    Population pop = Population(configuration["Total_Population"],
-                                ageProbablities,
-                                familySizeProbablities,
-                                configuration["Male_Probablity"],
-                                scheduleTypeProbablities,
-                                progressDisplay,
-                                configuration["Population_Seed"]);
-   
-    //Assign Locations to Population
+    
+    
+    //Read in Density Data
+    SedacReader sr = SedacReader();
+    densityData = sr.readFile(configuration.getSedacFileLocation(),
+                              configuration["Density_File_Total_Population"],
+                              configuration["Total_Population"]);
+    
+    //Read in Timeline File
+    TimelineFile tl = TimelineFile(configuration.getTimelineFileLocation(), configuration.getCustomFileTypes());
+    
+    //Extract out Pure Density Data
+    std::vector<double> pureDensity;
+    pureDensity.resize(densityData.size() * densityData[0].size());
+    for( int x=0; x < densityData.size(); x++ ){
+        for( int y=0; y < densityData[0].size(); y++ ){
+            densityData.at(x).at(y).getTransportHub()->setID(numberOfBuildings);
+            allBuildings[numberOfBuildings] = densityData.at(x).at(y).getTransportHub();
+            numberOfBuildings++;
+            if(densityData.at(x).at(y).getMaxPopulation()==0){
+                pureDensity[x*y]=0;
+                
+            }else{
+                pureDensity[x*y]=densityData.at(x).at(y).getDensity();
+            }
+        }
+    }
     
     BuildingGenerator buildingGen = BuildingGenerator(generator,
                                                       numberOfBuildings,
@@ -280,32 +277,50 @@ int main(int argc, char* argv[]) {
                                                       &allBuildings,
                                                       &densityData,
                                                       progressDisplay);
+    Population pop = Population(configuration["Total_Population"],
+                                ageProbablities,
+                                familySizeProbablities,
+                                configuration["Male_Probablity"],
+                                scheduleTypeProbablities,
+                                configuration["Population_Seed"]);
     
-    buildingGen.assignHomes(pop);
-    buildingGen.generateBuildings(businessSizeProbablities,
-                                  hospitalSizeProbablities,
-                                  schoolSizeProbablities,
-                                  pureDensity,
-                                  densityData.size(),
-                                  pop.getNumberOfEmployeedAdults(),
-                                  pop.getNumberOfStudentsPerGrade(),
-                                  pop.getNumberOfChildrenDaycare());
+    std::cout<<"Population Import File: "<<configuration.getPopulationImport()<<std::endl;
+    std::cout<<"Get Building Import File: "<<configuration.getBuildingImport()<<std::endl;
+    if(configuration.getPopulationImport() ==  "-1" || configuration.getBuildingImport() == "-1"){
+        //Create Population
+        pop.generatePopulation(progressDisplay);
+        
+        //Assign Locations to Population
+        buildingGen.assignHomes(pop);
+        buildingGen.generateBuildings(businessSizeProbablities,
+                                      hospitalSizeProbablities,
+                                      schoolSizeProbablities,
+                                      pureDensity,
+                                      densityData.size(),
+                                      pop.getNumberOfEmployeedAdults(),
+                                      pop.getNumberOfStudentsPerGrade(),
+                                      pop.getNumberOfChildrenDaycare());
 
-    //Generate Schedules
-    ScheduleGenerator scheduleGen = ScheduleGenerator (&densityData,
-                                                       &allBuildings,
-                                                       generator,
-                                                       progressDisplay);
-    scheduleGen.generateSchedules(pop,
-                                  radiusLimits,
-                                  transportProbablities,
-                                  transportRadius,
-                                  transportRate,
-                                  olderSchoolSchoolDayProbablities,
-                                  olderSchoolWeekendProbablities,
-                                  adultWorkVisitorProbablities,
-                                  adultNoWorkVisitorProbablities,
-                                  adultUnemployeedVisitorProbablities);
+        //Generate Schedules
+        ScheduleGenerator scheduleGen = ScheduleGenerator (&densityData,
+                                                           &allBuildings,
+                                                           generator,
+                                                           progressDisplay);
+        scheduleGen.generateSchedules(pop,
+                                      radiusLimits,
+                                      transportProbablities,
+                                      transportRadius,
+                                      transportRate,
+                                      olderSchoolSchoolDayProbablities,
+                                      olderSchoolWeekendProbablities,
+                                      adultWorkVisitorProbablities,
+                                      adultNoWorkVisitorProbablities,
+                                      adultUnemployeedVisitorProbablities);
+        
+    }else{
+        buildingGen.importBuildings(configuration.getBuildingImport());
+        pop.importPopulation(configuration.getPopulationImport(), &allBuildings);
+    }
     
     policy.setupCustomAttributes(&pop);
     if(produceImages){
@@ -335,7 +350,7 @@ int main(int argc, char* argv[]) {
                 }else{
                     imageData.at(x).at(y)=densityData.at(x).at(y).getCurrentPopulation();
                     buildingData.at(x).at(y)=densityData.at(x).at(y).getNumberOfBuildings('\0');
-
+                    
                 }
             }
         }
@@ -376,11 +391,15 @@ int main(int argc, char* argv[]) {
     
     //Create Files
     pop.displayStatistics(saveLocationPath);
+    if(exportFiles){
+        pop.exportPopulation(saveLocationPath);
+        buildingGen.exportBuildings(saveLocationPath);
+    }
     buildingGen.displayBuildingStatistics(businessSizeProbablities,
-                              hospitalSizeProbablities,
-                              schoolSizeProbablities,
-                              daycareSizeProbablities,
-                              saveLocationPath);
+                                          hospitalSizeProbablities,
+                                          schoolSizeProbablities,
+                                          daycareSizeProbablities,
+                                          saveLocationPath);
     
     //Display 10 Families Entirely (Useful for Schedule Testing).
     pop.returnFirstTenFamiliesInfo(familyFileLocationPath);

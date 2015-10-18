@@ -67,6 +67,8 @@ class TimeSlot{
     
         std::string toString();
     
+        std::string exportTimeSlot();
+    
         /**
          The destructor.
          

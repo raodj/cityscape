@@ -79,6 +79,20 @@ std::string Medical::toString(){
     
 }
 
+
+std::string Medical::exportString(){
+    std::string returnString = "*";
+    returnString += std::string(1, getType())+"\n";
+    returnString += std::to_string(getID())+"\n";
+    returnString += std::to_string(getMaxCapacity())+"\n";
+    returnString += std::to_string(getMaxVisitorCapacity())+"\n";
+    int *l = getLocation();
+    returnString += std::to_string(l[0])+","+std::to_string(l[1])+"\n";
+    returnString += std::to_string(maxPatientCapacity)+"\n";
+    return returnString;
+}
+
+
 Medical::~Medical(){
     
 }

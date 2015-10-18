@@ -83,6 +83,8 @@ class Medical : public Building {
          */
         std::string toString();
     
+        std::string exportString();
+    
         /**
          The destructor.
          

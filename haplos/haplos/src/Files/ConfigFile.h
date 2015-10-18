@@ -143,6 +143,17 @@ public:
      */
     std::string getCustomFileTypes() const;
 
+    /** Return Population Import File Location
+     
+     \return custom file types in CSV format
+     */
+    std::string getPopulationImport() const;
+    
+    /** Return Building Import File Location
+     
+     \return custom file types in CSV format
+     */
+    std::string getBuildingImport() const;
     
     /** Return Timeline File location.
      
@@ -165,6 +176,8 @@ private:
     std::string outputFileLocation;
     std::string timelineFileLocation;
     std::string customFileTypes;
+    std::string buildingImport;
+    std::string populationImport;
     std::unordered_map<std::string, double> variables;
 };
 

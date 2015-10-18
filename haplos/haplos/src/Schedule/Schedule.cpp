@@ -38,8 +38,8 @@
 
 Schedule::Schedule() {
     type=0;
-    currentTimeStep=0;
-    currentTimeSlot=0;
+    this->currentTimeStep=0;
+    this->currentTimeSlot=0;
     this->jobLocationID=-1;
     loop = false;
     
@@ -49,8 +49,8 @@ Schedule::Schedule() {
 
 Schedule::Schedule(int type){
     this->type=type;
-    currentTimeStep=0;
-    currentTimeSlot=0;
+    this->currentTimeStep=0;
+    this->currentTimeSlot=0;
     this->jobLocationID=-1;
     loop = false;
 }
@@ -65,6 +65,7 @@ int Schedule::getJobLocation(){
 
 Schedule::Schedule(const Schedule &s){
     type=s.type;
+    currentTimeSlot = s.currentTimeSlot;
     currentTimeStep=s.currentTimeStep;
     jobLocationID=s.jobLocationID;
     plan.resize(s.plan.size());
@@ -107,8 +108,6 @@ TimeSlot* Schedule::getLocationAt(int time){
 }
 
 TimeSlot* Schedule::getCurrentTimeSlot(){
-    //std::cout<<"\t\tCurrent Time Slot"<<currentTimeSlot<<std::endl;
-    //std::cout<<"\t\tTotal Time Slots"<<plan.size()<<std::endl;
     return &plan[currentTimeSlot];
 }
 
@@ -125,7 +124,7 @@ TimeSlot* Schedule::getNextLocation(){
        currentTimeStep++;
     }
     if(!loop){
-        if(plan[currentTimeSlot].getEndTime()<=currentTimeStep && currentTimeSlot!= plan.size()-1){
+        if(plan[currentTimeSlot].getEndTime()<=currentTimeStep && currentTimeSlot != plan.size()-1){
             //Move to Next Time Slot
             currentTimeSlot++;
         }else{
@@ -178,6 +177,17 @@ std::string Schedule::toString(){
 }
 
 
+
+std::string Schedule::exportSchedule(){
+    std::ostringstream outputString;
+    outputString << "#";
+    outputString << std::to_string(jobLocationID)<< std::endl;
+    for(std::vector< TimeSlot >::iterator it = plan.begin(); it!= plan.end(); ++it){
+        outputString << it->exportTimeSlot();
+    }
+    return outputString.str();
+    
+}
 
 
 Schedule::~Schedule(){

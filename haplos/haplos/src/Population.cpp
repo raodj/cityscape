@@ -48,7 +48,7 @@
 using namespace std;
 
 Population::Population(int s, double *ageProbablities, double *familySizeProbablites, double mProb, double
-    *scheduleProbablities, bool progressDisplay, int popSeed) {
+    *scheduleProbablities, int popSeed) {
     numberOfMales=0;
     
 	size=s;
@@ -71,12 +71,13 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
 
     //Set Schedule Probablities
     this->scheduleProbablities=scheduleProbablities;
-    
-    
 
     //Set Probablity of Male (It is Assumed Probablity of Female is 1-MaleProbablity)
     maleProbablity=mProb;
-    
+}
+
+
+void Population::generatePopulation(bool progressDisplay){
     std::cout << "Creating Population of size: " << size << std::endl;
     int i=0;
     float oldRatio=0;
@@ -92,13 +93,24 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
     //Initialize Arrays
     for(int i = 0; i < 13;i++){
         numberOfStudentsAssignedGrade[i]=0;
-
+        
+    }
+    
+    //Initialize Arrays
+    for(int i = 0; i < 11;i++){
+        numberOfPeopleAssignedSchedule[i]=0;
+        
+    }
+    //Initialize Arrays
+    for(int i = 0; i < 7;i++){
+        numberOfFamiliesSizes[i]=0;
+        numberOfPeopleAges[i]=0;
     }
     
     while( i < size){
         int familySize= generateFamilySize();
-       // std::cout<< "Family Size: "<< familySize << std::endl;
-
+        // std::cout<< "Family Size: "<< familySize << std::endl;
+        
         Family newFamily = Family();
         if(familySize > size-i ){
             familySize = size-i;
@@ -106,10 +118,14 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
         for( int b = 0; b<familySize; b++ ){
             //Always first Person in Family must be an Adult
             int *ageInformation=determineAge(((b == 0) ? true : false ));
-            Person newPerson= Person(ageInformation[0], determineGender(), -1, i++, determineScheduleType(ageInformation[1]).getScheduleType());
-            if(ageInformation[0]<18){
-                numberOfStudentsAssignedGrade[ageInformation[0]-5]++;
-            }
+            int scheduleType = determineScheduleType(ageInformation[1]);
+            char gender =determineGender();
+            Person newPerson= Person(ageInformation[0],
+                                     gender,
+                                     -1,
+                                     i++,
+                                     scheduleType);
+            updateStatistics(ageInformation[0], scheduleType, gender);
             newFamily.addPerson(newPerson);
         }
         
@@ -120,7 +136,7 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
         }
         
         families.push_back(newFamily);
-
+        
         if(progressDisplay){
             float ratio = i/(float)size;
             if(100*(ratio-oldRatio)>1){
@@ -131,7 +147,7 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
                 fflush(stdout);
             }
         }
-
+        
     }
     if(progressDisplay){
         printf("\r");
@@ -140,7 +156,7 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
     }
     std::cout<< std::endl;
     std::cout<<"Total of "<<i<<" People Generated."<<std::endl;
-
+    
 }
 
 int Population::getPopulationSize(){
@@ -177,12 +193,11 @@ int Population::getNumberOfChildrenDaycare(){
     return numberOfChildrenDaycare;
     
 }
+
 char Population::determineGender(){
 	//Generate random number
 	double x = 1.0*rand()/RAND_MAX;
-	//double x =1;
 	if ( x<maleProbablity ) {
-        numberOfMales++;
 		return 'm';
 	}
 	else {
@@ -190,7 +205,6 @@ char Population::determineGender(){
 	}
 
 }
-
 
 int Population::generateFamilySize(){
     std::discrete_distribution<int> distribution{familySizeProbablites[0],
@@ -213,21 +227,17 @@ int *Population::determineAge(bool forceAdult){
         //Adult Only (Using Uniform Distribution for Now)
         int age=(int)rand() % 82 + 18;
         if(age<25){
-            numberOfPeopleAges[3]++;
             ageGroup=3;
         }
         else{
             if(age<45){
-                numberOfPeopleAges[4]++;
                 ageGroup=4;
             }
             else{
                 if(age<65){
-                    numberOfPeopleAges[5]++;
                     ageGroup=5;
                 }
                 else{
-                    numberOfPeopleAges[6]++;
                     ageGroup=6;
                 }
             }
@@ -251,44 +261,36 @@ int *Population::determineAge(bool forceAdult){
         switch(distribution(generator)){
             case 0:
                 //4 and Younger
-                numberOfPeopleAges[0]++;
                 ageInformation[0]=(int)rand() % 4;
                 ageInformation[1]=0;
                 break;
             case 1:
                 //5-13
-                numberOfPeopleAges[1]++;
                 ageInformation[0]= (int)rand() % 8 + 5;
                 ageInformation[1]= 1;
                 break;
             case 2:
                 //14-17
-                numberOfPeopleAges[2]++;
                 ageInformation[0]=(int)rand() % 3 + 14;
                 ageInformation[1]=2;
                 break;
             case 3:
                 //18-24
-                numberOfPeopleAges[3]++;
                 ageInformation[0]= (int)rand() % 6 + 18;
                 ageInformation[1]=3;
                 break;
             case 4:
                 //25-44
-                numberOfPeopleAges[4]++;
                 ageInformation[0]= (int)rand() % 19 + 25;
                 ageInformation[1]=4;
                 break;
             case 5:
                 //45-64
-                numberOfPeopleAges[5]++;
                 ageInformation[0]= (int)rand() % 19 + 45;
                 ageInformation[1]=5;
                 break;
             case 6:
                 //65-Older
-            
-                numberOfPeopleAges[6]++;
                 ageInformation[0]= (int)rand() % 35 +65;
                 ageInformation[1]=6;
                 break;
@@ -304,27 +306,20 @@ int *Population::determineAge(bool forceAdult){
     return ageInformation;
 }
 
-Schedule Population::determineScheduleType(int ageGroup){
+int Population::determineScheduleType(int ageGroup){
     double adultScheduleProbablities[2];
-    Schedule tmp = Schedule();
     switch(ageGroup){
         case 0:
             //Young Child Schedule
-            numberOfPeopleAssignedSchedule[0]++;
-            tmp.setScheduleType(0);
-            return tmp;
+            return 0;
             break;
         case 1:
             //School Aged Child Schedule (5-13)
-            numberOfPeopleAssignedSchedule[1]++;
-            tmp.setScheduleType(1);
-            return tmp;
+            return 1;
             break;
         case 2:
             //School Aged Child Schedule (14-17)
-            numberOfPeopleAssignedSchedule[2]++;
-            tmp.setScheduleType(2);
-            return tmp;
+            return 2;
             break;
         case 3:
             //Adult Schedule (18-24)
@@ -356,49 +351,13 @@ Schedule Population::determineScheduleType(int ageGroup){
     
     if(scheduleType==1){
         //Unemployeed
-        switch(ageGroup){
-            case 3:
-                //18-24
-                numberOfPeopleAssignedSchedule[4]++;
-                break;
-            case 4:
-                //25-44
-                numberOfPeopleAssignedSchedule[6]++;
-                break;
-            case 5:
-                //45-64
-                numberOfPeopleAssignedSchedule[8]++;
-                break;
-            case 6:
-                //65-Older
-                numberOfPeopleAssignedSchedule[10]++;
-                break;
-        }
-        tmp.setScheduleType(4);
+        return 4;
     }
     else{
         //Employeed
-        switch(ageGroup){
-            case 3:
-                //18-24
-                numberOfPeopleAssignedSchedule[3]++;
-                break;
-            case 4:
-                //25-44
-                numberOfPeopleAssignedSchedule[5]++;
-                break;
-            case 5:
-                //45-64
-                numberOfPeopleAssignedSchedule[7]++;
-                break;
-            case 6:
-                //65-Older
-                numberOfPeopleAssignedSchedule[9]++;
-                break;
-        }
-        tmp.setScheduleType(3);
+        return 3;
     }
-    return tmp;
+    return 0;
 }
 
 void Population::displayStatistics(std::string fileLocation){
@@ -515,6 +474,165 @@ void Population::updateToNextTimeStep(std::unordered_map<int, Building*> *allBui
 }
 
 
+void Population::exportPopulation(std::string fileLocation){
+    std::ostringstream outputString;
+
+    for (std::vector<Family>::iterator i = families.begin(); i!= families.end(); i++){
+        outputString<<i->exportFamily();
+    }
+    
+    if(fileLocation!=""){
+        ofstream exportFile;
+        exportFile.open(fileLocation+"/populationExport.hpe");
+        exportFile << outputString.str();
+        exportFile.close();
+    }
+    
+}
+
+void Population::importPopulation(std::string fileLocation, std::unordered_map<int, Building*> *allBuildings){
+    std::ifstream in(fileLocation);
+    std::string s((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    std::stringstream ss(s);
+    std::string item;
+    std::getline(ss, item, '%');
+    while (std::getline(ss, item, '%')) {
+        //std::cout<<item<<std::endl;
+        std::stringstream rows(item);
+        std::string r;
+        std::getline(rows, r, '\n');
+        int homeID = std::stoi(r);
+        std::getline(rows, r, '\n');
+        int daycareID = std::stoi(r);
+        //std::cout<<"Home ID: "<<homeID<<std::endl;
+        //std::cout<<"Daycare ID: "<<daycareID<<std::endl;
+        Family newFamily = Family(allBuildings->at(homeID), (daycareID != -1 ? static_cast<Daycare*> (allBuildings->at(daycareID)) : NULL));
+        std::getline(rows, r, '*');
+        while(std::getline(rows, r, '*')){
+            std::string p;
+            //std::cout<<r<<std::endl;
+            std::stringstream rs(r);
+            std::getline(rs, p, '\n');
+            int personId = std::stoi(p);
+            std::getline(rs, p, '\n');
+            int age = std::stoi(p);
+            std::getline(rs, p, '\n');
+            char gender = (p.c_str())[0];
+            std::getline(rs, p, '\n');
+            int schType = std::stoi(p);
+            Person newPerson = Person(age, gender, -1, personId, schType);
+            std::string s;
+            std::getline(rs, s, '#');
+            Schedule tmpSch = Schedule(schType);
+            while(std::getline(rs, s, '#')){
+                //Read in Schedule Element
+                std::string jl;
+                std::stringstream schStream(s);
+                std::getline(schStream, jl, '\n');
+                int jobLocationID = std::stoi(jl);
+                std::string t;
+                tmpSch.setJobLocation(jobLocationID);
+                while(std::getline(schStream, t, '\n')){
+                    //Read in Time Slot Elements
+                    std::string ts;
+                    std::stringstream timeStream(t);
+                    std::getline(timeStream, ts, ',');
+                    int buildingID = std::stoi(ts);
+                    std::getline(timeStream, ts, ',');
+                    char vistType = (ts.c_str())[0];
+                    std::getline(timeStream, ts, ',');
+                    int endTime = std::stoi(ts);
+                    tmpSch.addTimeSlot(TimeSlot(buildingID, endTime, vistType));
+                }
+            }
+            newPerson.setSchedule(tmpSch);
+            TimeSlot *firstLoc = tmpSch.getCurrentTimeSlot();
+            newFamily.addPerson(newPerson);
+            allBuildings->at(firstLoc->getLocation())->addVisitor(&newPerson);
+            updateStatistics(age, schType, gender);
+
+        }
+        families.push_back(newFamily);
+        numberOfFamiliesSizes[newFamily.getNumberOfPeople()-1]++;
+        
+    }
+    
+}
+void Population::updateStatistics(int age, int scheduleType, char gender){
+    int ageGroup = 0;
+    if(gender == 'm'){
+        numberOfMales++;
+    }
+    if(age>4 && age <14){
+        ageGroup = 1;
+    }else{
+        if(age>13 && age <18){
+            ageGroup =2;
+        }else{
+            if(age>17 && age <25){
+                ageGroup = 3;
+            }else{
+                if(age > 24 && age < 45){
+                    ageGroup = 4;
+                }else{
+                    if(age > 44 && age < 65){
+                        ageGroup = 5;
+                    }else{
+                        if(age > 64){
+                            ageGroup = 6;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if(age<18 && age>4){
+        numberOfStudentsAssignedGrade[age-5]++;
+    }
+    numberOfPeopleAges[ageGroup]++;
+
+    if(scheduleType!= 3 && scheduleType != 4){
+        numberOfPeopleAssignedSchedule[scheduleType]++;
+    }else{
+        if(scheduleType==3){
+                //Employeed Schedule
+                switch(ageGroup){
+                    case 3:
+                        numberOfPeopleAssignedSchedule[3]++;
+                        break;
+                    case 4:
+                        numberOfPeopleAssignedSchedule[5]++;
+                        break;
+                    case 5:
+                        numberOfPeopleAssignedSchedule[7]++;
+                        break;
+                    case 6:
+                        numberOfPeopleAssignedSchedule[9]++;
+                        break;
+                    default:
+                        break;
+                }
+        }else{
+            //Employeed Schedule
+            switch(ageGroup){
+                case 3:
+                    numberOfPeopleAssignedSchedule[4]++;
+                    break;
+                case 4:
+                    numberOfPeopleAssignedSchedule[6]++;
+                    break;
+                case 5:
+                    numberOfPeopleAssignedSchedule[8]++;
+                    break;
+                case 6:
+                    numberOfPeopleAssignedSchedule[10]++;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+}
 
 Population::~Population() {
 	// TODO Auto-generated destructor stub

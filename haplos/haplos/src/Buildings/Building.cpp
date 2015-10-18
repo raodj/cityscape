@@ -39,34 +39,42 @@
 using namespace std;
 
 Building:: Building(){
-    type='U';
-    idNumber=-1;
-    location[0]=-1;
-    location[1]=-1;
-    maxCapacity=-1;
-    currentCapacity=0;
-    visitorCapacity=0;
+    type = 'U';
+    idNumber = -1;
+    location[0] = -1;
+    location[1] = -1;
+    maxCapacity = -1;
+    currentCapacity = 0;
+    visitorCapacity = 0;
+    currentEmployees.clear();
+    currentVisitors.clear();
 }
 
 Building::Building(char t, int i, int x, int y, int capacity, int visitorCapacity){
-    this->type=t;
+    this->type = t;
     this->idNumber = i;
-    this->location[0]=x;
-    this->location[1]=y;
-    this->maxCapacity=capacity;
-    this->currentCapacity=0;
-    this->visitorCapacity=visitorCapacity;
-    
+    this->location[0] = x;
+    this->location[1] = y;
+    this->maxCapacity = capacity;
+    this->currentCapacity = 0;
+    this->visitorCapacity = visitorCapacity;
+    currentEmployees.clear();
+    currentVisitors.clear();
 }
 
 Building::Building(const Building &b){
-    this->type=b.type;
-    this->idNumber=b.idNumber;
-    this->location[0]=b.location[0];
-    this->location[1]=b.location[1];
-    this->maxCapacity=b.maxCapacity;
-    this->currentCapacity=b.currentCapacity;
-    this->visitorCapacity=b.visitorCapacity;
+    this->type = b.type;
+    this->idNumber = b.idNumber;
+    this->location[0] = b.location[0];
+    this->location[1] = b.location[1];
+    this->maxCapacity = b.maxCapacity;
+    this->currentCapacity = b.currentCapacity;
+    this->visitorCapacity = b.visitorCapacity;
+    this->currentEmployees.clear();
+    this->currentVisitors.clear();
+    this->currentEmployees.insert(b.currentEmployees.begin(), b.currentEmployees.end());
+    this->currentVisitors.insert(b.currentVisitors.begin(), b.currentVisitors.end());
+
 }
 
 int Building::getID(){
@@ -147,8 +155,21 @@ char Building::getType() const{
     return type;
 }
 std::string Building::toString(){
-    std::string returnString="ID: "+std::to_string(this->idNumber)+"\n Type: "+std::string(1, this->type)+
-    "\n Capacity: "+std::to_string(this->maxCapacity)+"\n Visitor Capacity: "+std::to_string(this->visitorCapacity)+"\n Location: "+std::to_string(this->location[0])+","+std::to_string(this->location[1]);
+    std::string returnString="ID: "+std::to_string(this->idNumber)+
+                             "\n Type: "+std::string(1, this->type)+
+                             "\n Capacity: "+std::to_string(this->maxCapacity)+
+                             "\n Visitor Capacity: "+std::to_string(this->visitorCapacity)+
+                             "\n Location: "+std::to_string(this->location[0])+","+std::to_string(this->location[1]);
+    return returnString;
+}
+
+std::string Building::exportString(){
+    std::string returnString = "*";
+    returnString += std::string(1, this->type)+"\n";
+    returnString += std::to_string(this->idNumber)+"\n";
+    returnString += std::to_string(this->maxCapacity)+"\n";
+    returnString += std::to_string(this->visitorCapacity)+"\n";
+    returnString += std::to_string(this->location[0])+","+std::to_string(this->location[1])+"\n";
     return returnString;
 }
 
