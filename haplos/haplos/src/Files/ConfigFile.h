@@ -155,6 +155,37 @@ public:
      */
     std::string getBuildingImport() const;
     
+    double* getAgeProbablities();
+    
+    double* getFamilySizeProbablities();
+    
+    double* getBusinessSizeProbablities();
+    
+    double* getHospitalSizeProbablities();
+    
+    double* getSchoolSizeProbablities();
+    
+    double* getDaycareSizeProbablities();
+    
+    double* getScheduleTypeProbablities();
+    
+    int* getRadiusLimits();
+    
+    double* getTransportProbablities();
+    
+    int* getTransportRate();
+    
+    int* getTransportRadius();
+    
+    double* getAdultWorkVisitorProbablities();
+    
+    double* getAdultNoWorkVisitorProbablities();
+    
+    double* getAdultUnemployeedVisitorProbablities();
+    
+    double* getOlderSchoolSchoolDayProbablities();
+    
+    double* getOlderSchoolWeekendProbablities();
     /** Return Timeline File location.
      
      \return path to Timeline File.
@@ -179,6 +210,22 @@ private:
     std::string buildingImport;
     std::string populationImport;
     std::unordered_map<std::string, double> variables;
+    double ageProbablities[7];
+    double familySizeProbablities[7];
+    double businessSizeProbablities[6];
+    double hospitalSizeProbablities[6];
+    double schoolSizeProbablities[6];
+    double daycareSizeProbablities[6];
+    double scheduleTypeProbablities[11];
+    int radiusLimits[6];
+    double transportProbablities[3];
+    int transportRate[3];
+    int transportRadius[2];
+    double adultWorkVisitorProbablities[3];
+    double adultNoWorkVisitorProbablities[3];
+    double adultUnemployeedVisitorProbablities[3];
+    double olderSchoolSchoolDayProbablities[3];
+    double olderSchoolWeekendProbablities[3];
 };
 
 #endif

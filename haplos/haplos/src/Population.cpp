@@ -47,6 +47,10 @@
 
 using namespace std;
 
+Population::Population(){
+    
+}
+
 Population::Population(int s, double *ageProbablities, double *familySizeProbablites, double mProb, double
     *scheduleProbablities, int popSeed) {
     numberOfMales=0;
@@ -74,6 +78,22 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
 
     //Set Probablity of Male (It is Assumed Probablity of Female is 1-MaleProbablity)
     maleProbablity=mProb;
+}
+
+Population::Population(const Population &p){
+    this->numberOfMales=p.numberOfMales;
+    this->size=p.size;
+    this->generator = p.generator;
+    //Set Age Probablities
+    this->ageProbablities=p.ageProbablities;
+    //Set Family Size Probablities
+    this->familySizeProbablites=p.familySizeProbablites;
+    //Set Schedule Probablities
+    this->scheduleProbablities=p.scheduleProbablities;
+    //Set Probablity of Male (It is Assumed Probablity of Female is 1-MaleProbablity)
+    this->maleProbablity=p.maleProbablity;
+    this->families = p.families;
+    this->numberOfChildrenDaycare = p.numberOfChildrenDaycare;
 }
 
 
@@ -124,7 +144,8 @@ void Population::generatePopulation(bool progressDisplay){
                                      gender,
                                      -1,
                                      i++,
-                                     scheduleType);
+                                     scheduleType,
+                                     true);
             updateStatistics(ageInformation[0], scheduleType, gender);
             newFamily.addPerson(newPerson);
         }
@@ -135,7 +156,7 @@ void Population::generatePopulation(bool progressDisplay){
             numberOfChildrenDaycare++;
         }
         
-        families.push_back(newFamily);
+        families.push_back(Family(newFamily));
         
         if(progressDisplay){
             float ratio = i/(float)size;
@@ -176,6 +197,8 @@ void Population::setHomeLocationOfFamily(Building *home, int family){
 }
 
 Family* Population::getFamily(int family){
+    //std::cout<<"------Family Data--------"<<std::endl;
+    //std::cout<<families.at(family).toString()<<std::endl;
     return &families.at(family);
 }
 
@@ -520,10 +543,10 @@ void Population::importPopulation(std::string fileLocation, std::unordered_map<i
             char gender = (p.c_str())[0];
             std::getline(rs, p, '\n');
             int schType = std::stoi(p);
-            Person newPerson = Person(age, gender, -1, personId, schType);
+            Person newPerson = Person(age, gender, -1, personId, schType, true);
             std::string s;
             std::getline(rs, s, '#');
-            Schedule tmpSch = Schedule(schType);
+            Schedule tmpSch = Schedule(schType, true);
             while(std::getline(rs, s, '#')){
                 //Read in Schedule Element
                 std::string jl;

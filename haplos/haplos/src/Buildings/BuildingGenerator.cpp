@@ -153,7 +153,7 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
         if(elementrySchoolPopulation>0){
             //Make Elementry School
             // std::cout<<"Making Elementry: "<<location%width<<", "<<location/width<<"("<<capacity<<")"<<std::endl;
-            schoolBuildings->push_back(School(numberOfBuildings, location%width, location/width, capacity, 10, 0));
+            schoolBuildings->push_back(School(numberOfBuildings, location%width, location/width, capacity, 0));
             elementrySchoolPopulation-=capacity;
             if(elementrySchoolPopulation<0){
                 elementrySchoolPopulation=0;
@@ -163,7 +163,7 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
             if(middleSchoolPopulation>0){
                 //Make Middle School
                 //  std::cout<<"Making Middle: "<<location%width<<", "<<location/width<<"("<<capacity<<")"<<std::endl;
-                schoolBuildings->push_back(School(numberOfBuildings, location%width, location/width, capacity, 10, 1));
+                schoolBuildings->push_back(School(numberOfBuildings, location%width, location/width, capacity, 1));
                 middleSchoolPopulation-=capacity;
                 if(middleSchoolPopulation<0){
                     middleSchoolPopulation=0;
@@ -173,7 +173,7 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
                 if(highSchoolPopulation>0){
                     //Make High School
                     //  std::cout<<"Making High: "<<location%width<<", "<<location/width<<"("<<capacity<<")"<<std::endl;
-                    schoolBuildings->push_back(School(numberOfBuildings, location%width, location/width, capacity, 10, 2));
+                    schoolBuildings->push_back(School(numberOfBuildings, location%width, location/width, capacity, 2));
                     highSchoolPopulation-=capacity;
                     if(highSchoolPopulation<0){
                         highSchoolPopulation=0;
@@ -197,18 +197,22 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
     std::cout<<"\tNumber of Young Children: "<<numberChildrenDaycare<<std::endl;
     while(numberChildrenDaycare>0){
         int capacity = 0;
+        int employeeSize=0;
         switch(businessSizeDistribution(generator)){
             case 0:
                 //4
                 capacity = 4;
+                employeeSize=2;
                 break;
             case 1:
                 //5-9
                 capacity = (int)rand() % 4 + 5;
+                employeeSize=4;
                 break;
             case 2:
                 //10-19
                 capacity = (int)rand() % 9 + 10;
+                employeeSize=5;
                 break;
                 /*case 3: Anything greater than 20 seems kind of Silly
                  //20-99
@@ -233,7 +237,7 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
         }
         int location = locationDistribution(generator);
         //std::cout<<"Creating Daycare "<< location%width<<","<<location/width<<std::endl;
-        daycareBuildings->push_back(Daycare(numberOfBuildings, location%width, location/width, 10, 10, capacity));
+        daycareBuildings->push_back(Daycare(numberOfBuildings, location%width, location/width, employeeSize, capacity*2, capacity));
         numberChildrenDaycare-=capacity;
         if(numberChildrenDaycare<0){
             numberChildrenDaycare=0;
@@ -320,12 +324,16 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
         
         if(hospital){
             //Medical was made
-            medicalBuildings->push_back(Medical(numberOfBuildings, location%width, location/width, capacity, 10, 0));
+            int numberOfVisitors = (int)rand() % 10;
+            numberOfVisitors = numberOfVisitors*capacity;
+            medicalBuildings->push_back(Medical(numberOfBuildings, location%width, location/width, capacity, numberOfVisitors, capacity*10));
             //allBuildings.insert({numberOfBuildings, &medicalBuildings.at(medicalBuildings.size()-1)});
             updateStatistics('M', capacity);
         }else{
             //Normal business was made
-            businessBuildings->push_back(Business(numberOfBuildings,location%width, location/width, capacity, 10));
+            int numberOfVisitors = (int)rand() % 10;
+            numberOfVisitors = numberOfVisitors*capacity;
+            businessBuildings->push_back(Business(numberOfBuildings,location%width, location/width, capacity, numberOfVisitors));
             //allBuildings.insert({numberOfBuildings, &businessBuildings.at(businessBuildings.size()-1)});
             //std::cout<<numberOfBuildings<<": "<<newBuilding.getLocation()[0]<<" "<<newBuilding.getLocation()[1]<<std::endl;
             updateStatistics('B', capacity);

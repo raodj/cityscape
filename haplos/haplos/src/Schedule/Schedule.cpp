@@ -37,43 +37,63 @@
 
 
 Schedule::Schedule() {
-    type=0;
+    this->type=0;
     this->currentTimeStep=0;
     this->currentTimeSlot=0;
     this->jobLocationID=-1;
-    loop = false;
+    this->loop = false;
+    this->goToJobLocation = true;
     
 
 }
 
 
-Schedule::Schedule(int type){
+Schedule::Schedule(int type, bool goToJobLocation){
     this->type=type;
     this->currentTimeStep=0;
     this->currentTimeSlot=0;
     this->jobLocationID=-1;
-    loop = false;
+    this->goToJobLocation = true;
+    this->loop = false;
 }
 
 void Schedule::setJobLocation(int jobLocationID){
     this->jobLocationID=jobLocationID;
 }
 
+
 int Schedule::getJobLocation(){
     return jobLocationID;
 }
 
 Schedule::Schedule(const Schedule &s){
-    type=s.type;
-    currentTimeSlot = s.currentTimeSlot;
-    currentTimeStep=s.currentTimeStep;
-    jobLocationID=s.jobLocationID;
-    plan.resize(s.plan.size());
-    
-    for(int i=0; i< s.plan.size(); i++)
+    this->type=s.type;
+    this->currentTimeSlot = s.currentTimeSlot;
+    this->currentTimeStep=s.currentTimeStep;
+    this->jobLocationID=s.jobLocationID;
+    this->goToJobLocation=s.goToJobLocation;
+    this->plan.clear();
+    this->plan = s.plan;
+    /*for(int i=0; i< s.plan.size(); i++)
     {
-        plan[i] = s.plan[i];
+        this->plan.push_back(s.plan[i]);
+    }*/
+
+}
+
+void Schedule::setCurrentTimeStep(int newTimeStep){
+    currentTimeStep = newTimeStep;
+    currentTimeSlot = 0;
+    
+    while(plan[currentTimeSlot].getEndTime()<=currentTimeStep && currentTimeSlot != plan.size()-1){
+        //Move to Next Time Slot
+        currentTimeSlot++;
     }
+    if(currentTimeSlot == plan.size()-1){
+        currentTimeSlot = 0;
+        loop = true;
+    }
+    //std::cout<<"\tCurrent Time Slot: "<<currentTimeSlot<<" "<<plan.size()<<std::endl;
 
 }
 
@@ -88,6 +108,14 @@ void Schedule::removeTimeSlot(int i){
         plan.erase(plan.begin()+i);
     }
     
+}
+
+bool Schedule::getGoToJobLocation(){
+    return this->goToJobLocation;
+}
+
+void Schedule::setGoToJobLocation(bool n){
+    this->goToJobLocation = n;
 }
 
 void Schedule::setScheduleType(int type){
@@ -108,6 +136,7 @@ TimeSlot* Schedule::getLocationAt(int time){
 }
 
 TimeSlot* Schedule::getCurrentTimeSlot(){
+    //std::cout<<"\tCurrent Time Slot: "<<currentTimeSlot<<" "<<plan.size()<<std::endl;
     return &plan[currentTimeSlot];
 }
 
@@ -134,6 +163,9 @@ TimeSlot* Schedule::getNextLocation(){
             }
         }
     }
+    /*if(currentTimeSlot>plan.size()-1){
+        std::cout<<"\tCurrent Time Slot: "<<currentTimeSlot<<" "<<plan.size()<<std::endl;
+    }*/
     return &plan[currentTimeSlot];
     
 }

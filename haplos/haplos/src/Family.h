@@ -59,7 +59,10 @@ class Family {
         Family();
     
         Family(Building *home, Daycare *daycare);
-        
+    
+    
+        Family(const Family &f);
+    
         /** Get a member of a family.
          \param id  id of family memember to retrive.
          \return An array of memembers in the family.

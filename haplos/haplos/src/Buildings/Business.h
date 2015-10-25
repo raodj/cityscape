@@ -60,7 +60,5 @@ class Business : public Building {
          */
         virtual ~Business();
     private:
-        int maxVisitorCapacity;
-        int currentVisitorCapacity;
     };
 #endif /* defined(__haplos__Business__) */

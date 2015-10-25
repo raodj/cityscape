@@ -42,10 +42,13 @@
 
 class ScheduleGenerator {
     public:
+        ScheduleGenerator();
         ScheduleGenerator(std::vector< std::vector < Location > > *densityData,
                           std::unordered_map<int, Building*> *allBuildings,
                           std::default_random_engine generator,
                           bool progressDisplay);
+        ScheduleGenerator(const ScheduleGenerator &p);
+
         void generateSchedules(Population &pop,
                                int *radiusLimit,
                                double *transportProbablities,

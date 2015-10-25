@@ -33,38 +33,48 @@
 //
 //-----------------------------------------------------------
 #include "Policy.h"
+#include "Files/ConfigFile.h"
 #include "Population.h"
 #include <iterator>
 #include <cstdlib>
 #include <algorithm>
 
 Policy::Policy(){
-    //Set Policy Seed
     int seed = time(0);
     generator.seed(seed);
     std::cout<<"Policy Seed: "<<seed<<std::endl;
+}
+
+void Policy::setConfigFile(ConfigFile *configuration){
+    this->configuration = configuration;
 
 }
 
 //Required Method
-void Policy::setupCustomAttributes(Population *p){
-    int numberOfFamilies = p->getNumberOfFamilies();
-    int infectiousID = rand() % p->getPopulationSize();
+void Policy::setupCustomAttributes(Population &p){
+    int numberOfFamilies = p.getNumberOfFamilies();
+    int infectiousID = rand() % p.getPopulationSize();
     std::cout<<"Initial Infection: "<<infectiousID<<std::endl;
     for (int i = 0; i < numberOfFamilies; i++){
-        Family *f = p->getFamily(i);
+        Family *f = p.getFamily(i);
         int numberOfPeople = f->getNumberOfPeople();
         for(int j =0 ; j < numberOfPeople; j++){
             Person *p = f->getPerson(j);
             if(p->getID() == infectiousID){
                 setExposedStatus(p, 0);
+                p->setCustomAttribute("immune", "0");
 
             }else{
                 p->setCustomAttribute("exposed", "");
-
+                double isImmune = ((double) rand() / (RAND_MAX));
+                if(isImmune <= 0.471){
+                    p->setCustomAttribute("immune", "1");
+                }else{
+                    p->setCustomAttribute("immune", "0");
+                }
             }
             p->setCustomAttribute("infectious", "");
-            p->setCustomAttribute("immune", "0");
+                        
         }
         
     }
@@ -72,31 +82,28 @@ void Policy::setupCustomAttributes(Population *p){
 
 
 //Required Method
-void Policy::updatePopulation(Population *p, std::unordered_map<int, Building*> *allBuildings, int currentTime){
-    int numberOfFamilies = p->getNumberOfFamilies();
+void Policy::updatePopulation(Population &p, std::unordered_map<int, Building*> *allBuildings, int currentTime,
+                              ScheduleGenerator *scheduleGenerator){
+    int numberOfFamilies = p.getNumberOfFamilies();
     for (int i = 0; i < numberOfFamilies; i++){
-        Family *f = p->getFamily(i);
+        Family *f = p.getFamily(i);
         int numberOfPeople = f->getNumberOfPeople();
         for(int j =0 ; j < numberOfPeople; j++){
             Person *p = f->getPerson(j);
+            //Update Attributes
             if(p->getCustomAttribute("infectious") != ""){
-                //Determine if Person has infectious other people
+                //Determine if Person has infected other people
                 TimeSlot *t = p->getCurrentTimeSlot();
                 std::unordered_map<int, Person *> contacts = getPossibleContacts(t, f->getHome()->getID(), allBuildings);
                 if(contacts.size()>2){
-                    //std::cout<<"Contact Size: "<<contacts.size()<<std::endl;
                     int numberOfContacts = 1;
                     int currentContact = 0;
                     while (currentContact < numberOfContacts){
-                       // std::cout<<"CurrentContacts: "<<currentContact<<std::endl;
                         auto randomContact = std::next(std::begin(contacts), (rand() % contacts.size()-1));
                         while(randomContact->second->getID() == p->getID()){
-                            //std::cout<< (rand() % (contacts.size()-1))<< std::endl;
                             randomContact = std::next(std::begin(contacts), (rand() % (contacts.size()-1)));
-                            //std::cout<<randomContact->second->getID()<<" "<<p->getID()<<std::endl;
                         }
 
-                        ///std::cout<<p->getID()<<" "<<randomContact->second->getID()<<std::endl;
                         if(randomContact->second->getCustomAttribute("immune") != "1"
                            && randomContact->second->getCustomAttribute("exposed") == "" ){
                                 //Update Infection Status of Contact
@@ -105,9 +112,6 @@ void Policy::updatePopulation(Population *p, std::unordered_map<int, Building*> 
                         currentContact++;
                     }
                 }
-                //std::cout<<"Done"<<std::endl;
-                //Update Infected Status if Needed
-                //std::cout<<std::stoi(p->getCustomAttribute("infectious")) <<" "<<currentTime<< std::endl;
                 if(std::stoi(p->getCustomAttribute("infectious")) <= currentTime){
                     p->setCustomAttribute("immune", "1");
                 }
@@ -122,10 +126,20 @@ void Policy::updatePopulation(Population *p, std::unordered_map<int, Building*> 
                 }
             }
             
-        }
+            if(currentTime%144 == 0){
+                //Update Schedules based on Attributes
+                if(p->getCustomAttribute("immune") == "1"){
+                    revertToOldSchedule(f, p, currentTime);
+                }else{
+                    if(p->getCustomAttribute("infectious") != ""){
+                        modifySchedule(f, p, scheduleGenerator, currentTime);
+                    }
+                }
+            }
+            
+        }//End of Family Loop
         
-    }
-
+    }//End of Population Loop
 }
 
 //Required Method
@@ -149,27 +163,118 @@ int Policy::getCustomFileTypeData(Location *l, std::string fileType){
 }
 
 //Required Method
-void Policy::modifySchedule(Family *f, Person *p){
-  /*  Schedule *oldSchedule = p->getSchedule();
-    oldSchedules[p->getID()] = Schedule(oldSchedule);
+void Policy::modifySchedule(Family *f, Person *p, ScheduleGenerator *scheduleGenerator, int currentTime){
+    Schedule *oldSchedule = p->getSchedule();
+    bool scheduleNeedsGeneratored = false;
+    //Backup Schedule
+    if(oldSchedules.count(p->getID())== 0){
+        //std::cout<<"Modifying Schedule"<<std::endl;
+        //std::cout<<"\tID: "<<p->getID()<<std::endl;
+        oldSchedules[p->getID()] = Schedule(*oldSchedule);
+        p->setSchedule(Schedule(oldSchedules[p->getID()].getScheduleType(), false));
+        oldSchedule = p->getSchedule();
+        oldSchedule->setJobLocation(oldSchedules[p->getID()].getJobLocation());
+        //std::cout<<"\tSchedule Type: "<<oldSchedule->getScheduleType()<<std::endl;
+        scheduleNeedsGeneratored = true;
+    }
     //1= school aged child, 2=older school aged child, 3=working adult
-    vector<TimeSlot> *t = oldSchedule->getPlan();
+    double primaryVisitorTypeProb[] = {0.0,.1,.9};
+    double secondaryVisitorTypeProb[] = {0.0,.1,.9};
     
-    int scheduleType = oldSchedule->getType();
-    for(int i = 0; i< t.size(); i++){
-        TimeSlot slot1 = t.at(i);
-        if(slot.getVisitorType() == 'S' || slot.getVisitorType() == 'D' || slot.getVisitorType() == 'E'){
-            
+    if(scheduleNeedsGeneratored){
+        if(oldSchedule->getScheduleType() == 0 || oldSchedule->getScheduleType() == 1){
+            //Daycare or Young School Child need to regenerate childcare adult schedule
+            oldSchedule->setGoToJobLocation(false);
+            Person *childCareAdult = f->getChildCareAdult();
+            //std::cout<<"Modify Child Care Adult's Schedule:"<<std::endl;
+            //std::cout<<"\tID: "<<childCareAdult->getID()<<std::endl;
+            //Schedule Needs to be backed up
+            Schedule *oldChildCareAdultSchedule = childCareAdult->getSchedule();
+            //std::cout<<"\tAdult Prior Schedule Type: "<<oldChildCareAdultSchedule->getScheduleType()<<std::endl;
+
+            //Backup Schedule
+            if(oldSchedules.count(childCareAdult->getID())== 0){
+                oldSchedules[childCareAdult->getID()] = Schedule(*oldChildCareAdultSchedule);;
+                childCareAdult->setSchedule(Schedule(oldSchedules[childCareAdult->getID()].getScheduleType(), false));
+                oldChildCareAdultSchedule = childCareAdult->getSchedule();
+                oldChildCareAdultSchedule->setJobLocation(oldSchedules[childCareAdult->getID()].getJobLocation());
+            }
+            //std::cout<<"\tAdult Schedule Type: "<<oldChildCareAdultSchedule->getScheduleType()<<std::endl;
+                
+
+            //Generate Child Care Adult
+            scheduleGenerator->generatePersonSchedule(f,
+                                                      childCareAdult,
+                                                      configuration->getRadiusLimits(),
+                                                      configuration->getTransportProbablities(),
+                                                      configuration->getTransportRate(),
+                                                      configuration->getTransportRate(),
+                                                      primaryVisitorTypeProb,
+                                                      ((oldSchedule->getScheduleType() == 4)? NULL : secondaryVisitorTypeProb),
+                                                      false);
+            //std::cout<<"---- ChildCare"<<std::endl;
+            //std::cout<<childCareAdult->getSchedule()->toString()<<std::endl;
+            childCareAdult->getSchedule()->setCurrentTimeStep(currentTime);
+            //Generate Child Schedule
+            //std::cout<<"Generating Child's Schedule"<<std::endl;
+            //std::cout<<"\tID:"<< p->getID()<<std::endl;
+            scheduleGenerator->generatePersonSchedule(f,
+                                                      p,
+                                                      configuration->getRadiusLimits(),
+                                                      configuration->getTransportProbablities(),
+                                                      configuration->getTransportRate(),
+                                                      configuration->getTransportRate(),
+                                                      NULL,
+                                                      NULL,
+                                                      false);
+            //std::cout<<"---- Child Schedule "<<std::endl;
+            //std::cout<<p->getSchedule()->toString()<<std::endl;
+
+            p->getSchedule()->setCurrentTimeStep(currentTime);
+        }else{
+           //Older School Child and Adults;
+            //std::cout<<"Modify Standard Adult's Schedule:"<< p->getID()<<std::endl;
+            //std::cout<<"\tID: "<<p->getID()<<std::endl;
+            //std::cout<<"\tSchedule Type: "<<p->getSchedule()->getScheduleType()<<std::endl;
+
+            scheduleGenerator->generatePersonSchedule(f,
+                                                      p,
+                                                      configuration->getRadiusLimits(),
+                                                      configuration->getTransportProbablities(),
+                                                      configuration->getTransportRate(),
+                                                      configuration->getTransportRate(),
+                                                      primaryVisitorTypeProb,
+                                                      ((oldSchedule->getScheduleType() == 4)? NULL : secondaryVisitorTypeProb),
+                                                      false);
+            //std::cout<<"---- Other"<<std::endl;
+            //std::cout<<p->getSchedule()->toString()<<std::endl;
+
+            p->getSchedule()->setCurrentTimeStep(currentTime);
+
         }
     }
     
-    */
 }
 
 //Requried Method
-void Policy::revertToOldSchedule(Family *f, Person *p){
-    
-    
+void Policy::revertToOldSchedule(Family *f, Person *p, int currentTime){
+    if(oldSchedules.count(p->getID())!= 0){
+        //Revert Child Care Adult Schedule
+        if(oldSchedules[p->getID()].getScheduleType() == 0 || oldSchedules[p->getID()].getScheduleType() == 1){
+            Person *childCareAdult = f->getChildCareAdult();
+            if(oldSchedules.count(childCareAdult->getID())!= 0){
+                childCareAdult->setSchedule(Schedule(oldSchedules[childCareAdult->getID()]));
+                childCareAdult->getSchedule()->setCurrentTimeStep(currentTime);
+                oldSchedules.erase(childCareAdult->getID());
+            }
+        }
+        //Revert Person's Schedule
+        
+        p->setSchedule(Schedule(oldSchedules[p->getID()]));
+        p->getSchedule()->setCurrentTimeStep(currentTime);
+
+        oldSchedules.erase(p->getID());
+    }
 }
 
 //Helper methods specific to this type of Model
@@ -217,7 +322,7 @@ std::unordered_map<int, Person *> Policy::getPossibleContacts(TimeSlot *t, int h
     char visType = t->getVisitorType();
     std::unordered_map<int, Person *> returnVector;
     std::unordered_map<int, Person *> tmp;
-    
+    //std::cout<<"visType: "<<visType<<" ID: "<<locationID<<std::endl;
     if(visType == 'V' || visType == 'H' || visType == 'T' || visType == 'S' || visType == 'D' || visType =='P' || visType =='P'){
         tmp = allBuildings->at(locationID)->getVisitors();
         returnVector.insert(tmp.begin(), tmp.end());
