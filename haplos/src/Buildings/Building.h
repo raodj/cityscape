@@ -91,6 +91,11 @@ class Building {
          */
         int getMaxVisitorCapacity();
     
+        /**Get max visitor capacity of Building
+         \return max visitor capacity of Building
+         */
+        void setMaxVisitorCapacity(int newMaxVisitorCapacity);
+    
         /**Get current visitor capacity of Building at a specific timeslot
          \param[in] time  time slot to get visitor capacity
          \return current visitor capacity of Building

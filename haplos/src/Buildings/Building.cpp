@@ -96,6 +96,10 @@ void Building::setCurrentCapacity(int c){
 int Building::getMaxVisitorCapacity(){
     return visitorCapacity;
 }
+
+void Building::setMaxVisitorCapacity(int v){
+    visitorCapacity = v;
+}
 int Building::getCurrentVisitorCapacity(int time){
     return currentVisitorCapacity[time];
 }

@@ -48,10 +48,9 @@ class School : public Building{
          \param[in] x row number of building
          \param[in] y col number of building
          \param[in] capacity max number of employees.
-         \param[in] visitorCapacity max number of visitors a can have in a given hour.
          \param[in] gradeCapacity max number of students they can have in a given grade.
          */
-        School(int i, int x, int y, int capacity, int visitorCapacity);
+        School(int i, int x, int y, int capacity);
     
         /** The alternative constructor for this class.
          
@@ -59,11 +58,10 @@ class School : public Building{
          \param[in] x row number of building
          \param[in] y col number of building
          \param[in] capacity max number of employees.
-         \param[in] visitorCapacity max number of visitors a can have in a given hour.
          \param[in] gradeCapacity max number of students they can have in a given grade.
          \param[in] forceSchoolType 0=Elementry, 1= Middle, 2= High School
          */
-        School(int i, int x, int y, int capacity, int visitorCapacity, int forceSchoolType);
+        School(int i, int x, int y, int capacity, int forceSchoolType);
     
         School(int i, int x, int y, int capacity, int visitorCapacity, int childMax,  int forceSchoolType, int schoolStart, int schoolEnd) ;
 
@@ -116,7 +114,6 @@ class School : public Building{
          */
         virtual ~School();
     private:
-        int maxVisitorCapacity;
         int studentCapacity;
         int studentMaxCapacity;
         int schoolStart;

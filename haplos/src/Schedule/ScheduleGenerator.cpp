@@ -39,7 +39,9 @@
 #include <map>
 #include <utility>
 
-
+ScheduleGenerator::ScheduleGenerator(){
+    
+}
 ScheduleGenerator::ScheduleGenerator(std::vector< std::vector < Location > > *d, std::unordered_map<int, Building*> *a,
                                      std::default_random_engine g, bool p){
     this->progressDisplay = p;
@@ -49,6 +51,12 @@ ScheduleGenerator::ScheduleGenerator(std::vector< std::vector < Location > > *d,
     
 }
 
+ScheduleGenerator::ScheduleGenerator(const ScheduleGenerator &s){
+    this->progressDisplay = s.progressDisplay;
+    this->densityData = s.densityData;
+    this->allBuildings = s.allBuildings;
+    this->generator = s.generator;
+}
 
 void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, double *transportProbablities,
                                           int *transportRadiusLimits,
@@ -271,7 +279,7 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
                                              primaryVisitorTypeProb);
             break;
         default:
-            //**std::cout<<"ERROR: Unknown Schedule Type"<<std::endl;
+            std::cout<<"ERROR: Unknown Schedule Type"<<std::endl;
             break;
     }
     
@@ -283,6 +291,7 @@ void ScheduleGenerator::generateYoungChildSchedule(Person* p, Family *f, int rad
     Schedule *currentSchedule = p->getSchedule();
     Schedule *childCareAdultSchedule = f->getChildCareAdult()->getSchedule();
     Daycare  *daycareLocaiton = f->getDaycare();
+
     //**std::cout<<"---------------------- Young Child: "<<p->getID()<<" -------------------------"<<std::endl;
     //**std::cout<<childCareAdultSchedule->getScheduleType()<<std::endl;
     //Set Schedule Based on Child Care Adult
@@ -322,6 +331,12 @@ void ScheduleGenerator::generateYoungChildSchedule(Person* p, Family *f, int rad
             currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
         }
         i++;
+    }
+    
+    if(currentSchedule->getPlan()->size() == 0){
+        std::cout<<"Child Plan is Size Zero"<<std::endl;
+        std::cout<< "Adult's Schedule: "<<std::endl;
+        std::cout<<childCareAdultSchedule->toString()<<std::endl;
     }
 }
 
@@ -1138,6 +1153,12 @@ void ScheduleGenerator::generateSchoolAgedChildSchedule(Person *p, Family *f, in
         dayTime=144;
     }
     
+    //Check for Completely Empty Schedule
+    if(currentSchedule->peekNextLocation()==NULL){
+        //**std::cout<<"Didn't go Anywhere :("<<std::endl;
+        currentSchedule->addTimeSlot(TimeSlot(home->getID(), 1008, 'H'));
+    }
+    
 }
 
 
@@ -1948,7 +1969,7 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
     //Check for Completely Empty Schedule
     if(currentSchedule->peekNextLocation()==NULL){
         //**std::cout<<"Didn't go Anywhere :("<<std::endl;
-        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, 'H'));
+        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), 1008, 'H'));
     }
     
 }
@@ -2366,7 +2387,7 @@ void ScheduleGenerator::generateUnemployeedAdultSchedule(Person *p,
     //Check for Completely Empty Schedule
     if(currentSchedule->peekNextLocation()==NULL){
         //**std::cout<<"Didn't go Anywhere :("<<std::endl;
-        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), trueTime+dayTime, 'H'));
+        currentSchedule->addTimeSlot(TimeSlot(lastPlace->getID(), 1008, 'H'));
     }
     
     
@@ -2462,7 +2483,7 @@ std::vector <std::pair<int, School*> > ScheduleGenerator::getSchoolTimes(Family 
     for(int fm=0; fm<f->getNumberOfPeople(); fm++){
         Person *p1 = f->getPerson(fm);
         Schedule *sc = p1->getSchedule();
-        if(sc->getScheduleType()==1 || sc->getScheduleType()==2){
+        if((sc->getScheduleType()==1 || sc->getScheduleType()==2) && sc->getGoToJobLocation() == true){
             School *attendingSchool= static_cast<School* >(allBuildings->at(sc->getJobLocation()));
             //**std::cout<<sc->getJobLocation()<<std::endl;
             //**std::cout<<"Type: "<<attendingSchool->getType()<<std::endl;;

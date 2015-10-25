@@ -37,7 +37,7 @@
 #include "Building.h"
 #include <math.h>
 
-School::School(int i, int x, int y, int capacity, int visitorCapacity) : Building('S', i, x, y, capacity, visitorCapacity){
+School::School(int i, int x, int y, int capacity) : Building('S', i, x, y, capacity, 0){
     //Determine Grade Capacity
     //20% of School are not Teachers (teachers can have up to 30 students)
     int avalibleTeachers = (int)capacity * 0.20;
@@ -77,6 +77,7 @@ School::School(int i, int x, int y, int capacity, int visitorCapacity) : Buildin
     
     this->studentCapacity = 0;
     this->studentMaxCapacity=avalibleTeachers*30;
+    setMaxVisitorCapacity(studentMaxCapacity*2);
 
     
     
@@ -89,7 +90,7 @@ School::School(int i, int x, int y, int capacity, int visitorCapacity) : Buildin
 }
 
 
-School::School(int i, int x, int y, int capacity, int visitorCapacity, int forceSchoolType) : Building('S', i, x, y, capacity, visitorCapacity){
+School::School(int i, int x, int y, int capacity, int forceSchoolType) : Building('S', i, x, y, capacity, 0){
     //Determine Grade Capacity
     //20% of School are not Teachers (teachers can have up to 30 students)
     int avalibleTeachers = (int)ceil(capacity * 0.20);
@@ -130,7 +131,7 @@ School::School(int i, int x, int y, int capacity, int visitorCapacity, int force
 
     this->studentCapacity = 0;
     this->studentMaxCapacity=avalibleTeachers*30;
-    
+    setMaxVisitorCapacity(studentMaxCapacity*2);
     //7:00AM (42) - 10:00AM (60) (needs to be chagned to a 15 minute scale)
     this->schoolStart=(int)rand() % 18 + 42;
     
@@ -144,7 +145,6 @@ School::School(int i, int x, int y, int capacity, int visitorCapacity, int force
 
 
 School::School(int i, int x, int y, int capacity, int visitorCapacity, int childMax,  int forceSchoolType, int schoolStart, int schoolEnd) : Building('S', i, x, y, capacity, visitorCapacity){
-    int avalibleTeachers = (int)ceil(capacity * 0.20);
     schoolType =forceSchoolType;
     this->studentCapacity = 0;
     this->studentMaxCapacity=childMax;

@@ -57,7 +57,7 @@ public:
      \param[in] id_num Unique ID of person.
      \param[in] scheduleType Type of schedule assigned (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
      */
-	Person(int age , char gender, int b, int id_num, int scheduleType);
+	Person(int age , char gender, int b, int id_num, int scheduleType, bool goToJobLocation);
     /** The copy constructor for this class.
      
      \param[in] p Another person.

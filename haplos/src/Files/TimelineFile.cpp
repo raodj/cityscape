@@ -48,6 +48,22 @@ TimelineFile::TimelineFile(){
     
 }
 
+TimelineFile::TimelineFile(const TimelineFile &p){
+    timeStepInterval = p.timeStepInterval;
+    dayInterval = p.dayInterval;
+    weekInterval = p.weekInterval;
+    monthInterval = p.monthInterval;
+    yearInterval = p.yearInterval;
+    allowedFileTypes = p.allowedFileTypes;
+    fileTimeStep = p.fileTimeStep;
+    fileDay = p.fileDay;
+    fileWeek = p.fileWeek;
+    fileMonth = p.fileMonth;
+    fileYear = p.fileYear;
+    singleFiles = p.singleFiles;
+    timeLineLocation = p.timeLineLocation;
+}
+
 TimelineFile::TimelineFile(const std::string& fileLocation, std::string customFileTypes):
 timeLineLocation(fileLocation) {
     std::cout << "Loading timeline file: " << timeLineLocation << std::endl;

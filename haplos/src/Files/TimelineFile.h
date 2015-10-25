@@ -59,6 +59,9 @@ class TimelineFile {
          */
         TimelineFile(const std::string& fileLocation, std::string customFileTypes);
     
+        TimelineFile(const TimelineFile &p);
+
+    
         std::vector<std::string> getFilesToProduceAt(int time);
     
         std::string displayTimeLineInformation();

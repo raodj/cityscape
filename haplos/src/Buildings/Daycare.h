@@ -76,8 +76,6 @@ class Daycare : public Building {
          */
         virtual ~Daycare();
     private:
-        int maxVisitorCapacity;
-        int currentVisitorCapacity;
         int childCapacity;
         int maxChildCapacity;
         std::unordered_map<int, Person *> currentChildren;

@@ -1,5 +1,7 @@
-#ifndef POLICY_H_
-#define POLICY_H_
+
+#ifndef HAPLOS_H_
+#define HAPLOS_H_
+
 //------------------------------------------------------------
 //
 // This file is part of HAPLOS <http://pc2lab.cec.miamiOH.edu/>
@@ -35,37 +37,58 @@
 //
 //-----------------------------------------------------------
 
-#include "Population.h"
-#include "Files/ConfigFile.h"
-#include "Schedule/Schedule.h"
-#include "Schedule/ScheduleGenerator.h"
-#include "Family.h"
-#include "Person.h"
-#include "Location.h"
-#include <random>
-#include <cstdlib>
 
-class Policy {
-    
+#include <iostream>
+#include <string>
+#include <vector>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <ctime>
+
+#include "SedacReader.h"
+#include "ImageGeneration/ImageGen.h"
+#include "Location.h"
+#include "Population.h"
+#include "ImageGeneration/XFigImageGenerator.h"
+#include "Files/ConfigFile.h"
+#include "Files/TimelineFile.h"
+#include "Files/ImageFileGenerator.h"
+#include "Schedule/ScheduleGenerator.h"
+#include "Buildings/BuildingGenerator.h"
+#include "Policy.h"
+
+
+#include "Buildings/Medical.h"
+#include "Buildings/School.h"
+#include "Buildings/Business.h"
+#include "Buildings/Daycare.h"
+
+class Haplos {
 public:
-    Policy();
-    void setConfigFile(ConfigFile *configuration);
-    void setupCustomAttributes(Population &p);
-    void updatePopulation(Population &p, std::unordered_map<int, Building*> *allBuildings, int currentTime, ScheduleGenerator *scheduleGen);
-    int getCustomFileTypeData(Location *l, std::string fileType);
-    std::unordered_map<int, Person *> getPossibleContacts(TimeSlot *t, int homeNumber, std::unordered_map<int, Building*> *allBuildings);
-    void modifySchedule(Family *f, Person *p, ScheduleGenerator *scheduleGenerator, int currentTIme);
-    void revertToOldSchedule(Family *f, Person *p, int currentTime);
-    
+    Haplos(std::string configFileLocation, bool produceImages, bool progressDisplay, bool exportFiles, Policy p);
 private:
-    void setExposedStatus(Person *p, int currentTime);
-    void setInfectiousStatus(Person *p, int currentTime);
-    void determineExposedStatus(Person *p, int currentTime);
+    Policy policy;
+    std::vector< School > schoolBuildings;
+    std::vector< Business > businessBuildings;
+    std::vector< Daycare > daycareBuildings;
+    std::vector< Medical > medicalBuildings;
+    std::vector< Building > otherBuildings;
+    std::unordered_map<int, Building*> allBuildings;
+    
+    std::vector< std::vector < Location > > densityData;
+    
     std::default_random_engine generator;
-    std::unordered_map<int, Schedule> oldSchedules;
-    ConfigFile *configuration;
+    std::string outputFolder;
+    std::string imageFileLocationPath;
+    std::string familyFileLocationPath;
+    std::string saveLocationPath;
+    ConfigFile configuration;
+    bool produceImages;
+    bool progressDisplay;
+    bool exportFiles;
+    int numberOfBuildings=0;
+
 
 };
 
-
-#endif /* POLICY_H_ */
+#endif /* HAPLOS_H_ */

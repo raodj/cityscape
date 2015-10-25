@@ -44,34 +44,32 @@ Person::Person(){
     schedule = Schedule();
 }
 
-Person::Person(int a, char g, int b, int id_number, int scheduleType) {
+Person::Person(int a, char g, int b, int id_number, int scheduleType, bool goToJobLocation) {
 	age=a;
 	gender=g;
     currentLocation = b;
     id_num = id_number;
-    schedule = Schedule(scheduleType);
+    schedule = Schedule(scheduleType, goToJobLocation);
 }
 
 void Person::setLocation(int b){
     currentLocation=b;
 }
 Person::Person(const Person &p){
-    id_num=p.id_num;
-	age=0;
-	gender=' ';
-	age=p.age;
-	gender=p.gender;
-	currentLocation=p.currentLocation;
-    schedule= p.schedule;
+    this->id_num=p.id_num;
+	this->age=p.age;
+	this->gender=p.gender;
+	this->currentLocation=p.currentLocation;
+    this->schedule = p.schedule;
 }
 
 Person &Person::operator = (const Person &p){
 	if (this!=&p) {
-		age=0;
-		gender=' ';
-		age=p.age;
-		gender=p.gender;
-        id_num=p.id_num;
+		this->age=p.age;
+		this->gender=p.gender;
+        this->id_num=p.id_num;
+        this->currentLocation=p.currentLocation;
+        this->schedule = p.schedule;
 	}
 	return *this;
 }

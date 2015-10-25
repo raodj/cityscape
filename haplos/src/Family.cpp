@@ -64,6 +64,18 @@ Family::Family(Building *h, Daycare *d ){
     daycare=d;
 }
 
+Family::Family(const Family &f){
+    this->hasAdult=f.hasAdult;
+    this->hasYoungChild=f.hasYoungChild;
+    this->hasYoungSchoolChild=f.hasSchoolChild;
+    this->hasSchoolChild=f.hasSchoolChild;
+    this->numberOfPeople=f.numberOfPeople;
+    this->homeNumber=f.homeNumber;
+    this->childCareAdultPos=f.childCareAdultPos;
+    this->daycare=f.daycare;
+    this-> members = f.members;
+}
+
 Person* Family::getPerson(int id){
     return &members[id];
     
@@ -143,10 +155,9 @@ int Family::getHasYoungChild(){
 }
 
 Person* Family::getChildCareAdult(){
-    return &members.at(childCareAdultPos);
+    return this->getPerson(childCareAdultPos);
     
 }
-
 
 std::string Family::toString(){
     std::ostringstream outputString;
@@ -163,8 +174,6 @@ std::string Family::toString(){
     return outputString.str();
 }
 
-
-
 std::string Family::exportFamily(){
     std::ostringstream outputString;
     outputString << "%";
@@ -180,6 +189,7 @@ std::string Family::exportFamily(){
     return outputString.str();
     
 }
+
 void Family::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildings){
    // std::cout<<"Family: "<<homeNumber->getID()<<std::endl;
     for (std::vector<Person>::iterator i = members.begin(); i!= members.end(); i++){
@@ -222,6 +232,8 @@ void Family::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildin
                 break;
             default:
                 std::cout<< "Invalid Visitor Type in Old: "<<oldLocation->getVisitorType()<<std::endl;
+                std::cout<<"ID: "<<i->getID()<<std::endl;
+                std::cout<<i->getSchedule()->toString();
                 break;
         }
         
@@ -264,6 +276,8 @@ void Family::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildin
                 break;
             default:
                 std::cout<< "Invalid Visitor Type in New: "<<oldLocation->getVisitorType()<<std::endl;
+                std::cout<<"ID: "<<i->getID()<<std::endl;
+                std::cout<<i->getSchedule()->toString();
                 break;
 
         }
@@ -273,6 +287,7 @@ void Family::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildin
     }
     
 }
+
 Family::~Family() {
 	// TODO Auto-generated destructor stub
 }

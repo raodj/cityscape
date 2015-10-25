@@ -49,7 +49,7 @@ class Schedule {
         /** Alternative constructor for this class with specific type
          param[in] type type of schedule to create (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
          */
-        Schedule(int type);
+        Schedule(int type, bool goToJobLocation);
     
         /**Copy Constructor for Schedule
         param[in] s schedule to copy.
@@ -74,6 +74,8 @@ class Schedule {
          */
         int getJobLocation();
     
+        void setCurrentTimeStep(int newTimeStep);
+
         /**Create a new timeslot in the Schedule
          param[in] building  pointer to location of where person should be during time slot.
          param[in] endtime end time of time slot.
@@ -92,6 +94,10 @@ class Schedule {
          param[in] type type to change to (0=young child, 1= school aged child, 2=older school aged child, 3=working adult, 4=non-working adult)
          */
         void setScheduleType(int type);
+    
+        void setGoToJobLocation(bool n);
+
+        bool getGoToJobLocation();
     
         TimeSlot* getLocationAt(int time);
     
@@ -112,7 +118,7 @@ class Schedule {
     
         std::string toString();
     
-    std::string exportSchedule();
+        std::string exportSchedule();
         /**
          The destructor.
          
@@ -135,6 +141,7 @@ class Schedule {
         int currentTimeSlot;
         int numberOfTimeSlots;
         int jobLocationID;
+        bool goToJobLocation;
         bool loop;
 };
 #endif /* defined(__haplos__Schedule__) */

@@ -8,10 +8,10 @@
 Density_File=examples/data/MicroWorld.asc
 Timeline_File=examples/timeline/Microworld.tl
 Output_Directory=output/
-#Building_Import=-1
-#Population_Import=-1
-Building_Import=output/buildingExport.hpb
-Population_Import=output/populationExport.hpe
+Building_Import=-1
+Population_Import=-1
+#Building_Import=output/buildingExport.hpb
+#Population_Import=output/populationExport.hpe
 
 #Output File Parameters and Header Information
 Custom_Output_Files=infectious,immune,exposed
@@ -21,7 +21,7 @@ Cellsize_Width=0.0416666666667
 Cellsize_Height=0.0416666666667
 
 ###General Settings###
-Length_Of_Simulation=1;
+Length_Of_Simulation=14112;
 
 ###Population Configuration###
 #General Configuration
@@ -31,7 +31,7 @@ Max_Population_In_Area=10
 Population_Seed=-1
 Total_Population=104
 
-#Demographics (Population Projects 2015 US Census. http://www.census.gov/population/projections/data/national/2012/summarytables.html) Older People have +0.000003
+#Demographics (Population Projects 2015 US Census. http://www.census.gov/population/projections/data/national/2012/summarytables.html)
 Male_Probablity=0.492782305
 Age_5-Younger_Probablity=0.065505363
 Age_5-13_Probablity=0.114425121

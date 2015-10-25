@@ -47,6 +47,7 @@ class Population {
     /** A class specifically repersenting a population.
      */
     public:
+        Population();
         /** The default constructor for this class.
          
          \param[in] size Size of population to create.
@@ -69,6 +70,8 @@ class Population {
         Population(int size, double *ageProbablities, double *familySizeProbablities,
                    double maleProbablity, double *scheduleProbablities, int popSeed);
     
+        Population(const Population &p);
+
         /** Generates population
 
         \param[in] progressDisplay Display progress of creating population.
