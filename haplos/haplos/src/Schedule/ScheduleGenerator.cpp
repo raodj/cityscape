@@ -346,6 +346,7 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
     Schedule *childCareAdultSchedule = f->getChildCareAdult()->getSchedule();
     School *attendingSchool= static_cast<School* >(allBuildings->at(currentSchedule->getJobLocation()));
     attendingSchool->assignStudentToSchool(0);
+    currentSchedule->setGoToJobLocation(goToSchool);
     int schoolStartTime = (goToSchool ? attendingSchool->getSchoolStartTime() : 99999);
     int schoolEndTime = (goToSchool ? attendingSchool->getSchoolEndTime(): 99999);
     //**std::cout<<"---------------------- Young School: "<<p->getID()<<" ----------------------"<<std::endl;
@@ -480,7 +481,8 @@ void ScheduleGenerator::generateSchoolAgedChildSchedule(Person *p, Family *f, in
     //Older School Aged Child (On own after school)
     Schedule *currentSchedule = p->getSchedule();
     Building *home =f->getHome();
-    
+    currentSchedule->setGoToJobLocation(goToSchool);
+
     //Set Probablities for where they can go
     //double workProb=0;
     //double outProb=0.2;
@@ -1172,6 +1174,8 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
                                                        bool goToWork){
     //Working Adult
     Schedule *currentSchedule = p->getSchedule();
+    currentSchedule->setGoToJobLocation(goToWork);
+
     Building *home =f->getHome();
     Building *lastPlace = home;
     Building *jobLocation=allBuildings->at(currentSchedule->getJobLocation());
@@ -1982,6 +1986,7 @@ void ScheduleGenerator::generateUnemployeedAdultSchedule(Person *p,
     //**std::cout<<"---------------------- Unemployeed: "<<p->getID()<<" "<<(childModification?"True":"False")<<" ----------------------"<<std::endl;
     
     Schedule *currentSchedule = p->getSchedule();
+
     Building *home =f->getHome();
     Building *lastPlace = home;
     

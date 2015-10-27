@@ -65,15 +65,15 @@ Family::Family(Building *h, Daycare *d ){
 }
 
 Family::Family(const Family &f){
-    this->hasAdult=f.hasAdult;
-    this->hasYoungChild=f.hasYoungChild;
-    this->hasYoungSchoolChild=f.hasSchoolChild;
-    this->hasSchoolChild=f.hasSchoolChild;
-    this->numberOfPeople=f.numberOfPeople;
-    this->homeNumber=f.homeNumber;
-    this->childCareAdultPos=f.childCareAdultPos;
-    this->daycare=f.daycare;
-    this-> members = f.members;
+    this->hasAdult = f.hasAdult;
+    this->hasYoungChild = f.hasYoungChild;
+    this->hasYoungSchoolChild = f.hasYoungSchoolChild;
+    this->hasSchoolChild = f.hasSchoolChild;
+    this->numberOfPeople = f.numberOfPeople;
+    this->homeNumber = f.homeNumber;
+    this->childCareAdultPos = f.childCareAdultPos;
+    this->daycare = f.daycare;
+    this->members = f.members;
 }
 
 Person* Family::getPerson(int id){
@@ -107,7 +107,7 @@ Daycare* Family::getDaycare(){
     return daycare;
 }
 
-void Family::addPerson(Person newPerson){
+void Family::addPerson(Person newPerson){    
     members.push_back(newPerson);
     if(newPerson.getAge()>17){
         hasAdult=true;
