@@ -259,7 +259,7 @@ Haplos::Haplos(std::string configFileLocation, bool produceImages, bool progress
         //  std::cout<<"Current Time: "<<currentTime<<std::endl;
         //Update Population
         pop.updateToNextTimeStep(&allBuildings);
-        policy.updatePopulation(pop, &allBuildings, currentTime, &scheduleGen);
+        //policy.updatePopulation(pop, &allBuildings, currentTime, &scheduleGen);
         //Generate Any Images Needed
         std::vector<std::string> files =tl.getFilesToProduceAt(currentTime);
         if(!files.empty()){
