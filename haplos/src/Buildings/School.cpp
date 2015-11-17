@@ -40,6 +40,7 @@
 School::School(int i, int x, int y, int capacity) : Building('S', i, x, y, capacity, 0){
     //Determine Grade Capacity
     //20% of School are not Teachers (teachers can have up to 30 students)
+    //std::cout<<"Constructor 1 Called: "<<&(*this)<<std::endl;
     int avalibleTeachers = (int)capacity * 0.20;
     //Schools very rarely offer all grades, split at elementry, middle, and high
     schoolType = (int)rand() % 2;
@@ -94,6 +95,8 @@ School::School(int i, int x, int y, int capacity, int forceSchoolType) : Buildin
     //Determine Grade Capacity
     //20% of School are not Teachers (teachers can have up to 30 students)
     int avalibleTeachers = (int)ceil(capacity * 0.20);
+    //std::cout<<"Constructor 2 Called: "<<&(*this)<<std::endl;
+
     //Schools very rarely offer all grades, split at elementry, middle, and high
     schoolType =forceSchoolType;
     //std::cout<<"Avalaible teachers: "<<avalibleTeachers<<std::endl;
@@ -131,6 +134,8 @@ School::School(int i, int x, int y, int capacity, int forceSchoolType) : Buildin
 
     this->studentCapacity = 0;
     this->studentMaxCapacity=avalibleTeachers*30;
+    
+    //std::cout<<studentMaxCapacity<<" "<<avalibleTeachers<<" "<<capacity<<std::endl;
     setMaxVisitorCapacity(studentMaxCapacity*2);
     //7:00AM (42) - 10:00AM (60) (needs to be chagned to a 15 minute scale)
     this->schoolStart=(int)rand() % 18 + 42;
@@ -150,6 +155,78 @@ School::School(int i, int x, int y, int capacity, int visitorCapacity, int child
     this->studentMaxCapacity=childMax;
     this->schoolStart = schoolStart;
     this->schoolEnd = schoolEnd;
+    int currentGrade =0;
+    //std::cout<<"Constructor 3 Called: "<<&(*this)<<std::endl;
+
+    endGrade=0;
+    startGrade=0;
+    
+    switch(schoolType){
+        case 0:
+            //Elementry
+            //Grades 0-5
+            endGrade=5;
+            startGrade=0;
+            break;
+        case 1:
+            //Middle
+            //Grades 6-8
+            endGrade=8;
+            startGrade=6;
+            break;
+        case 2:
+            //High School
+            //Grades 9-12
+            endGrade=12;
+            startGrade=9;
+            break;
+        default:
+            std::cout<<"Invalid School Type"<<std::endl;
+            break;
+    }
+
+}
+
+School::School(const School &s) : Building(s){
+    //std::cout<<"Copy Constructor: "<<&s<<" to "<<&(*this)<<std::endl;
+    //std::cout<<"Student Map: "<< &(s.currentStudents) << " to "<< &(this->currentStudents)<<std::endl;
+
+    this->studentCapacity = s.studentCapacity;
+    this->studentMaxCapacity = s.studentMaxCapacity;
+    this->schoolStart = s.schoolStart;
+    this->schoolEnd = s.schoolEnd;
+    this->startGrade = s.startGrade;
+    this->endGrade = s.endGrade;
+    this->schoolType = s.schoolType;
+    this->currentStudents.clear();
+    this->currentStudents.reserve(studentMaxCapacity);
+    if(s.currentStudents.size()>0){
+        this->currentStudents.insert(s.currentStudents.begin(), s.currentStudents.end());
+    }
+    
+}
+
+
+School &School::operator = (const School &s){
+//    std::cout<<"Equal Constructor: "<<&(*this)<<std::endl;
+
+    if (this!=&s) {
+        Building::operator = (s);
+        this->studentCapacity = s.studentCapacity;
+        this->studentMaxCapacity = s.studentMaxCapacity;
+        this->schoolStart = s.schoolStart;
+        this->schoolEnd = s.schoolEnd;
+        this->startGrade = s.startGrade;
+        this->endGrade = s.endGrade;
+        this->schoolType = s.schoolType;
+        this->currentStudents.clear();
+        this->currentStudents.reserve(studentMaxCapacity);
+
+        if(s.currentStudents.size()>0){
+            this->currentStudents.insert(s.currentStudents.begin(), s.currentStudents.end());
+        }
+    }
+    return *this;
 }
 
 
@@ -171,6 +248,7 @@ int School::getStudentCapacity(){
 
 bool School::hasGradeAvaliable(int age, int numberOfStudents){
     int grade=age-5;
+    //std::cout<<"Grade: "<<grade<<" "<<startGrade<<"-"<<endGrade<<std::endl;
    // std::cout<<"Start Time: "<<schoolStart<<" "<<this->getID()<<std::endl;
     //std::cout<<"Capacity: "<<studentCapacity<<" "<<studentMaxCapacity<<std::endl;
     if(endGrade>=grade && startGrade<=grade){
@@ -193,15 +271,15 @@ int School::getTotalNumberOfPeople(){
     return currentStudents.size()+Building::getTotalNumberOfPeople();
 }
 
-void School::removeStudent(Person *p){
-    currentStudents.erase(p->getID());
+void School::removeStudent(int pID){
+    currentStudents.erase(pID);
 }
 
-void School::addStudent(Person *p){
-    currentStudents[p->getID()] = p;
+void School::addStudent(int pID, int familyID){
+    currentStudents[pID] = familyID;
 }
 
-std::unordered_map<int, Person *> School::getStudents(){
+std::unordered_map<int, int> School::getStudents(){
     return currentStudents;
     
 }
@@ -222,5 +300,4 @@ std::string School::exportString(){
 }
 
 School::~School(){
-    
 }

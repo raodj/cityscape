@@ -39,15 +39,17 @@
 using namespace std;
 
 Building:: Building(){
-    type = 'U';
-    idNumber = -1;
-    location[0] = -1;
-    location[1] = -1;
-    maxCapacity = -1;
-    currentCapacity = 0;
-    visitorCapacity = 0;
-    currentEmployees.clear();
-    currentVisitors.clear();
+    this->type = 'U';
+    this->idNumber = -1;
+    this->location[0] = -1;
+    this->location[1] = -1;
+    this->maxCapacity = -1;
+    this->currentCapacity = 0;
+    this->visitorCapacity = 0;
+
+    for(int i = 0; i < 1008; i++){
+        this->currentVisitorCapacity[i] = 0;
+    }
 }
 
 Building::Building(char t, int i, int x, int y, int capacity, int visitorCapacity){
@@ -58,11 +60,15 @@ Building::Building(char t, int i, int x, int y, int capacity, int visitorCapacit
     this->maxCapacity = capacity;
     this->currentCapacity = 0;
     this->visitorCapacity = visitorCapacity;
-    currentEmployees.clear();
-    currentVisitors.clear();
+
+    for(int i = 0; i < 1008; i++){
+        this->currentVisitorCapacity[i] = 0;
+    }
 }
 
 Building::Building(const Building &b){
+    //std::cout<<"Copy"<<std::endl;
+    //std::cout<<b.currentEmployees.size()<<std::endl;
     this->type = b.type;
     this->idNumber = b.idNumber;
     this->location[0] = b.location[0];
@@ -70,11 +76,43 @@ Building::Building(const Building &b){
     this->maxCapacity = b.maxCapacity;
     this->currentCapacity = b.currentCapacity;
     this->visitorCapacity = b.visitorCapacity;
-    this->currentEmployees.clear();
+    this->currentEmployees = b.currentEmployees;
+    this->currentVisitors = b.currentVisitors;
+    /*this->currentEmployees.clear();
     this->currentVisitors.clear();
-    this->currentEmployees.insert(b.currentEmployees.begin(), b.currentEmployees.end());
-    this->currentVisitors.insert(b.currentVisitors.begin(), b.currentVisitors.end());
+    if(b.currentEmployees.size()>0){
+        std::cout<<"Copying Employees"<<std::endl;
+        this->currentEmployees.insert(b.currentEmployees.begin(), b.currentEmployees.end());
+    }
+    if(b.currentVisitors.size()>0){
+        this->currentVisitors.insert(b.currentVisitors.begin(), b.currentVisitors.end());
+    }*/
+}
 
+Building &Building::operator = (const Building &b){
+    //std::cout<<"Equal"<<std::endl;
+    if (this!=&b) {
+        this->type = b.type;
+        this->idNumber = b.idNumber;
+        this->location[0] = b.location[0];
+        this->location[1] = b.location[1];
+        this->maxCapacity = b.maxCapacity;
+        this->currentCapacity = b.currentCapacity;
+        this->visitorCapacity = b.visitorCapacity;
+        this->currentEmployees = b.currentEmployees;
+        this->currentVisitors = b.currentVisitors;
+        
+        /*this->currentEmployees.clear();
+        this->currentVisitors.clear();
+        if(b.currentEmployees.size()>0){
+            this->currentEmployees.insert(b.currentEmployees.begin(), b.currentEmployees.end());
+        }
+        if(b.currentVisitors.size()>0){
+            this->currentVisitors.insert(b.currentVisitors.begin(), b.currentVisitors.end());
+        }*/
+        
+    }
+    return *this;
 }
 
 int Building::getID(){
@@ -114,28 +152,33 @@ void Building::addVisitorTimeSlot(int startTime, int endTime){
     }
 }
 
-std::unordered_map<int, Person *>Building::getVisitors(){
+std::unordered_map<int, int> Building::getVisitors(){
     return currentVisitors;
 }
 
-std::unordered_map<int, Person *>Building::getEmployees(){
+std::unordered_map<int, int> Building::getEmployees(){
     return currentEmployees;
 }
 
-void Building::addVisitor(Person *p){
-    currentVisitors[p->getID()] = p;
+void Building::addVisitor(int pID, int familyID){
+    currentVisitors[pID] = familyID;
 }
 
-void Building::removeVisitor(Person *p){
-    currentVisitors.erase(p->getID());
+void Building::removeVisitor(int pID){
+    currentVisitors.erase(pID);
 }
 
-void Building::addEmployee(Person *p){
-    currentEmployees[p->getID()] = p;
+void Building::addEmployee(int pID, int familyID){
+    //std::cout<<"ID: "<<idNumber<<std::endl;
+    //std::cout<<"Size: "<<currentEmployees.size()<<std::endl;
+    //std::cout<<"Type: "<<type<<std::endl;
+    //std::cout<<pID<<" "<<familyID<<std::endl;
+    currentEmployees[pID] = familyID;
+    attemptsAdded++;
 }
 
-void Building::removeEmployee(Person *p){
-    currentEmployees.erase(p->getID());
+void Building::removeEmployee(int pID){
+    currentEmployees.erase(pID);
 }
 
 int Building::getTotalNumberOfPeople(){

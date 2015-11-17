@@ -39,6 +39,26 @@
 Daycare::Daycare(int i, int x, int y, int capacity, int visitorCapacity, int childCapacity) : Building('D', i, x, y, capacity, visitorCapacity){
     this->maxChildCapacity=childCapacity;
     this->childCapacity=0;
+    this->currentChildren.reserve(this->maxChildCapacity);
+}
+
+Daycare::Daycare(const Daycare &d) : Building(d){
+    this->childCapacity = d.childCapacity;
+    this->maxChildCapacity = d.maxChildCapacity;
+    this->currentChildren.clear();
+    this->currentChildren.insert(d.currentChildren.begin(), d.currentChildren.end());
+}
+
+Daycare &Daycare::operator = (const Daycare &d){
+    if (this!=&d) {
+        Building::operator = (d);
+        this->childCapacity = d.childCapacity;
+        this->maxChildCapacity = d.maxChildCapacity;
+        this->currentChildren.clear();
+        this->currentChildren.insert(d.currentChildren.begin(), d.currentChildren.end());
+        
+    }
+    return *this;
 }
 
 int Daycare::getChildCapacity(){
@@ -49,15 +69,15 @@ int Daycare::getMaxChildCapacity(){
     return maxChildCapacity;
 }
 
-void Daycare::removeChild(Person *p){
-    currentChildren.erase(p->getID());
+void Daycare::removeChild(int pID){
+    currentChildren.erase(pID);
 }
 
-void Daycare::addChild(Person *p){
-    currentChildren[p->getID()] = p;
+void Daycare::addChild(int pID, int familyID){
+    currentChildren[pID] = familyID;
 }
 
-std::unordered_map<int, Person *>Daycare::getChildren(){
+std::unordered_map<int, int>Daycare::getChildren(){
     return currentChildren;
     
 }

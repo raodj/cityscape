@@ -64,7 +64,7 @@
 
 using namespace std;
 
-Haplos::Haplos(std::string configFileLocation, bool produceImages, bool progressDisplay, bool exportFiles, Policy p){
+Haplos::Haplos(std::string configFileLocation, bool produceImages, bool progressDisplay, bool exportFiles){
     //Display Awesome Logo
     std::cout << " _    _          _____  _      ____   _____" <<std::endl;
     std::cout << "| |  | |   /\\   |  __ \\| |    / __ \\ / ____|" <<std::endl;
@@ -80,7 +80,9 @@ Haplos::Haplos(std::string configFileLocation, bool produceImages, bool progress
     //Read in Configuration File
     configuration= ConfigFile(configFileLocation);
     outputFolder = configuration.getOutputFileLocation();
-
+}
+void Haplos::runSimulation(Policy *p){
+    
     //Age Probablities
     double *ageProbablities =configuration.getAgeProbablities();
     
@@ -108,7 +110,7 @@ Haplos::Haplos(std::string configFileLocation, bool produceImages, bool progress
     double *adultUnemployeedVisitorProbablities = configuration.getAdultUnemployeedVisitorProbablities();
     double *olderSchoolSchoolDayProbablities = configuration.getOlderSchoolSchoolDayProbablities();
     double *olderSchoolWeekendProbablities = configuration.getOlderSchoolWeekendProbablities();
-
+    
     //Set Seed
     generator.seed(time(0));
     
@@ -163,9 +165,7 @@ Haplos::Haplos(std::string configFileLocation, bool produceImages, bool progress
                                      progressDisplay);
     
     //Create Policy Object
-    policy = p;
-    
-    policy.setConfigFile(&configuration);
+    p->setConfigFile(&configuration);
     
     std::cout<<"Population Import File: "<<configuration.getPopulationImport()<<std::endl;
     std::cout<<"Get Building Import File: "<<configuration.getBuildingImport()<<std::endl;
@@ -201,7 +201,6 @@ Haplos::Haplos(std::string configFileLocation, bool produceImages, bool progress
         pop.importPopulation(configuration.getPopulationImport(), &allBuildings);
     }
     
-    policy.setupCustomAttributes(pop);
     
     std::cout<<"Output Folder: "<< outputFolder<<std::endl;
     std::string temp =outputFolder+"haplos_%Y%m%d_%H%M%S";
@@ -244,7 +243,9 @@ Haplos::Haplos(std::string configFileLocation, bool produceImages, bool progress
                                           saveLocationPath);
     
     //Display 10 Families Entirely (Useful for Schedule Testing).
-    pop.returnFirstTenFamiliesInfo(familyFileLocationPath);
+    //pop.returnFirstTenFamiliesInfo(familyFileLocationPath);
+
+    policy.setupCustomAttributes(pop);
 
     //Prepare Headers for Image Generator Files
     vector<std::string> headerInformation;
@@ -253,13 +254,18 @@ Haplos::Haplos(std::string configFileLocation, bool produceImages, bool progress
     headerInformation.push_back(std::to_string(configuration["Cellsize_Width"])+","
                                 +std::to_string(configuration["Cellsize_Height"]));
 
+    /*for(auto it = schoolBuildings.begin(); it != schoolBuildings.end(); it++){
+        std::cout<<"Address of School Building: "<<&(*it)<<std::endl;
+        std::cout<<"Address of All Building: "<<&(*(allBuildings[it->getID()]))<<std::endl;
+    }*/
+    
     int currentTime = 0;
     std::cout<<"Simulation Running"<<std::endl;
     while(currentTime<configuration["Length_Of_Simulation"]){
         //  std::cout<<"Current Time: "<<currentTime<<std::endl;
         //Update Population
         pop.updateToNextTimeStep(&allBuildings);
-        //policy.updatePopulation(pop, &allBuildings, currentTime, &scheduleGen);
+        p->updatePopulation(pop, allBuildings, currentTime, &scheduleGen);
         //Generate Any Images Needed
         std::vector<std::string> files =tl.getFilesToProduceAt(currentTime);
         if(!files.empty()){
@@ -305,9 +311,10 @@ Haplos::Haplos(std::string configFileLocation, bool produceImages, bool progress
             }
         }
         
-        
-        
         currentTime++;
+        if(currentTime%144 == 0){
+            std::cout<<"Day: "<<(currentTime/144)<<std::endl;
+        }
     }
     
     std::ofstream completeFile;

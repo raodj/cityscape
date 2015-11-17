@@ -50,9 +50,12 @@
 
 class BuildingGenerator{
     public:
-        BuildingGenerator(std::default_random_engine generator, int numberOfBuildings,
-                          std::vector< School > *schoolBuildings, std::vector< Daycare > *daycareBuildings,
-                          std::vector< Medical > *medicalBuildings, std::vector< Business > *businessBuildings,
+        BuildingGenerator(std::default_random_engine generator,
+                          int numberOfBuildings,
+                          std::vector< School > *schoolBuildings,
+                          std::vector< Daycare > *daycareBuildings,
+                          std::vector< Medical > *medicalBuildings,
+                          std::vector< Business > *businessBuildings,
                           std::vector< Building > *otherBuildings,
                           std::unordered_map<int, Building*> *allBuildings,
                           std::vector< std::vector < Location > > *densityData,
@@ -73,7 +76,7 @@ class BuildingGenerator{
         void updateStatistics(char buildingType, int capacity);
 
         std::default_random_engine generator;
-        bool progressDisplay;
+        bool progressDisplay = false;
         std::vector< School > *schoolBuildings;
         std::vector< Daycare > *daycareBuildings;
         std::vector< Medical > *medicalBuildings;
@@ -82,15 +85,15 @@ class BuildingGenerator{
 
         std::unordered_map<int, Building*> *allBuildings;
         std::vector< std::vector < Location > > *densityData;
-        int totalBusinessSize[6];
-        int totalHospitalSize[6];
-        int totalSchoolSize[6];
-        int totalDaycareSize[6];
-        int totalSchools;
-        int totalHospitals;
-        int totalBusinesses;
-        int totalDaycares;
-        int numberOfBuildings;
+        int totalBusinessSize[6] = {0,0,0,0,0,0};
+        int totalHospitalSize[6] = {0,0,0,0,0,0};
+        int totalSchoolSize[6] = {0,0,0,0,0,0};
+        int totalDaycareSize[6] = {0,0,0,0,0,0};
+        int totalSchools = 0;
+        int totalHospitals = 0;
+        int totalBusinesses = 0;
+        int totalDaycares = 0;
+        int numberOfBuildings = 0;
     
     
 };

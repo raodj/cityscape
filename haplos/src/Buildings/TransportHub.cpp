@@ -42,12 +42,31 @@ TransportHub::TransportHub() : Building(){
 
 
 TransportHub::TransportHub(int i, int x, int y) : Building('T', i, x, y, -1, -1){
+
+}
+
+TransportHub::TransportHub(const TransportHub &t) : Building(t){
+    this->privateTransport.clear();
+    if(t.privateTransport.size()>0){
+        this->privateTransport.insert(t.privateTransport.begin(), t.privateTransport.end());
+    }
+}
+
+TransportHub &TransportHub::operator = (const TransportHub &t){
+    if (this!=&t) {
+        Building::operator = (t);
+        this->privateTransport.clear();
+        if(t.privateTransport.size()>0){
+            this->privateTransport.insert(t.privateTransport.begin(), t.privateTransport.end());
+        }
+    }
+    return *this;
 }
 
 int TransportHub::getTotalNumberOfPeople(){
     int total =0;
     
-    for(std::unordered_map<int, std::unordered_map<int, Person *>>::iterator i = privateTransport.begin(); i != privateTransport.end(); i++){
+    for(std::unordered_map<int, std::vector<int>>::iterator i = privateTransport.begin(); i != privateTransport.end(); i++){
         
         total += (*i).second.size();
     }
@@ -55,16 +74,20 @@ int TransportHub::getTotalNumberOfPeople(){
     return total+Building::getTotalNumberOfPeople();
 }
 
-void TransportHub::removePrivateTransport(int homeNumber, Person *p){
-    (privateTransport[homeNumber]).erase(p->getID());
+void TransportHub::removePrivateTransport(int pID, int familyID){
+    std::vector<int>::iterator it;
+    it = std::find(privateTransport[familyID].begin(), privateTransport[familyID].end(), pID);
+    if(it != privateTransport[familyID].end()){
+        privateTransport[familyID].erase(it);
+    }
 }
 
-void TransportHub::addPrivateTransport(int homeNumber, Person *p){
-    (privateTransport[homeNumber])[p->getID()] = p;
+void TransportHub::addPrivateTransport(int pID, int familyID){
+    privateTransport[familyID].push_back(pID);
 }
 
-std::unordered_map<int, Person *> TransportHub::getPrivateTransport(int homeNumber){
-    return privateTransport[homeNumber];
+std::vector<int> TransportHub::getPrivateTransport(int familyID){
+    return privateTransport[familyID];
 }
 
 TransportHub::~TransportHub(){

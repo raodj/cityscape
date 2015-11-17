@@ -44,6 +44,7 @@ int main(int argc, char* argv[]) {
         }
     }
     Policy p = Policy();
-    Haplos hap = Haplos(configFile, produceImages, progressDisplay, exportFiles, p);
+    Haplos hap = Haplos(configFile, produceImages, progressDisplay, exportFiles);
+    hap.runSimulation(&p);
     return 0;
 }

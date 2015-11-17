@@ -53,7 +53,12 @@ class Medical : public Building {
          */
         Medical(int i, int x, int y, int capacity, int visitorCapcity, int patientCapcity);
     
-        /** Return the Max Capacity for Patients 
+    
+        Medical(const Medical &m);
+        
+        Medical &operator=(const Medical &m);
+    
+        /** Return the Max Capacity for Patients
          \return max capacity for patients
          */
         int getMaxPatientCapacity();
@@ -68,11 +73,11 @@ class Medical : public Building {
          */
         void setCurrentPatientCapacity(int p);
     
-        void addPatient(Person *p);
+        void addPatient(int pID, int familyID);
     
-        void removePatient(Person *p);
+        void removePatient(int pID);
     
-        std::unordered_map<int, Person *> getPatients();
+        std::unordered_map<int, int> getPatients();
     
         using Building::getTotalNumberOfPeople;
         int getTotalNumberOfPeople();
@@ -94,9 +99,9 @@ class Medical : public Building {
          */
         virtual ~Medical();
     private:
-        int maxPatientCapacity;
-        int currentPatientCapacity;
-        std::unordered_map<int, Person *> currentPatients;
+        int maxPatientCapacity = 0;
+        int currentPatientCapacity = 0;
+        std::unordered_map<int, int> currentPatients;
 
 };
 

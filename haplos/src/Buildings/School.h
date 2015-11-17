@@ -64,6 +64,11 @@ class School : public Building{
         School(int i, int x, int y, int capacity, int forceSchoolType);
     
         School(int i, int x, int y, int capacity, int visitorCapacity, int childMax,  int forceSchoolType, int schoolStart, int schoolEnd) ;
+    
+    
+        School(const School &s);
+        
+        School &operator=(const School &s);
 
     
         /**Get time of day when school will start (based on a 144 hour time units)
@@ -94,11 +99,11 @@ class School : public Building{
          */
         void assignStudentToSchool(int grade);
     
-        void addStudent(Person *p);
+        void addStudent(int pID, int familyID);
     
-        void removeStudent(Person *p);
+        void removeStudent(int pID);
     
-        std::unordered_map<int, Person *> getStudents();
+        std::unordered_map<int, int> getStudents();
     
         using Building::getTotalNumberOfPeople;
         int getTotalNumberOfPeople();
@@ -114,14 +119,14 @@ class School : public Building{
          */
         virtual ~School();
     private:
-        int studentCapacity;
-        int studentMaxCapacity;
-        int schoolStart;
-        int schoolEnd;
-        int startGrade;
-        int endGrade;
-        int schoolType;
-        std::unordered_map <int, Person *> currentStudents;
+        int studentCapacity = 0;
+        int studentMaxCapacity = 0;
+        int schoolStart = -1;
+        int schoolEnd = -1;
+        int startGrade= -1;
+        int endGrade = -1;
+        int schoolType = -1;
+        std::unordered_map <int, int> currentStudents;
     
     
 };

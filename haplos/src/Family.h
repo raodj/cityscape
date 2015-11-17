@@ -58,7 +58,7 @@ class Family {
          */
         Family();
     
-        Family(Building *home, Daycare *daycare);
+        Family(Building *home, Daycare *daycare, int familyID);
     
     
         Family(const Family &f);
@@ -74,7 +74,7 @@ class Family {
         /** Get All memembers of the family
          \return Vector of all family memembers
          */
-        Person* getAllPersons();
+        std::unordered_map< int , Person>* getAllPersons();
         
         /**Add new Person to Family
          \param newPerson Person to be added
@@ -126,6 +126,10 @@ class Family {
          */
         bool getHasYoungSchoolChild();
     
+        void setID(int i);
+    
+        int getID();
+    
         Person* getChildCareAdult();
     
         std::string toString();
@@ -143,7 +147,9 @@ class Family {
         virtual ~Family();
         
     private:
-        std::vector < Person > members; //Vector containing all members in the family
+        //std::vector < Person > members; //Vector containing all members in the family
+        //Person members[7] = {};
+        std::unordered_map< int , Person>  members;
         int numberOfPeople; //Number of People in the Family
         bool hasAdult;  //Has an person 18 and older in the family
         int hasYoungChild; //Has Child that is under the age of 14 and needs to have adult supervision
@@ -152,6 +158,7 @@ class Family {
         int childCareAdultPos;
         Building *homeNumber; //Pointer to Home Building.
         Daycare *daycare;  //Pointer to Daycare for Family.
+        int familyID = 0;
     
     
 };

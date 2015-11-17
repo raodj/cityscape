@@ -98,12 +98,12 @@ Population::Population(const Population &p){
 
 
 void Population::generatePopulation(bool progressDisplay){
-    std::cout << "Creating Population of size: " << size << std::endl;
+    //std::cout << "Creating Population of size: " << size << std::endl;
     int i=0;
     float oldRatio=0;
-    
+    int numberOfFamilies = 0;
     //Reserve Space for Familes to prevent space resassignment midway (Avg Family size is 3)
-    families.reserve(size/3);
+    //families.reserve(size/3);
     
     if(progressDisplay){
         printf("Percentage Complete: %3d%%", 0 );
@@ -130,14 +130,17 @@ void Population::generatePopulation(bool progressDisplay){
     while( i < size){
         int familySize= generateFamilySize();
         // std::cout<< "Family Size: "<< familySize << std::endl;
-        
-        Family newFamily = Family();
         if(familySize > size-i ){
             familySize = size-i;
         }
+        
+        families.insert({numberOfFamilies, Family(NULL, NULL, numberOfFamilies)});
+        Family *newFamily = &families[numberOfFamilies];
+        
         for( int b = 0; b<familySize; b++ ){
             //Always first Person in Family must be an Adult
-            int *ageInformation=determineAge(((b == 0) ? true : false ));
+            int ageInformation[2];
+            determineAge(((b == 0) ? true : false ), ageInformation);
             int scheduleType = determineScheduleType(ageInformation[1]);
             char gender =determineGender();
             Person newPerson= Person(ageInformation[0],
@@ -147,17 +150,15 @@ void Population::generatePopulation(bool progressDisplay){
                                      scheduleType,
                                      true);
             updateStatistics(ageInformation[0], scheduleType, gender);
-            newFamily.addPerson(newPerson);
+            newFamily->addPerson(newPerson);
         }
         
         
-        if(newFamily.getHasYoungChild()>0 && newFamily.getChildCareAdult()->getSchedule()->getScheduleType()!=4){
+        if(newFamily->getHasYoungChild()>0 && newFamily->getChildCareAdult()->getSchedule()->getScheduleType()!=4){
             //std::cout<<"Family Needs Day Care"<<std::endl;
             numberOfChildrenDaycare++;
         }
-        
-        families.push_back(Family(newFamily));
-        
+        numberOfFamilies++;
         if(progressDisplay){
             float ratio = i/(float)size;
             if(100*(ratio-oldRatio)>1){
@@ -194,6 +195,7 @@ void Population::setHomeLocationOfFamily(Building *home, int family){
     families.at(family).setHome(home);
     int location = families.at(family).getHome()->getID();
     families.at(family).setLocation(location);
+
 }
 
 Family* Population::getFamily(int family){
@@ -243,9 +245,9 @@ int Population::generateFamilySize(){
 }
 
 
-int *Population::determineAge(bool forceAdult){
+int *Population::determineAge(bool forceAdult, int *returnArray){
     int ageGroup=-1;
-    int *ageInformation=new int[2];
+    int *ageInformation = returnArray;
     if(forceAdult){
         //Adult Only (Using Uniform Distribution for Now)
         int age=(int)rand() % 82 + 18;
@@ -467,9 +469,6 @@ std::string Population::returnFirstTenFamiliesInfo(std::string fileLocation){
     
     std::string returnString="FIRST 10 FAMILY INFORMATION\n";
     int n=getNumberOfFamilies();
-    if(getNumberOfFamilies()<10){
-        n=getNumberOfFamilies();
-    }
     for(int i=0; i<n; i++){
         std::ostringstream outputString;
         outputString << getFamily(i)->toString();
@@ -491,8 +490,9 @@ std::string Population::returnFirstTenFamiliesInfo(std::string fileLocation){
 
 
 void Population::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildings){
-    for (std::vector<Family>::iterator i = families.begin(); i!= families.end(); i++){
-        i->updateToNextTimeStep(allBuildings);
+    //std::cout<<"Updating Population"<<std::endl;
+    for (auto i = families.begin(); i!= families.end(); i++){
+        i->second.updateToNextTimeStep(allBuildings);
     }
 }
 
@@ -500,8 +500,8 @@ void Population::updateToNextTimeStep(std::unordered_map<int, Building*> *allBui
 void Population::exportPopulation(std::string fileLocation){
     std::ostringstream outputString;
 
-    for (std::vector<Family>::iterator i = families.begin(); i!= families.end(); i++){
-        outputString<<i->exportFamily();
+    for (auto i = families.begin(); i!= families.end(); i++){
+        outputString<<i->second.exportFamily();
     }
     
     if(fileLocation!=""){
@@ -518,6 +518,7 @@ void Population::importPopulation(std::string fileLocation, std::unordered_map<i
     std::string s((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     std::stringstream ss(s);
     std::string item;
+    int numberOfFamilies = 0;
     std::getline(ss, item, '%');
     while (std::getline(ss, item, '%')) {
         //std::cout<<item<<std::endl;
@@ -529,7 +530,7 @@ void Population::importPopulation(std::string fileLocation, std::unordered_map<i
         int daycareID = std::stoi(r);
         //std::cout<<"Home ID: "<<homeID<<std::endl;
         //std::cout<<"Daycare ID: "<<daycareID<<std::endl;
-        Family newFamily = Family(allBuildings->at(homeID), (daycareID != -1 ? static_cast<Daycare*> (allBuildings->at(daycareID)) : NULL));
+        Family newFamily = Family(allBuildings->at(homeID), (daycareID != -1 ? static_cast<Daycare*> (allBuildings->at(daycareID)) : NULL), numberOfFamilies);
         std::getline(rows, r, '*');
         while(std::getline(rows, r, '*')){
             std::string p;
@@ -571,11 +572,13 @@ void Population::importPopulation(std::string fileLocation, std::unordered_map<i
             newPerson.setSchedule(tmpSch);
             TimeSlot *firstLoc = tmpSch.getCurrentTimeSlot();
             newFamily.addPerson(newPerson);
-            allBuildings->at(firstLoc->getLocation())->addVisitor(&newPerson);
+            allBuildings->at(firstLoc->getLocation())->addVisitor(newPerson.getID(), newFamily.getID());
             updateStatistics(age, schType, gender);
 
         }
-        families.push_back(newFamily);
+
+        families.insert({numberOfFamilies, newFamily});
+        numberOfFamilies++;
         numberOfFamiliesSizes[newFamily.getNumberOfPeople()-1]++;
         
     }
