@@ -40,7 +40,33 @@
 Medical::Medical(int i, int x, int y, int capacity, int visitorCapacity, int patientCapcity) : Building('M', i, x, y, capacity, visitorCapacity){
     this->maxPatientCapacity= patientCapcity;
     this->currentPatientCapacity=0;
+    this->currentPatients.reserve(maxPatientCapacity);
 
+}
+
+Medical::Medical(const Medical &m) : Building(m){
+    this->maxPatientCapacity = m.maxPatientCapacity;
+    this->currentPatientCapacity = m.currentPatientCapacity;
+    this->currentPatients.clear();
+    this->currentPatients.reserve(maxPatientCapacity);
+
+    if(m.currentPatients.size()>0){
+        this->currentPatients.insert(m.currentPatients.begin(), m.currentPatients.end());
+    }
+}
+
+Medical &Medical::operator = (const Medical &m){
+    if (this!=&m) {
+        Building::operator = (m);
+        this->maxPatientCapacity = m.maxPatientCapacity;
+        this->currentPatientCapacity = m.currentPatientCapacity;
+        this->currentPatients.clear();
+        this->currentPatients.reserve(maxPatientCapacity);
+        if(m.currentPatients.size()>0){
+            this->currentPatients.insert(m.currentPatients.begin(), m.currentPatients.end());
+        }
+    }
+    return *this;
 }
 
 int Medical::getMaxPatientCapacity(){
@@ -55,15 +81,15 @@ void Medical::setCurrentPatientCapacity(int p){
     this->currentPatientCapacity=p;
 }
 
-void Medical::removePatient(Person *p){
-    currentPatients.erase(p->getID());
+void Medical::removePatient(int pID){
+    currentPatients.erase(pID);
 }
 
-void Medical::addPatient(Person *p){
-    currentPatients[p->getID()] = p;
+void Medical::addPatient(int pID, int familyID){
+    currentPatients[pID] = pID;
 }
 
-std::unordered_map<int, Person *> Medical::getPatients(){
+std::unordered_map<int, int> Medical::getPatients(){
     return currentPatients;
     
 }

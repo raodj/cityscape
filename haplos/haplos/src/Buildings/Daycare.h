@@ -51,14 +51,19 @@ class Daycare : public Building {
          */
         Daycare(int id, int x, int y, int capacity, int visitorCapacity, int childCapacity);
     
+    
+        Daycare(const Daycare &d);
+        
+        Daycare &operator=(const Daycare &d);
+    
         int getChildCapacity();
     
         int getMaxChildCapacity();
     
-        void addChild(Person *p);
-        void removeChild(Person *p);
+        void addChild(int pID, int familyID);
+        void removeChild(int pID);
     
-        std::unordered_map<int, Person *> getChildren();
+        std::unordered_map<int, int> getChildren();
     
         void setChildCapacity(int c);
     
@@ -76,9 +81,9 @@ class Daycare : public Building {
          */
         virtual ~Daycare();
     private:
-        int childCapacity;
-        int maxChildCapacity;
-        std::unordered_map<int, Person *> currentChildren;
+        int childCapacity = 0;
+        int maxChildCapacity = 0;
+        std::unordered_map<int, int> currentChildren;
     
     };
 #endif /* defined(__haplos__Business__) */

@@ -65,7 +65,8 @@
 
 class Haplos {
 public:
-    Haplos(std::string configFileLocation, bool produceImages, bool progressDisplay, bool exportFiles, Policy p);
+    Haplos(std::string configFileLocation, bool produceImages, bool progressDisplay, bool exportFiles);
+    void runSimulation(Policy *p);
 private:
     Policy policy;
     std::vector< School > schoolBuildings;
@@ -78,15 +79,15 @@ private:
     std::vector< std::vector < Location > > densityData;
     
     std::default_random_engine generator;
-    std::string outputFolder;
-    std::string imageFileLocationPath;
-    std::string familyFileLocationPath;
-    std::string saveLocationPath;
+    std::string outputFolder = "";
+    std::string imageFileLocationPath = "";
+    std::string familyFileLocationPath = "";
+    std::string saveLocationPath = "";
     ConfigFile configuration;
-    bool produceImages;
-    bool progressDisplay;
-    bool exportFiles;
-    int numberOfBuildings=0;
+    bool produceImages = true;
+    bool progressDisplay = true;
+    bool exportFiles = true;
+    int numberOfBuildings = 0;
 
 
 };

@@ -47,6 +47,7 @@ Location::Location(){
     density=0;
 	coordinates[0]=-1;
 	coordinates[1]=-1;
+    tHub = TransportHub(-1, -1, -1);
 
 }
 
@@ -149,10 +150,9 @@ int Location::getNumberOfBuildings(char type) const{
 }
 
 void Location::addFamily(Family *f){
-    Person* people =f->getAllPersons();
-    int numberOfPeople = f->getNumberOfPeople();
-    for(int p=0; p<numberOfPeople;p++){
-        this->addPerson(&people[p]);
+    std::unordered_map< int , Person> *people =f->getAllPersons();
+    for(auto p = people->begin(); p != people->end();p++){
+        this->addPerson(&p->second);
     }
 }
 

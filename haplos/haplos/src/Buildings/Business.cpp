@@ -40,6 +40,19 @@ Business::Business(int i, int x, int y, int capacity, int visitorCapacity) : Bui
 
 }
 
+Business::Business(const Business &b) : Building(b){
+    
+}
+
+Business &Business::operator = (const Business &b){
+    if (this!=&b) {
+        Building::operator = (b);
+    }
+    return *this;
+}
+
 Business::~Business(){
     
 }
+
+

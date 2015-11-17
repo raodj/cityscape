@@ -52,11 +52,15 @@ public:
      */
     TransportHub(int buildID, int x, int y);
     
-    void addPrivateTransport(int homeNumber, Person *p);
+    TransportHub(const TransportHub &t);
     
-    void removePrivateTransport(int homeNumber, Person *p);
+    TransportHub &operator=(const TransportHub &t);
     
-    std::unordered_map<int, Person *> getPrivateTransport(int homeNumber);
+    void addPrivateTransport(int pID, int familyID);
+    
+    void removePrivateTransport(int pID, int familyID);
+    
+    std::vector<int> getPrivateTransport(int familyID);
     
     using Building::getTotalNumberOfPeople;
     int getTotalNumberOfPeople();
@@ -70,7 +74,7 @@ public:
      */
     virtual ~TransportHub();
 private:
-    std::unordered_map<int, std::unordered_map<int, Person *>> privateTransport;
+    std::unordered_map<int, std::vector<int>> privateTransport;
 
     
 };

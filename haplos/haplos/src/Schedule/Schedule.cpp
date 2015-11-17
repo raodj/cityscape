@@ -43,7 +43,7 @@ Schedule::Schedule() {
     this->jobLocationID=-1;
     this->loop = false;
     this->goToJobLocation = true;
-    
+    this->numberOfTimeSlots=0;
 
 }
 
@@ -55,6 +55,8 @@ Schedule::Schedule(int type, bool goToJobLocation){
     this->jobLocationID=-1;
     this->goToJobLocation = true;
     this->loop = false;
+    this->numberOfTimeSlots=0;
+
 }
 
 void Schedule::setJobLocation(int jobLocationID){
@@ -73,11 +75,12 @@ Schedule::Schedule(const Schedule &s){
     this->jobLocationID=s.jobLocationID;
     this->goToJobLocation=s.goToJobLocation;
     this->plan.clear();
-    this->plan = s.plan;
-    /*for(int i=0; i< s.plan.size(); i++)
+    //this->plan = s.plan;
+    this->numberOfTimeSlots=s.numberOfTimeSlots;
+    for(int i=0; i< s.plan.size(); i++)
     {
         this->plan.push_back(s.plan[i]);
-    }*/
+    }
 
 }
 
@@ -99,6 +102,7 @@ void Schedule::setCurrentTimeStep(int newTimeStep){
 
 void Schedule::addTimeSlot(TimeSlot t){
     plan.push_back(t);
+    numberOfTimeSlots++;
 }
 
 void Schedule::removeTimeSlot(int i){
@@ -107,6 +111,7 @@ void Schedule::removeTimeSlot(int i){
     }else{
         plan.erase(plan.begin()+i);
     }
+    numberOfTimeSlots--;
     
 }
 

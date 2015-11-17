@@ -51,9 +51,14 @@ public:
     Policy();
     void setConfigFile(ConfigFile *configuration);
     void setupCustomAttributes(Population &p);
-    void updatePopulation(Population &p, std::unordered_map<int, Building*> *allBuildings, int currentTime, ScheduleGenerator *scheduleGen);
+    void updatePopulation(Population &p,
+                          std::unordered_map<int, Building*> &allBuildings,
+                          int currentTime,
+                          ScheduleGenerator *scheduleGen);
     int getCustomFileTypeData(Location *l, std::string fileType);
-    std::unordered_map<int, Person *> getPossibleContacts(TimeSlot *t, int homeNumber, std::unordered_map<int, Building*> *allBuildings);
+    std::unordered_map<int, int> getPossibleContacts(TimeSlot *t,
+                                                     int familyID,
+                                                     std::unordered_map<int, Building*> &allBuildings);
     void modifySchedule(Family *f, Person *p, ScheduleGenerator *scheduleGenerator, int currentTIme);
     void revertToOldSchedule(Family *f, Person *p, int currentTime);
     

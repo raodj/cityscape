@@ -40,7 +40,7 @@
 #include <utility>
 
 ScheduleGenerator::ScheduleGenerator(){
-    
+
 }
 ScheduleGenerator::ScheduleGenerator(std::vector< std::vector < Location > > *d, std::unordered_map<int, Building*> *a,
                                      std::default_random_engine g, bool p){
@@ -88,9 +88,9 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                adultWorkVisitorProbablities,
                                adultNoworkVisitorProbablites,
                                true);
-        
-        for(int p=0; p<currentFamily->getNumberOfPeople(); p++){
-            Person *p1 = currentFamily->getPerson(p);
+        std::unordered_map< int , Person> *people =currentFamily->getAllPersons();
+        for(auto p = people->begin(); p != people->end(); p++){
+            Person *p1 = &(p->second);
             if(p1->getID()!=childcareAdult->getID()){
                 Schedule *currentSchedule = p1->getSchedule();
 
@@ -195,6 +195,7 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
                                                double *primaryVisitorTypeProb,
                                                double *secondaryVisitorTypeProb,
                                                bool specialLocationFlag){
+    //std::cout<<"Generating Schedule"<<std::endl;
     Schedule *currentSchedule = p1->getSchedule();
     int childModification = -1;
     bool youngChildModification=false;
@@ -283,6 +284,8 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
             break;
     }
     
+    //std::cout<<"Schedule Generatored"<<std::endl;
+
     
 }
 
@@ -2485,12 +2488,14 @@ bool ScheduleGenerator::sort_schoolTimes(const std::pair<int, School*>& firstEle
 std::vector <std::pair<int, School*> > ScheduleGenerator::getSchoolTimes(Family *f){
     std::vector <std::pair<int, School*> > schoolTimes;
     std::map <std::string,int > existingTimes;
-    for(int fm=0; fm<f->getNumberOfPeople(); fm++){
-        Person *p1 = f->getPerson(fm);
+    std::unordered_map< int , Person> *people =f->getAllPersons();
+    for(auto fm = people->begin(); fm != people->end(); fm++){
+        Person *p1 = &(fm->second);
         Schedule *sc = p1->getSchedule();
         if((sc->getScheduleType()==1 || sc->getScheduleType()==2) && sc->getGoToJobLocation() == true){
+            //std::cout<<sc->getJobLocation()<<std::endl;
+
             School *attendingSchool= static_cast<School* >(allBuildings->at(sc->getJobLocation()));
-            //**std::cout<<sc->getJobLocation()<<std::endl;
             //**std::cout<<"Type: "<<attendingSchool->getType()<<std::endl;;
             std::string key =std::to_string(attendingSchool->getSchoolStartTime())+"_"+std::to_string(attendingSchool->getID());
             if(existingTimes[key]!=1){
@@ -2681,14 +2686,15 @@ Building* ScheduleGenerator::findAvaliableBuilding(int x, int y, char typeOfVisi
 
 void ScheduleGenerator::assignJobSchoolLocations(Family *f){
     Building *home =f->getHome();
-    for(int p=0; p<f->getNumberOfPeople(); p++){
-        Schedule *currentSchedule =f->getPerson(p)->getSchedule();
-        //**std::cout<<"Person ID: "<<f->getPerson(p)->getID()<<std::endl;
+    
+    std::unordered_map< int , Person> *people =f->getAllPersons();
+    for(auto p = people->begin(); p != people->end();p++){
+        Schedule *currentSchedule = p->second.getSchedule();
         if(currentSchedule->getScheduleType()==1 || currentSchedule->getScheduleType()==2){
             //Set School
-            Building *schoolLocation=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'S', -1, f->getPerson(p)->getAge(), 0, 1, 1);
+            Building *schoolLocation=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'S', -1, p->second.getAge(), 0, 1, 1);
             if(schoolLocation==NULL){
-                ////**std::cout<<"No School Location Found For School Aged Child"<<std::endl;
+                std::cout<<"No School Location Found For School Aged Child"<<std::endl;
                 ////**std::cout<<p->toString()<<std::endl;
             }else{
                 ////**std::cout<<"School Found"<<std::endl;
@@ -2698,9 +2704,9 @@ void ScheduleGenerator::assignJobSchoolLocations(Family *f){
         }
         if(currentSchedule->getScheduleType()==0 && f->getDaycare()==NULL){
             //Young Child that needs to go to DayCare
-            Building *daycareLocation=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'D', -1, f->getPerson(p)->getAge(), 0, f->getHasYoungChild(), 1);
+            Building *daycareLocation=findAvaliableBuilding(home->getLocation()[0], home->getLocation()[1], 'D', -1, p->second.getAge(), 0, f->getHasYoungChild(), 1);
             if(daycareLocation==NULL){
-                //**std::cout<<"No Daycare"<<std::endl;
+                std::cout<<"No Daycare"<<std::endl;
                 //**std::cout<<f->getPerson(p)->toString()<<std::endl;
             }else{
                 ////**std::cout<<"School Found"<<std::endl;

@@ -51,6 +51,10 @@ class Business : public Building {
          */
         Business(int id, int x, int y, int capacity, int visitorCapacity);
     
+        Business(const Business &b);
+
+        Business &operator=(const Business &b);
+
         /**
          The destructor.
          

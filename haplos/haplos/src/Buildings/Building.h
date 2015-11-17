@@ -40,7 +40,7 @@
 #include "../Person.h"
 
 #include <iostream>
-#include <unordered_map>
+#include <map>
 
 
 class Person;
@@ -66,6 +66,10 @@ class Building {
          \param[in] b building to copy.
          */
         Building(const Building &b);
+    
+    
+        Building &operator=(const Building &b);
+
         /**Get ID of Building
          \return ID of Building
          */
@@ -119,19 +123,19 @@ class Building {
          */
         void setLocation(int x, int y);
     
-        void addVisitor(Person *p);
+        void addVisitor(int pID, int familyID);
     
-        void removeVisitor(Person *p);
+        void removeVisitor(int pID);
     
-        void addEmployee(Person *p);
+        void addEmployee(int pID, int familyID);
     
-        void removeEmployee(Person *p);
+        void removeEmployee(int pID);
     
         void addVisitorTimeSlot(int startTime, int endTime);
     
-        std::unordered_map<int, Person *> getEmployees();
+        std::unordered_map<int, int> getEmployees();
     
-        std::unordered_map<int, Person *> getVisitors();
+        std::unordered_map<int, int> getVisitors();
         /** Return the coordinates of the current location of entity
          
          \return An array consisting of [rows, cols]
@@ -164,15 +168,16 @@ class Building {
          */
         virtual ~Building();
     private:
-        char type;
-        int maxCapacity;
-        int currentCapacity;
-        int visitorCapacity;
+        char type = 'B';
+        int maxCapacity = 0 ;
+        int currentCapacity = 0;
+        int visitorCapacity = 0;
+        int attemptsAdded = 0;
         int currentVisitorCapacity[1008]; //Visitor Capacity at each time incriment for a week
-        std::unordered_map<int, Person *>currentEmployees;
-        std::unordered_map<int, Person *>currentVisitors;
-        int idNumber;
-        int location[2];
+        std::unordered_map<int, int> currentEmployees;
+        std::unordered_map<int, int> currentVisitors;
+        int idNumber = 0;
+        int location[2] = {-1, -1};
     
 };
 

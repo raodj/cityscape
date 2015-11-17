@@ -1,12 +1,9 @@
-#Configuration File for MicroWorld Data
+#Configuration File for MidWorld Data
 
 #####File Input and Output Configuration####
 #Data File Paths
-#Density_File=../examples/data/MicroWorld.asc
-#Timeline_File=../examples/timeline/Microworld.tl
-#Output_Directory=../output/
-Density_File=examples/data/MicroWorld.asc
-Timeline_File=examples/timeline/Microworld.tl
+Density_File=examples/data/MidWorld_22000.asc
+Timeline_File=examples/timeline/MidWorld.tl
 Output_Directory=output/
 Building_Import=-1
 Population_Import=-1
@@ -21,15 +18,14 @@ Cellsize_Width=0.0416666666667
 Cellsize_Height=0.0416666666667
 
 ###General Settings###
-Length_Of_Simulation=7200;
+Length_Of_Simulation=28800;
 
 ###Population Configuration###
 #General Configuration
-Density_File_Total_Population=89
-Max_Population_In_Area=10
-#Population_Seed=1443683913
+Density_File_Total_Population=22000
+Max_Population_In_Area=11
 Population_Seed=-1
-Total_Population=104
+Total_Population=22000
 
 #Demographics (Population Projects 2014 US Census. Table 3. http://www.census.gov/population/projections/data/national/2014/summarytables.html)
 Male_Probablity=0.492720206

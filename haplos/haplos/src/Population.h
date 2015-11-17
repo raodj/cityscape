@@ -148,7 +148,7 @@ class Population {
          \param[in] forceAdult forces the creation of adult.
          \return an array consisting of the age of person and the agegroup the person falls into.
          */
-        int* determineAge(bool forceAdult);
+        int* determineAge(bool forceAdult, int *returnArray);
     
         /** Set Schedule Type for person in the population.
             \param[in] ageGroup 0= 5 or younger, 1= 5-13, 2=14-17, 3=18-24, 4=25-44, 5=45-64, 6=65 or older
@@ -180,7 +180,7 @@ class Population {
         int numberOfChildrenDaycare=0;
         std::default_random_engine generator;
 
-        std::vector < Family > families;    //Families in Population.
+        std::unordered_map < int, Family > families;    //Families in Population.
 };
 
 

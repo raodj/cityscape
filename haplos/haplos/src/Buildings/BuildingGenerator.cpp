@@ -50,26 +50,26 @@ BuildingGenerator::BuildingGenerator(std::default_random_engine g, int nb,
                                      std::vector< Business > *bb, std::vector< Building > *ob,
                                      std::unordered_map<int, Building*> *ab, std::vector< std::vector < Location > > *d,
                                      bool pd){
-    generator = g;
-    schoolBuildings = sb;
-    daycareBuildings = db;
-    medicalBuildings = mb;
-    businessBuildings = bb;
-    otherBuildings = ob;
-    allBuildings = ab;
-    densityData = d;
-    totalSchools=0;
-    totalHospitals=0;
-    totalBusinesses=0;
-    totalDaycares=0;
-    numberOfBuildings=nb;
-    progressDisplay=pd;
+    this->generator = g;
+    this->schoolBuildings = sb;
+    this->daycareBuildings = db;
+    this->medicalBuildings = mb;
+    this->businessBuildings = bb;
+    this->otherBuildings = ob;
+    this->allBuildings = ab;
+    this->densityData = d;
+    this->totalSchools=0;
+    this->totalHospitals=0;
+    this->totalBusinesses=0;
+    this->totalDaycares=0;
+    this->numberOfBuildings=nb;
+    this->progressDisplay=pd;
     
     for(int i = 0; i<6 ; i++){
-        totalBusinessSize[i] = 0;
-        totalHospitalSize[i] = 0;
-        totalSchoolSize[i] = 0;
-        totalDaycareSize[i] = 0;
+        this->totalBusinessSize[i] = 0;
+        this->totalHospitalSize[i] = 0;
+        this->totalSchoolSize[i] = 0;
+        this->totalDaycareSize[i] = 0;
     }
 }
 
@@ -103,9 +103,9 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
     int highSchoolPopulation = numberOfStudentsPerGrade[9]+numberOfStudentsPerGrade[10]+numberOfStudentsPerGrade[11]+numberOfStudentsPerGrade[12];
     
     std::cout<<"Populations Created"<<std::endl;
-    // std::cout<<"Elementry: "<<elementrySchoolPopulation<<std::endl;
-    // std::cout<<"Middle: " << middleSchoolPopulation<<std::endl;
-    // std::cout<<"High: "<<highSchoolPopulation<<endl<<std::endl;
+    std::cout<<"Elementry: "<<elementrySchoolPopulation<<std::endl;
+    std::cout<<"Middle: " << middleSchoolPopulation<<std::endl;
+    std::cout<<"High: "<<highSchoolPopulation<<endl<<std::endl;
     
     int eleTotal=0;
     int middleTotal=0;
@@ -154,7 +154,8 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
             //Make Elementry School
             // std::cout<<"Making Elementry: "<<location%width<<", "<<location/width<<"("<<capacity<<")"<<std::endl;
             schoolBuildings->push_back(School(numberOfBuildings, location%width, location/width, capacity, 0));
-            elementrySchoolPopulation-=capacity;
+            elementrySchoolPopulation-=schoolBuildings->at(schoolBuildings->size()-1).getStudentMaxCapacity();
+            //std::cout<<"Elementry School Size: "<<schoolBuildings->at(schoolBuildings->size()-1).getStudentMaxCapacity()<<std::endl;
             if(elementrySchoolPopulation<0){
                 elementrySchoolPopulation=0;
             }
@@ -164,7 +165,8 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
                 //Make Middle School
                 //  std::cout<<"Making Middle: "<<location%width<<", "<<location/width<<"("<<capacity<<")"<<std::endl;
                 schoolBuildings->push_back(School(numberOfBuildings, location%width, location/width, capacity, 1));
-                middleSchoolPopulation-=capacity;
+                middleSchoolPopulation-=schoolBuildings->at(schoolBuildings->size()-1).getStudentMaxCapacity();
+                //std::cout<<"Middle School Size: "<<schoolBuildings->at(schoolBuildings->size()-1).getStudentMaxCapacity()<<std::endl;
                 if(middleSchoolPopulation<0){
                     middleSchoolPopulation=0;
                 }
@@ -174,7 +176,8 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
                     //Make High School
                     //  std::cout<<"Making High: "<<location%width<<", "<<location/width<<"("<<capacity<<")"<<std::endl;
                     schoolBuildings->push_back(School(numberOfBuildings, location%width, location/width, capacity, 2));
-                    highSchoolPopulation-=capacity;
+                    highSchoolPopulation-=schoolBuildings->at(schoolBuildings->size()-1).getStudentMaxCapacity();
+                    //std::cout<<"High School Size: "<<schoolBuildings->at(schoolBuildings->size()-1).getStudentMaxCapacity()<<std::endl;
                     if(highSchoolPopulation<0){
                         highSchoolPopulation=0;
                     }
@@ -182,14 +185,18 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
                 }
             }
         }
+        //std::cout<<elementrySchoolPopulation<<" "<<middleSchoolPopulation<<" "<<highSchoolPopulation<<std::endl;
+
         totalBuinessPopulation+=capacity;
         updateStatistics('S', capacity);
     }
+    
     for(int i = 0; i< schoolBuildings->size();i++){
         //Set up Pointers
         allBuildings->insert({schoolBuildings->at(i).getID(), &(schoolBuildings->at(i))});
         densityData->at(schoolBuildings->at(i).getLocation()[0]).at(schoolBuildings->at(i).getLocation()[1]).addBuilding(&(schoolBuildings->at(i)));
     }
+    
     std::cout<<"\tNumber of Elementries: "<<eleTotal<<endl;
     std::cout<<"\tNumber of Middle:  "<<middleTotal<<endl;
     std::cout<<"\tNumber of High:  "<<highTotal<<std::endl;
@@ -350,6 +357,7 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
     
     for(int i = 0; i< businessBuildings->size();i++){
         //Set up Pointers
+        //std::cout<<"Setting up Business Pointers"<<std::endl;
         allBuildings->insert({businessBuildings->at(i).getID(), &(businessBuildings->at(i))});
         densityData->at(businessBuildings->at(i).getLocation()[0]).at(businessBuildings->at(i).getLocation()[1]).addBuilding(&(businessBuildings->at(i)));
     }

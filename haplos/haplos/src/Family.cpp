@@ -49,19 +49,24 @@ Family::Family() {
     hasSchoolChild=false;
     numberOfPeople=0;
     homeNumber=NULL;
-    childCareAdultPos=0;
+    childCareAdultPos=-1;
     daycare=NULL;
+    this->members.clear();
+
 }
 
-Family::Family(Building *h, Daycare *d ){
+Family::Family(Building *h, Daycare *d, int familyID){
     hasAdult=false;
     hasYoungChild=0;
     hasYoungSchoolChild=false;
     hasSchoolChild=false;
     numberOfPeople=0;
     homeNumber=h;
-    childCareAdultPos=0;
+    childCareAdultPos=-1;
     daycare=d;
+    this->familyID = familyID;
+    this->members.clear();
+
 }
 
 Family::Family(const Family &f){
@@ -73,7 +78,11 @@ Family::Family(const Family &f){
     this->homeNumber = f.homeNumber;
     this->childCareAdultPos = f.childCareAdultPos;
     this->daycare = f.daycare;
-    this->members = f.members;
+    this->members.clear();
+    this->members.insert(f.members.begin(), f.members.end());
+    
+    this->familyID = f.familyID;
+    this->numberOfPeople = f.numberOfPeople;
 }
 
 Person* Family::getPerson(int id){
@@ -86,8 +95,8 @@ int Family::getNumberOfPeople(){
     
 }
 
-Person* Family::getAllPersons(){
-    return &members[0];
+std::unordered_map< int , Person> * Family::getAllPersons(){
+    return &members;
 }
 
 void Family::setHome(Building *n){
@@ -107,14 +116,27 @@ Daycare* Family::getDaycare(){
     return daycare;
 }
 
-void Family::addPerson(Person newPerson){    
-    members.push_back(newPerson);
+int Family::getID(){
+    return familyID;
+}
+
+void Family::setID(int f){
+    this->familyID = f;
+    
+}
+
+void Family::addPerson(Person newPerson){
+    members.insert({newPerson.getID(), Person(newPerson)} );
     if(newPerson.getAge()>17){
         hasAdult=true;
-        if(newPerson.getSchedule()->getScheduleType()==4 &&
-           members.at(childCareAdultPos).getSchedule()->getScheduleType()!=4){
-            //Non-Working Adult is being added
-            childCareAdultPos=members.size()-1;
+        if(childCareAdultPos == -1){
+            childCareAdultPos=newPerson.getID();
+        }else{
+            if(newPerson.getSchedule()->getScheduleType()==4 &&
+               members[childCareAdultPos].getSchedule()->getScheduleType()!=4){
+                //Non-Working Adult is being added
+                childCareAdultPos=newPerson.getID();
+            }
         }
     }else{
         if(newPerson.getAge()<14){
@@ -129,12 +151,12 @@ void Family::addPerson(Person newPerson){
         }
     }
     numberOfPeople++;
-    
+
 }
 
 void Family::setLocation(int x){
-    for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){
-        it->setLocation(x);
+    for(auto it = members.begin(); it!= members.end(); ++it){
+        it->second.setLocation(x);
     }
 }
 
@@ -163,13 +185,14 @@ std::string Family::toString(){
     std::ostringstream outputString;
     outputString << "\"Family Home Number:\",\""<< homeNumber->getID() << '"'<< std::endl;
     outputString << "\"Number of People: \",\"" << numberOfPeople <<'"'<< std::endl;
-    outputString << "\"Child Care Adult: \",\"" << std::to_string(members.at(childCareAdultPos).getID())+" (" <<std::to_string(members.at(childCareAdultPos).getSchedule()->getScheduleType())<<")"<< '"'<< std::endl;
+    outputString << "\"Child Care Adult: \",\"" << std::to_string(members[childCareAdultPos].getID())+" (" <<std::to_string(members[childCareAdultPos].getSchedule()->getScheduleType())<<")"<< '"'<< std::endl;
     outputString << "\"Has School Child: \",\"" << ((hasSchoolChild) ? "Yes" : "No") << '"'<< std::endl;
     outputString << "\"Has Young School Child: \",\"" << ((hasYoungSchoolChild) ? "Yes" : "No") << '"'<< std::endl;
     outputString << "\"Has Young Child: \",\"" << ((hasYoungChild) ? "Yes" : "No") << '"'<< std::endl;
     outputString << "\"Detail Information: \"\n" << std::endl;
-    for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){
-        outputString << it->toString();
+    
+    for(auto it = members.begin(); it!= members.end(); ++it){
+        outputString << it->second.toString();
     }
     return outputString.str();
 }
@@ -183,106 +206,112 @@ std::string Family::exportFamily(){
         daycareID = daycare->getID();
     }
     outputString << daycareID << std::endl;
-    for(std::vector< Person >::iterator it = members.begin(); it!= members.end(); ++it){
-       outputString << it->exportPerson();
+    for(auto it = members.begin(); it!= members.end(); ++it){
+       outputString << it->second.exportPerson();
     }
     return outputString.str();
     
 }
 
 void Family::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildings){
-   // std::cout<<"Family: "<<homeNumber->getID()<<std::endl;
-    for (std::vector<Person>::iterator i = members.begin(); i!= members.end(); i++){
-        TimeSlot* oldLocation = i->getCurrentTimeSlot();
+    //std::cout<<"Family: "<<homeNumber->getID()<<std::endl;
+    //std::cout<<this->toString()<<std::endl;
+    for(auto m = members.begin(); m != members.end(); m++){
+        //Person p = m->second;
+        TimeSlot* oldLocation = m->second.getCurrentTimeSlot();
         int buildingID = oldLocation->getLocation();
+
         //Update Previous Location
         switch(oldLocation->getVisitorType()){
             case 'H':
                 //Home
-                allBuildings->at(buildingID)->removeVisitor(&(*i));
+                allBuildings->at(buildingID)->removeVisitor(m->second.getID());
                 break;
             case 'S':
                 //Student
-                static_cast<School *> (allBuildings->at(buildingID))->removeStudent(&(*i));
+                static_cast<School *> (allBuildings->at(buildingID))->removeStudent(m->second.getID());
                 break;
             case 'D':
                 //Child
-                static_cast<Daycare *> (allBuildings->at(buildingID))->removeChild(&(*i));
+                static_cast<Daycare *> (allBuildings->at(buildingID))->removeChild(m->second.getID());
                 break;
             case 'V':
                 //Visitor
-                allBuildings->at(buildingID)->removeVisitor(&(*i));
+                allBuildings->at(buildingID)->removeVisitor(m->second.getID());
                 break;
             case 'E':
                 //Employee
-                allBuildings->at(buildingID)->removeEmployee(&(*i));
+                allBuildings->at(buildingID)->removeEmployee(m->second.getID());
                 break;
             case 'P':
                 //Patient
-                static_cast<Medical *> (allBuildings->at(buildingID))->removePatient(&(*i));
+                static_cast<Medical *> (allBuildings->at(buildingID))->removePatient(m->second.getID());
                 break;
             case 'T':
-                static_cast<TransportHub *> (allBuildings->at(buildingID))->removeVisitor(&(*i));
+                static_cast<TransportHub *> (allBuildings->at(buildingID))->removeVisitor(m->second.getID());
                 break;
             case 'W':
-                static_cast<TransportHub *> (allBuildings->at(buildingID))->removeEmployee(&(*i));
+                static_cast<TransportHub *> (allBuildings->at(buildingID))->removeEmployee(m->second.getID());
                 break;
             case 'C':
-                static_cast<TransportHub *> (allBuildings->at(buildingID))->removePrivateTransport(homeNumber->getID(), &(*i));
+                static_cast<TransportHub *> (allBuildings->at(buildingID))->removePrivateTransport(m->second.getID(), familyID);
                 break;
             default:
                 std::cout<< "Invalid Visitor Type in Old: "<<oldLocation->getVisitorType()<<std::endl;
-                std::cout<<"ID: "<<i->getID()<<std::endl;
-                std::cout<<i->getSchedule()->toString();
+                std::cout<<"ID: "<<m->second.getID()<<std::endl;
+                std::cout<<m->second.getSchedule()->toString();
                 break;
         }
         
-        TimeSlot* newLocation=i->updateToNextTimeStep();
+        TimeSlot* newLocation=m->second.updateToNextTimeStep();
         buildingID = newLocation->getLocation();
+        Building *tmp = allBuildings->at(buildingID);
+        //std::cout<<"All Building Size: "<<allBuildings->size()<<std::endl;
+        //std::cout<<"Building  ID: "<<tmp->getID()<<std::endl;
+        //std::cout<<"Building  Type: "<<tmp->getType()<<std::endl;
         //Update to New Location
         switch(newLocation->getVisitorType()){
             case 'H':
                 //Home
-                allBuildings->at(buildingID)->addVisitor(&(*i));
+                allBuildings->at(buildingID)->addVisitor(m->second.getID(), familyID);
                 break;
             case 'S':
                 //Student
-                static_cast<School* > (allBuildings->at(buildingID))->addStudent(&(*i));
+                static_cast<School* > (allBuildings->at(buildingID))->addStudent(m->second.getID(), familyID);
                 break;
             case 'D':
                 //Child
-                static_cast<Daycare* > (allBuildings->at(buildingID))->addChild(&(*i));
+                static_cast<Daycare* > (allBuildings->at(buildingID))->addChild(m->second.getID(), familyID);
                 break;
             case 'V':
                 //Visitor
-                allBuildings->at(buildingID)->addVisitor(&(*i));
+                allBuildings->at(buildingID)->addVisitor(m->second.getID(), familyID);
                 break;
             case 'E':
                 //Employee
-                allBuildings->at(buildingID)->addEmployee(&(*i));
+                //std::cout<<"Building ID: "<<buildingID<<std::endl;
+                allBuildings->at(buildingID)->addEmployee(m->second.getID(), familyID);
                 break;
             case 'P':
                 //Patient
-                static_cast<Medical* > (allBuildings->at(buildingID))->addPatient(&(*i));
+                static_cast<Medical* > (allBuildings->at(buildingID))->addPatient(m->second.getID(), familyID);
                 break;
             case 'T':
-                static_cast<TransportHub *> (allBuildings->at(buildingID))->addVisitor(&(*i));
+                static_cast<TransportHub *> (allBuildings->at(buildingID))->addVisitor(m->second.getID(), familyID);
                 break;
             case 'W':
-                static_cast<TransportHub *> (allBuildings->at(buildingID))->addEmployee(&(*i));
+                static_cast<TransportHub *> (allBuildings->at(buildingID))->addEmployee(m->second.getID(), familyID);
                 break;
             case 'C':
-                static_cast<TransportHub *> (allBuildings->at(buildingID))->addPrivateTransport(homeNumber->getID(), &(*i));
+                static_cast<TransportHub *> (allBuildings->at(buildingID))->addPrivateTransport(m->second.getID(), familyID);
                 break;
             default:
                 std::cout<< "Invalid Visitor Type in New: "<<oldLocation->getVisitorType()<<std::endl;
-                std::cout<<"ID: "<<i->getID()<<std::endl;
-                std::cout<<i->getSchedule()->toString();
+                std::cout<<"ID: "<<m->second.getID()<<std::endl;
+                std::cout<<m->second.getSchedule()->toString();
                 break;
 
         }
-        //Update Building Information
-        
         
     }
     
