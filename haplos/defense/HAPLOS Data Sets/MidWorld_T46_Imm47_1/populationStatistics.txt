@@ -1,0 +1,40 @@
+--------Family--------
+Total Number of Families: 8855
+Size 1:  	2365 	0.26708	(Expected 0.27000)
+Size 2:  	3032 	0.34241	(Expected 0.34000)
+Size 3:  	1389 	0.15686	(Expected 0.16000)
+Size 4:  	1290 	0.14568	(Expected 0.14000)
+Size 5:  	517 	0.05839	(Expected 0.06000)
+Size 6:  	172 	0.01942	(Expected 0.02000)
+Size 7:  	90 	0.01016	(Expected 0.01000)
+--------Population--------
+----Gender----
+Males:   	10873 	0.49423	(Expected 0.49272)
+Females: 	11127 	0.50577	(Expected 0.50728)
+----Age----
+Under Age 5: 	794 	0.03609	(Expected 0.06212)
+Age 5-13:    	1474 	0.06700	(Expected 0.11474)
+Age 14-17:   	635 	0.02886	(Expected 0.05226)
+Age 18-24:   	2093 	0.09514	(Expected 0.09713)
+Age 25-44:   	5704 	0.25927	(Expected 0.26343)
+Age 45-64:   	5529 	0.25132	(Expected 0.26148)
+Over Age 65: 	5771 	0.26232	(Expected 0.14883)
+Total:       	22000
+--------Schedules--------
+Young Child: 	794 	1.00000	(Expected 1.00000)
+School Schedule: 	2109 	636.43080	(Expected 0.16700)
+Employeed Schedule: 	10469 	0.54820	(Expected 0.46472)
+Unemployeed Schedule: 	8628 	0.45180	(Expected 0.30615)
+----Schedule Break Down----
+Young Child (0-4): 	794 	1.00000	(Expected 1.00000)
+School Schedule (5-13): 	1474 	1.00000	(Expected 1.00000)
+School Schedule (14-17): 	635 	1.00000	(Expected 1.00000)
+Employeed Schedule (18-24): 	1195 	0.57095	(Expected 0.56675)
+Unemployeed Schedule (18-24): 	898 	0.42905	(Expected 0.43325)
+Employeed Schedule (25-44): 	4390 	0.76964	(Expected 0.77043)
+Unemployeed Schedule (25-44): 	1314 	0.23036	(Expected 0.22957)
+Employeed Schedule (45-64): 	3855 	0.69723	(Expected 0.68965)
+Unemployeed Schedule (45-64): 	1674 	0.30277	(Expected 0.31035)
+Employeed Schedule (65-Older): 	1029 	0.17831	(Expected 0.17729)
+Unemployeed Schedule (65-Older): 	4742 	0.82169	(Expected 0.82271)
+Total:                           	22000

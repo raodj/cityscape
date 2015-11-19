@@ -1,0 +1,34 @@
+--------Buildings--------
+Total Buildings Generated: 31544
+----Businesses----
+Total Generated: 87
+Employee Capacity 1-4:     	68 	0.781609	(Expected 0.477556)
+Employee Capacity 5-9:     	12 	0.137931	(Expected 0.135235)
+Employee Capacity 10-19:   	7 	0.0804598	(Expected 0.0848799)
+Employee Capacity 20-99:   	0 	0	(Expected 0.0924771)
+Employee Capacity 100-499: 	0 	0	(Expected 0.0484683)
+Employee Capacity 500:     	0 	0	(Expected 0.161384)
+----Hospitals----
+Total Generated: 0
+Employee Capacity 1-4:     	0 	nan	(Expected 1.944e-05)
+Employee Capacity 5-9:     	0 	nan	(Expected 9.95e-06)
+Employee Capacity 10-19:   	0 	nan	(Expected 1.268e-05)
+Employee Capacity 20-99:   	0 	nan	(Expected 0.00042487)
+Employee Capacity 100-499: 	0 	nan	(Expected 0.00416982)
+Employee Capacity 500:     	0 	nan	(Expected 0.00405211)
+----Schools----
+Total Generated: 9
+Employee Capacity 1-4:     	3 	0.333333	(Expected 0.000833732)
+Employee Capacity 5-9:     	0 	0	(Expected 0.0020427)
+Employee Capacity 10-19:   	6 	0.666667	(Expected 0.00483346)
+Employee Capacity 20-99:   	0 	0	(Expected 0.012845)
+Employee Capacity 100-499: 	0 	0	(Expected 0.00888101)
+Employee Capacity 500:     	0 	0	(Expected 0.00105972)
+----Daycares----
+Total Generated: 44
+Employee Capacity 1-4:     	29 	0.659091	(Expected 0.00701642)
+Employee Capacity 5-9:     	13 	0.295455	(Expected 0.0117299)
+Employee Capacity 10-19:   	2 	0.0454545	(Expected 0.0200853)
+Employee Capacity 20-99:   	0 	0	(Expected 0.0182533)
+Employee Capacity 100-499: 	0 	0	(Expected 0.0181257)
+Employee Capacity 500:     	0 	0	(Expected 0.00583137)
