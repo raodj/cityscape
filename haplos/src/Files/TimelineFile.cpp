@@ -37,7 +37,8 @@
 //-----------------------------------------------------------
 
 #include "TimelineFile.h"
-
+#include <climits>
+#include <iterator>
 
 TimelineFile::TimelineFile(){
     timeStepInterval = INT_MAX;

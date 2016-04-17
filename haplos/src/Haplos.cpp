@@ -38,6 +38,7 @@
 
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <vector>
 #include <sys/types.h>
 #include <sys/stat.h>
