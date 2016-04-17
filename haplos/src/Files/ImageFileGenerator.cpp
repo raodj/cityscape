@@ -56,8 +56,8 @@ bool ImageFileGenerator::makeCustomFile(std::string fileType, std::string fileNa
     int maxVal=0;
     int minVal=INT_MAX;
     int  total = 0;
-    for( int x=0; x < locationData->size(); x++ ){
-        for( int y=0; y < locationData->at(0).size(); y++ ){
+    for (size_t x=0; x < locationData->size(); x++) {
+        for (size_t y=0; y < locationData->at(0).size(); y++) {
             int amount=policy->getCustomFileTypeData(&(locationData->at(x).at(y)), fileType);
             total += amount;
             if (amount>=maxVal){
@@ -106,8 +106,8 @@ bool ImageFileGenerator::makePopFile(std::string folderName, std::string fileNam
     int maxVal=0;
     int minVal=INT_MAX;
     int  total = 0;
-    for( int x=0; x < locationData->size(); x++ ){
-        for( int y=0; y < locationData->at(0).size(); y++ ){
+    for (size_t x = 0; x < locationData->size(); x++) {
+        for (size_t y=0; y < locationData->at(0).size(); y++) {
             int amount=locationData->at(x).at(y).getCurrentPopulation();
             total += amount;
             if (amount>=maxVal){
@@ -153,8 +153,8 @@ bool ImageFileGenerator::makeBuildingFile(std::string folderName, std::string fi
     std::ostringstream outputString;
     int maxVal=0;
     int minVal=INT_MAX;
-    for( int x=0; x < locationData->size(); x++ ){
-        for( int y=0; y < locationData->at(0).size(); y++ ){
+    for (size_t x = 0; x < locationData->size(); x++) {
+        for (size_t y = 0; y < locationData->at(0).size(); y++) {
             int amount=locationData->at(x).at(y).getNumberOfBuildings(type);
             if (amount>=maxVal){
                 maxVal=amount;

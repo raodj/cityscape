@@ -191,7 +191,7 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
         updateStatistics('S', capacity);
     }
     
-    for(int i = 0; i< schoolBuildings->size();i++){
+    for (size_t i = 0; i < schoolBuildings->size(); i++) {
         //Set up Pointers
         allBuildings->insert({schoolBuildings->at(i).getID(), &(schoolBuildings->at(i))});
         densityData->at(schoolBuildings->at(i).getLocation()[0]).at(schoolBuildings->at(i).getLocation()[1]).addBuilding(&(schoolBuildings->at(i)));
@@ -252,7 +252,7 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
         updateStatistics('D', capacity);
 
     }
-    for(int i = 0; i< daycareBuildings->size();i++){
+    for (size_t i = 0; i < daycareBuildings->size(); i++) {
         //Set up Pointers
         allBuildings->insert({daycareBuildings->at(i).getID(), &(daycareBuildings->at(i))});
         densityData->at(daycareBuildings->at(i).getLocation()[0]).at(daycareBuildings->at(i).getLocation()[1]).addBuilding(&(daycareBuildings->at(i)));
@@ -349,13 +349,13 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
         totalBuinessPopulation+=capacity;
     }
     
-    for(int i = 0; i< medicalBuildings->size();i++){
+    for (size_t i = 0; i< medicalBuildings->size();i++) {
         //Set up Pointers
         allBuildings->insert({medicalBuildings->at(i).getID(), &(medicalBuildings->at(i))});
         densityData->at(medicalBuildings->at(i).getLocation()[0]).at(medicalBuildings->at(i).getLocation()[1]).addBuilding(&(medicalBuildings->at(i)));
     }
     
-    for(int i = 0; i< businessBuildings->size();i++){
+    for (size_t i = 0; i< businessBuildings->size();i++){
         //Set up Pointers
         //std::cout<<"Setting up Business Pointers"<<std::endl;
         allBuildings->insert({businessBuildings->at(i).getID(), &(businessBuildings->at(i))});
@@ -368,8 +368,8 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
 
 void BuildingGenerator::assignHomes(Population &pop){
     //Assign Families Locations
-    int x=0;
-    int y=0;
+    size_t x = 0;
+    size_t y = 0;
     int notAssigned=0;
     float oldRatio=0;
     std::cout << "Assigning Homes to Population" << std::endl;
@@ -584,7 +584,7 @@ void BuildingGenerator::importBuildings(std::string fileLocation){
         updateStatistics(type, maxCap);
     }
 
-    for(int i = 0; i< otherBuildings->size();i++){
+    for (size_t i = 0; i < otherBuildings->size(); i++){
         //Set up Pointers
         allBuildings->insert({otherBuildings->at(i).getID(), &(otherBuildings->at(i))});
         densityData->at(otherBuildings->at(i).getLocation()[0]).at(otherBuildings->at(i).getLocation()[1]).addBuilding(&(otherBuildings->at(i)));
@@ -592,7 +592,7 @@ void BuildingGenerator::importBuildings(std::string fileLocation){
             &(otherBuildings->at(i))});
     }
     
-    for(int i = 0; i< daycareBuildings->size();i++){
+    for (size_t i = 0; i < daycareBuildings->size(); i++) {
         //Set up Pointers
         allBuildings->insert({daycareBuildings->at(i).getID(), &(daycareBuildings->at(i))});
         densityData->at(daycareBuildings->at(i).getLocation()[0]).at(daycareBuildings->at(i).getLocation()[1]).addBuilding(&(daycareBuildings->at(i)));
@@ -601,7 +601,7 @@ void BuildingGenerator::importBuildings(std::string fileLocation){
 
     }
     
-    for(int i = 0; i< schoolBuildings->size();i++){
+    for (size_t i = 0; i < schoolBuildings->size(); i++) {
         //Set up Pointers
         allBuildings->insert({schoolBuildings->at(i).getID(), &(schoolBuildings->at(i))});
         densityData->at(schoolBuildings->at(i).getLocation()[0]).at(schoolBuildings->at(i).getLocation()[1]).addBuilding(&(schoolBuildings->at(i)));
@@ -609,7 +609,7 @@ void BuildingGenerator::importBuildings(std::string fileLocation){
             &(schoolBuildings->at(i))});
     }
     
-    for(int i = 0; i< medicalBuildings->size();i++){
+    for (size_t i = 0; i < medicalBuildings->size(); i++) {
         //Set up Pointers
         allBuildings->insert({medicalBuildings->at(i).getID(), &(medicalBuildings->at(i))});
         densityData->at(medicalBuildings->at(i).getLocation()[0]).at(medicalBuildings->at(i).getLocation()[1]).addBuilding(&(medicalBuildings->at(i)));
@@ -617,7 +617,7 @@ void BuildingGenerator::importBuildings(std::string fileLocation){
             &(medicalBuildings->at(i))});
     }
     
-    for(int i = 0; i< businessBuildings->size();i++){
+    for (size_t i = 0; i < businessBuildings->size(); i++) {
         //Set up Pointers
         allBuildings->insert({businessBuildings->at(i).getID(), &(businessBuildings->at(i))});
         densityData->at(businessBuildings->at(i).getLocation()[0]).at(businessBuildings->at(i).getLocation()[1]).addBuilding(&(businessBuildings->at(i)));

@@ -127,16 +127,16 @@ void Haplos::runSimulation(Policy *p){
     //Extract out Pure Density Data
     std::vector<double> pureDensity;
     pureDensity.resize(densityData.size() * densityData[0].size());
-    for( int x=0; x < densityData.size(); x++ ){
-        for( int y=0; y < densityData[0].size(); y++ ){
+    for (size_t x = 0; x < densityData.size(); x++) {
+        for (size_t y = 0; y < densityData[0].size(); y++) {
             densityData.at(x).at(y).getTransportHub()->setID(numberOfBuildings);
             allBuildings[numberOfBuildings] = densityData.at(x).at(y).getTransportHub();
             numberOfBuildings++;
-            if(densityData.at(x).at(y).getMaxPopulation()==0){
-                pureDensity[x*y]=0;
-                
-            }else{
-                pureDensity[x*y]=densityData.at(x).at(y).getDensity();
+            if (densityData.at(x).at(y).getMaxPopulation() == 0) {
+                pureDensity[x * y] = 0;
+
+            } else {
+                pureDensity[x * y] = densityData.at(x).at(y).getDensity();
             }
         }
     }
