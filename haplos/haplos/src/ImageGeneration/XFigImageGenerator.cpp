@@ -60,8 +60,8 @@ void XFigImageGenerator::createImage(const std::string& outFileName,
 	const int maxColors = generateColorScale(xfig);
 	const int radius = 4, scale = 4;
 	// Iterate over the points and generate circles...
-	for (size_t r = 0; (r < rows); r++) {
-		for (size_t c = 0; (c < cols); c++) {
+	for (int r = 0; (r < rows); r++) {
+		for (int c = 0; (c < cols); c++) {
 			// Compute color code for
 			if (data[r][c] <= 0) {
 				if(data[r][c]==0){

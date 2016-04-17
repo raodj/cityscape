@@ -77,8 +77,7 @@ Schedule::Schedule(const Schedule &s){
     this->plan.clear();
     //this->plan = s.plan;
     this->numberOfTimeSlots=s.numberOfTimeSlots;
-    for(int i=0; i< s.plan.size(); i++)
-    {
+    for (size_t i = 0; i < s.plan.size(); i++) {
         this->plan.push_back(s.plan[i]);
     }
 
@@ -88,11 +87,12 @@ void Schedule::setCurrentTimeStep(int newTimeStep){
     currentTimeStep = newTimeStep;
     currentTimeSlot = 0;
     
-    while(plan[currentTimeSlot].getEndTime()<=currentTimeStep && currentTimeSlot != plan.size()-1){
+    while ((plan[currentTimeSlot].getEndTime() <= currentTimeStep) && 
+            (currentTimeSlot != plan.size() - 1)) {
         //Move to Next Time Slot
         currentTimeSlot++;
     }
-    if(currentTimeSlot == plan.size()-1){
+    if (currentTimeSlot == plan.size() - 1) {
         currentTimeSlot = 0;
         loop = true;
     }
@@ -100,16 +100,16 @@ void Schedule::setCurrentTimeStep(int newTimeStep){
 
 }
 
-void Schedule::addTimeSlot(TimeSlot t){
+void Schedule::addTimeSlot(TimeSlot t) {
     plan.push_back(t);
     numberOfTimeSlots++;
 }
 
-void Schedule::removeTimeSlot(int i){
-    if(i==-1){
+void Schedule::removeTimeSlot(int i) {
+    if (i ==- 1) {
         plan.pop_back();
-    }else{
-        plan.erase(plan.begin()+i);
+    } else {
+        plan.erase(plan.begin() + i);
     }
     numberOfTimeSlots--;
     
@@ -132,10 +132,10 @@ int Schedule::getScheduleType(){
 }
 
 TimeSlot* Schedule::getLocationAt(int time){
-    if( time< plan.size()){
+    const int planSize = plan.size();
+    if (time < planSize) {
         return &plan[time];
-    }
-    else{
+    } else{
         return NULL;
     }
 }
@@ -151,17 +151,18 @@ std::vector<TimeSlot>* Schedule::getPlan(){
 }
 
 TimeSlot* Schedule::getNextLocation(){
-    if( currentTimeStep>=MAXTIMESTEPS-1){
+    if ( currentTimeStep>=MAXTIMESTEPS-1){
         currentTimeStep=0;
         loop = false;
-    }else{
+    } else {
        currentTimeStep++;
     }
-    if(!loop){
-        if(plan[currentTimeSlot].getEndTime()<=currentTimeStep && currentTimeSlot != plan.size()-1){
+    if (!loop){
+        if ((plan[currentTimeSlot].getEndTime()<=currentTimeStep) && 
+            (currentTimeSlot != plan.size() - 1)) {
             //Move to Next Time Slot
             currentTimeSlot++;
-        }else{
+        } else {
             if(plan[currentTimeSlot].getEndTime()<=currentTimeStep){
                 currentTimeSlot = 0;
                 loop = true;

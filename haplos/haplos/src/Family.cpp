@@ -265,11 +265,11 @@ void Family::updateToNextTimeStep(std::unordered_map<int, Building*> *allBuildin
         
         TimeSlot* newLocation=m->second.updateToNextTimeStep();
         buildingID = newLocation->getLocation();
-        Building *tmp = allBuildings->at(buildingID);
-        //std::cout<<"All Building Size: "<<allBuildings->size()<<std::endl;
-        //std::cout<<"Building  ID: "<<tmp->getID()<<std::endl;
-        //std::cout<<"Building  Type: "<<tmp->getType()<<std::endl;
-        //Update to New Location
+        // Building *tmp = allBuildings->at(buildingID);
+        // std::cout<<"All Building Size: "<<allBuildings->size()<<std::endl;
+        // std::cout<<"Building  ID: "<<tmp->getID()<<std::endl;
+        // std::cout<<"Building  Type: "<<tmp->getType()<<std::endl;
+        // Update to New Location
         switch(newLocation->getVisitorType()){
             case 'H':
                 //Home

@@ -138,7 +138,7 @@ class Schedule {
         void generateSchedule(int type);
         std::vector<TimeSlot> plan;
         int currentTimeStep;
-        int currentTimeSlot;
+        size_t currentTimeSlot;
         int numberOfTimeSlots;
         int jobLocationID;
         bool goToJobLocation;

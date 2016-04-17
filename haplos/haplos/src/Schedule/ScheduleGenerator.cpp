@@ -366,12 +366,12 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
         nextSlot = childCareAdultSchedule->getLocationAt(i+1);
         TimeSlot *slot =childCareAdultSchedule->getLocationAt(i);
         
-        int startTimeForSlot = 0;
+        /* int startTimeForSlot = 0;
         char visitorTypeForPrevious = 'H';
         if(previousSlot!=NULL){
             startTimeForSlot = previousSlot->getEndTime();
             visitorTypeForPrevious= previousSlot->getVisitorType();
-        }
+        }*/
         
         if(slot->getLocation()==currentSchedule->getJobLocation()){
             //At School Location
@@ -1240,7 +1240,7 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
     char visitorType='H';
     int travelTime = 0;
     for(int day=0; day< 7 ; day++){
-        int currentPlaceInSchoolTimes = 0;
+        size_t currentPlaceInSchoolTimes = 0;
         std::pair<int, School*> nextSchoolTime=std::make_pair(99999,nullptr);
         int travelTimeToSchool = 0;
         int travelTimeSchoolFromJob = 0;
@@ -2024,7 +2024,7 @@ void ScheduleGenerator::generateUnemployeedAdultSchedule(Person *p,
     int travelTimeToHome  = 0;
     //Start of Week Loop
     for(int day=0; day< 7 ; day++){
-        int currentPlaceInSchoolTimes = 0;
+        size_t currentPlaceInSchoolTimes = 0;
         std::pair<int, School*> nextSchoolTime=std::make_pair(9999,nullptr);
         //**std::cout<<schoolTimes.size()<<std::endl;
         //Reset to first School Time if Needed
@@ -2586,13 +2586,13 @@ Building* ScheduleGenerator::findAvaliableBuilding(int x, int y, char typeOfVisi
         // Found
         return b;
     }else{
-        /*if(typeOfVisitor=='E'){
-         //**std::cout<<"Starting Locaiton: "<<x<<" "<<y<<std::endl;
-         }*/
+        // if(typeOfVisitor=='E'){
+        //     std::cout<<"Starting Locaiton: "<<x<<" "<<y<<std::endl;
+        // }
         while(actual_radMaxY<maxY||actual_radMaxX<maxX||actual_radMinY>0||actual_radMinX>0) {
-            /*if(typeOfVisitor=='E'){
-             //**std::cout<<"----Next---"<<std::endl;
-             }*/
+            // if(typeOfVisitor=='E'){
+            // std::cout<<"----Next---"<<std::endl;
+            // }
             r++;
             //Update Radius ranges
             adjusted_actual_radMinY=(y-r>0)?y-r:0;
@@ -2609,9 +2609,9 @@ Building* ScheduleGenerator::findAvaliableBuilding(int x, int y, char typeOfVisi
                 if(actual_radMaxX<=maxX){
                     //Actual is Still in Grid and has not gone off Edge
                     b=densityData->at(actual_radMaxX).at(j).hasAvaliableBuilding(typeOfVisitor, startTime, endTime,numberOfVisitors);
-                    /*if(typeOfVisitor=='E'){
-                     //**std::cout<<"Bottom: "<<actual_radMaxX<<" "<<j<<std::endl;
-                     }*/
+                    // if(typeOfVisitor=='E'){
+                    //  std::cout<<"Bottom: "<<actual_radMaxX<<" "<<j<<std::endl;
+                    // }
                     if(b!=NULL){
                         // Found
                         return b;
@@ -2625,9 +2625,9 @@ Building* ScheduleGenerator::findAvaliableBuilding(int x, int y, char typeOfVisi
                     //Actual is Still in Grid and has not gone off Edge
                     
                     b=densityData->at(actual_radMinX).at(j).hasAvaliableBuilding(typeOfVisitor, startTime, endTime,numberOfVisitors);
-                    /*if(typeOfVisitor=='E'){
-                     //**std::cout<<"Top: "<<actual_radMinX<<" "<<j<<std::endl;
-                     }*/
+                    // if(typeOfVisitor=='E'){
+                    //     std::cout<<"Top: "<<actual_radMinX<<" "<<j<<std::endl;
+                    // }
                     if(b!=NULL){
                         // Found
                         return b;
@@ -2644,25 +2644,25 @@ Building* ScheduleGenerator::findAvaliableBuilding(int x, int y, char typeOfVisi
                     //Actual is Still in Grid and has not gone off Edge
                     
                     b=densityData->at(i).at(actual_radMaxY).hasAvaliableBuilding(typeOfVisitor, startTime, endTime,numberOfVisitors);
-                    /*if(typeOfVisitor=='E'){
-                     //**std::cout<<"Right: "<<i<<" "<<actual_radMaxY<<std::endl;
-                     }*/
+                    // if(typeOfVisitor=='E'){
+                    //    std::cout<<"Right: "<<i<<" "<<actual_radMaxY<<std::endl;
+                    //}
                     if(b!=NULL){
                         // Found
                         return b;
                     }
                 }else{
                     //Gone Off Right Side of Grid
-                    // //**std::cout<<"-Off Right Side "<<actual_radMaxY<<std::endl;
+                    // std::cout<<"-Off Right Side "<<actual_radMaxY<<std::endl;
                 }
                 //Left
                 if(actual_radMinY>=0){
                     //Actual is Still in Grid and has not gone off Edge
                     
                     b=densityData->at(i).at(actual_radMinY).hasAvaliableBuilding(typeOfVisitor, startTime, endTime, numberOfVisitors);
-                    /*if(typeOfVisitor=='E'){
-                     //**std::cout<<"Left: "<<i<<" "<<actual_radMinY<<std::endl;
-                     }*/
+                    // if(typeOfVisitor=='E'){
+                    //     std::cout<<"Left: "<<i<<" "<<actual_radMinY<<std::endl;
+                    // }
                     if(b!=NULL){
                         // Found
                         return b;
