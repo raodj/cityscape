@@ -33,6 +33,8 @@
 // from <http://www.gnu.org/licenses/>.
 //
 //-----------------------------------------------------------
+
+#include <algorithm>
 #include "TransportHub.h"
 #include "Building.h"
 

@@ -35,7 +35,9 @@
 // from <http://www.gnu.org/licenses/>.
 //
 //-----------------------------------------------------------
+
 #include "ImageFileGenerator.h"
+#include <climits>
 #include <sys/types.h>
 #include <sys/stat.h>
 
