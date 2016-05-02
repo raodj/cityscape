@@ -2422,7 +2422,7 @@ char ScheduleGenerator::determineTransportationType(int distance, int timeLimit,
             return 'C';
         }else{
             //Public Transport is Viable
-            if(distance>transportRadiusLimits[2]){
+            if(distance>transportRadiusLimits[1]){
                 //Too far to walk
                 publicTransportProb = walkingTransportProb + publicTransportProb;
                 walkingTransportProb=0;
