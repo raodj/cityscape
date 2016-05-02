@@ -1,3 +1,41 @@
+#ifndef MAIN_CPP
+#define MAIN_CPP
+
+//------------------------------------------------------------
+//
+// This file is part of HAPLOS <http://pc2lab.cec.miamiOH.edu/>
+//
+// Human  Population  and   Location  Simulator (HAPLOS)  is
+// free software: you can  redistribute it and/or  modify it
+// under the terms of the GNU  General Public License  (GPL)
+// as published  by  the   Free  Software Foundation, either
+// version 3 (GPL v3), or  (at your option) a later version.
+//
+// HAPLOS is distributed in the hope that it will  be useful,
+// but   WITHOUT  ANY  WARRANTY;  without  even  the IMPLIED
+// WARRANTY of  MERCHANTABILITY  or FITNESS FOR A PARTICULAR
+// PURPOSE.
+//
+// Miami University and the HAPLOS  development team make no
+// representations  or  warranties  about the suitability of
+// the software,  either  express  or implied, including but
+// not limited to the implied warranties of merchantability,
+// fitness  for a  particular  purpose, or non-infringement.
+// Miami  University and  its affiliates shall not be liable
+// for any damages  suffered by the  licensee as a result of
+// using, modifying,  or distributing  this software  or its
+// derivatives.
+//
+// By using or  copying  this  Software,  Licensee  agree to
+// abide  by the intellectual  property laws,  and all other
+// applicable  laws of  the U.S.,  and the terms of the  GNU
+// General  Public  License  (version 3).  You  should  have
+// received a  copy of the  GNU General Public License along
+// with HAPLOS.  If not, you may  download copies  of GPL V3
+// from <http://www.gnu.org/licenses/>.
+//
+//-----------------------------------------------------------
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -7,44 +45,23 @@
 #include "Haplos.h"
 #include "Policy.h"
 
-using namespace std;
-
-int main(int argc, char* argv[]) {
-
-    std::string configFile;
-    bool produceImages =false;
-    bool progressDisplay = false;
-    bool exportFiles = false;
-    
-    //Command Line Paramaters
-    if(argc>0){
-        //Do Not Use Default
-        for (int i = 1; i < argc; ++i) {
-            std::string arg = argv[i];
-            if ((arg == "--configFile") || (arg=="-c")) {
-                //Configuration File Path
-                if (i + 1 < argc) {
-                    configFile=argv[++i];
-                }else{
-                    std::cerr << "--configFile option requires one argument." << std::endl;
-                }
-            }else{
-                if((arg=="--noImages")||(arg=="-ni")){
-                    //No Images Produced
-                    produceImages=false;
-                }
-                if((arg=="--noProgressDisplay")|| (arg=="-npd")){
-                    progressDisplay=false;
-                }
-                if((arg=="--export")|| (arg=="-e")){
-                    exportFiles=true;
-                }
-                
-            }
+int
+main(int argc, char* argv[]) {
+    // Create haplos class using supplied command-line arguments.
+    bool success = false;
+    Haplos hap(argc, argv, success);
+    if (!success) {
+        std::cerr << "Use --help for full help on command-line arguments.\n";
+        return 1;  // initialization failed.
+    }
+    if (success) {
+        hap.generateModel();
+        if (hap.shouldSimulate()) {
+            Policy p;
+            hap.runSimulation(&p);
         }
     }
-    Policy p = Policy();
-    Haplos hap = Haplos(configFile, produceImages, progressDisplay, exportFiles);
-    hap.runSimulation(&p);
     return 0;
 }
+
+#endif

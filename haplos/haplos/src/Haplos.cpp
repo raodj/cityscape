@@ -44,6 +44,7 @@
 #include <sys/stat.h>
 #include <ctime>
 
+#include "Files/ArgParser.h"
 #include "SedacReader.h"
 #include "ImageGeneration/ImageGen.h"
 #include "Location.h"
@@ -57,7 +58,6 @@
 #include "Policy.h"
 #include "Haplos.h"
 
-
 #include "Buildings/Medical.h"
 #include "Buildings/School.h"
 #include "Buildings/Business.h"
@@ -65,25 +65,57 @@
 
 using namespace std;
 
-Haplos::Haplos(std::string configFileLocation, bool produceImages, bool progressDisplay, bool exportFiles){
-    //Display Awesome Logo
-    std::cout << " _    _          _____  _      ____   _____" <<std::endl;
-    std::cout << "| |  | |   /\\   |  __ \\| |    / __ \\ / ____|" <<std::endl;
-    std::cout << "| |__| |  /  \\  | |__) | |   | |  | | (___" << std::endl;
-    std::cout << "|  __  | / /\\ \\ |  ___/| |   | |  | |\\___ \\" << std::endl;
-    std::cout << "| |  | |/ ____ \\| |    | |___| |__| |____) |" << std::endl;
-    std::cout << "|_|  |_/_/    \\_\\_|    |______\\____/|_____/" <<std::endl;
-    
-    this->produceImages=produceImages;
-    this->progressDisplay=progressDisplay;
-    this->exportFiles = exportFiles;
-    
-    //Read in Configuration File
-    configuration= ConfigFile(configFileLocation);
-    outputFolder = configuration.getOutputFileLocation();
+bool
+Haplos::parseCmdLineArgs(int& argc, char *argv[]) {
+    // A simple informational message used has header.
+    std::string message = 
+        " _    _          _____  _      ____   _____\n"                 \
+        "| |  | |   /\\   |  __ \\| |    / __ \\ / ____|\n"             \
+        "| |__| |  /  \\  | |__) | |   | |  | | (___\n"                 \
+        "|  __  | / /\\ \\ |  ___/| |   | |  | |\\___ \\\n"             \
+        "| |  | |/ ____ \\| |    | |___| |__| |____) |\n"               \
+        "|_|  |_/_/    \\_\\_|    |______\\____/|_____/\n"              \
+        "\nCopyright (C) 2012- Miami University, Oxford, Ohio, USA\n"   \
+        "Licence: GPLv3 (see http://www.gnu.org/licenses/)\n";
+    // Setup command-line arguments that Haplos uses.
+    ArgParser::ArgRecord arg_list[] = {
+        {"", "", message, NULL, ArgParser::MAIN_MESSAGE},        
+        {"--configFile", "-c", "Configuration file for model generation",
+         &configFilePath, ArgParser::STRING},
+        {"--noImages", "-ni", "Do not generate images of model",
+         &produceImages, ArgParser::INV_BOOLEAN},
+        {"--noImages", "-ni", "Do not generate images of model",
+         &produceImages, ArgParser::INV_BOOLEAN},
+        {"--noProgress", "-npd", "Do not generate progress information",
+         &progressDisplay, ArgParser::INV_BOOLEAN},
+        {"--export", "-e", "Export resulting model data to disk",
+         &exportFiles, ArgParser::INV_BOOLEAN},
+        {"--simulate", "-s", "Simulate the generated model",
+         &simulate, ArgParser::BOOLEAN},
+        {"", "", "", NULL, ArgParser::INVALID}
+    };
+    // Parse the inputs supplied by the user
+    ArgParser ap(arg_list);
+    ap.parseArguments(argc, argv, true);
+    // Ensure we have a configuration file to process
+    return ap.checkArg(!configFilePath.empty(), &configFilePath,
+                       "A configuration file must be specified");
 }
-void Haplos::runSimulation(Policy *p){
-    
+
+Haplos::Haplos(int& argc, char *argv[], bool& success) {
+    // Set success to false as convenience. This value is changed later on
+    success = false;
+    // Process command-line arguments.
+    if (parseCmdLineArgs(argc, argv)) {
+        //Read in Configuration File
+        configuration = ConfigFile(configFilePath);
+        outputFolder  = configuration.getOutputFileLocation();
+        success       = true;
+    }
+}
+
+void
+Haplos::generateModel() {    
     //Age Probablities
     double *ageProbablities =configuration.getAgeProbablities();
     
@@ -122,7 +154,8 @@ void Haplos::runSimulation(Policy *p){
                               configuration["Total_Population"]);
     
     //Read in Timeline File
-    TimelineFile tl = TimelineFile(configuration.getTimelineFileLocation(), configuration.getCustomFileTypes());
+    tl = TimelineFile(configuration.getTimelineFileLocation(),
+                      configuration.getCustomFileTypes());
     
     //Extract out Pure Density Data
     std::vector<double> pureDensity;
@@ -151,22 +184,18 @@ void Haplos::runSimulation(Policy *p){
                                                       &allBuildings,
                                                       &densityData,
                                                       progressDisplay);
-   Population pop = Population(configuration["Total_Population"],
-                                ageProbablities,
-                                familySizeProbablities,
-                                configuration["Male_Probablity"],
-                                scheduleTypeProbablities,
-                                configuration["Population_Seed"]);
+    pop = Population(configuration["Total_Population"],
+                     ageProbablities,
+                     familySizeProbablities,
+                     configuration["Male_Probablity"],
+                     scheduleTypeProbablities,
+                     configuration["Population_Seed"]);
     
     
     //Generate Schedules
-    ScheduleGenerator scheduleGen = ScheduleGenerator (&densityData,
-                                     &allBuildings,
-                                     generator,
-                                     progressDisplay);
+    scheduleGen = ScheduleGenerator (&densityData, &allBuildings,
+                                     generator, progressDisplay);
     
-    //Create Policy Object
-    p->setConfigFile(&configuration);
     
     std::cout<<"Population Import File: "<<configuration.getPopulationImport()<<std::endl;
     std::cout<<"Get Building Import File: "<<configuration.getBuildingImport()<<std::endl;
@@ -248,17 +277,24 @@ void Haplos::runSimulation(Policy *p){
 
     policy.setupCustomAttributes(pop);
 
+
+    /*for(auto it = schoolBuildings.begin(); it != schoolBuildings.end(); it++){
+        std::cout<<"Address of School Building: "<<&(*it)<<std::endl;
+        std::cout<<"Address of All Building: "<<&(*(allBuildings[it->getID()]))<<std::endl;
+    }*/    
+}
+
+void
+Haplos::runSimulation(Policy *p){
+    //Create Policy Object
+    p->setConfigFile(&configuration);
+
     //Prepare Headers for Image Generator Files
     vector<std::string> headerInformation;
     headerInformation.push_back(std::to_string(configuration["Lower_Left_Longitude"])+","
                                 +std::to_string(configuration["Lower_Left_Laditude"]));
     headerInformation.push_back(std::to_string(configuration["Cellsize_Width"])+","
                                 +std::to_string(configuration["Cellsize_Height"]));
-
-    /*for(auto it = schoolBuildings.begin(); it != schoolBuildings.end(); it++){
-        std::cout<<"Address of School Building: "<<&(*it)<<std::endl;
-        std::cout<<"Address of All Building: "<<&(*(allBuildings[it->getID()]))<<std::endl;
-    }*/
     
     int currentTime = 0;
     std::cout<<"Simulation Running"<<std::endl;
