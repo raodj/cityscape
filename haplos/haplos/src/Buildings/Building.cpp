@@ -151,7 +151,14 @@ void Building::setCurrentVisitorCapacity(int time, int c){
     currentVisitorCapacity[time]=c;
 }
 
-void Building::addVisitorTimeSlot(int startTime, int endTime){
+void Building::addVisitorTimeSlot(int startTime, int endTime) {
+    if (endTime > 1008) {
+        std::cerr << "Building::addVisitorTimeSlot method received invalid "
+                  << "endTime of: " << endTime << " (endTime must be < 1008). "
+                  << "endTime set to 1008 as workaround. There is a defect "
+                  << "in the calling method(s) that needs to be fixed.\n";
+        endTime = 1008;
+    }
     for(int i = startTime; i<endTime; i++){
         currentVisitorCapacity[i]++;
     }
