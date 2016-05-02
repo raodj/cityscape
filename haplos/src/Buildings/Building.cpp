@@ -34,6 +34,7 @@
 //
 //-----------------------------------------------------------
 
+#include <algorithm>
 #include "Building.h"
 
 using namespace std;
@@ -78,6 +79,10 @@ Building::Building(const Building &b){
     this->visitorCapacity = b.visitorCapacity;
     this->currentEmployees = b.currentEmployees;
     this->currentVisitors = b.currentVisitors;
+
+    // Copy the current visitor capacity information from the source
+    // to this building.
+    std::copy_n(b.currentVisitorCapacity, 1008, currentVisitorCapacity);
     /*this->currentEmployees.clear();
     this->currentVisitors.clear();
     if(b.currentEmployees.size()>0){
