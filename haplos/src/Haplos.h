@@ -1,4 +1,3 @@
-
 #ifndef HAPLOS_H_
 #define HAPLOS_H_
 
@@ -37,7 +36,6 @@
 //
 //-----------------------------------------------------------
 
-
 #include <iostream>
 #include <string>
 #include <vector>
@@ -57,7 +55,6 @@
 #include "Buildings/BuildingGenerator.h"
 #include "Policy.h"
 
-
 #include "Buildings/Medical.h"
 #include "Buildings/School.h"
 #include "Buildings/Business.h"
@@ -65,8 +62,84 @@
 
 class Haplos {
 public:
-    Haplos(std::string configFileLocation, bool produceImages, bool progressDisplay, bool exportFiles);
+    /** Convenience constructor to initialize Haplos from command-line
+        arguments.
+
+        This is a convenience constructor that enables initialization
+        of Haplos from command-line arguments.  This is the preferred
+        constructor for Haplos and performs the following tasks: <ol>
+
+        <li>It uses an ArgParser object to parse the command-line
+        arguments and udpate internal configuration instance
+        variables.</li>
+
+        <li>If the command-line processing is successful, then it
+        processes the configuration file specified as command-line
+        argument.</li>
+        
+        </ol>
+
+        \note If any errors/failures occurr then the constructor
+        reports a suitable error message and terminates the program.
+        
+        \param[in,out] argc The number of command-line arguments to be
+        parsed.
+
+        \param[in,out] argv The actual command-line arguments to be
+        used to initialize this object.
+
+        \param[out] success This flag is set to true to indicate the
+        processing was completed successfully.  On errors this flag is
+        set to false.
+    */
+    Haplos(int& argc, char *argv[], bool& success);
+
+    /** Generate the model using data from a given configuration file.
+
+        This method is a top-level method that must be used to
+        generate a model (from scratch) using information from a
+        configuration file (spplied as command-line argument).
+    */
+    void generateModel();
+    
+    /** Top-level method to run a simulation using generated model.
+
+        This method is the top-level method for running a simulation
+        using the current model.
+
+        \note A valid model must be available for simulation.  The
+        model can be generated or loaded from a data file.
+        
+        \param[in] p The policy object to be used during simulation.
+     */
     void runSimulation(Policy *p);
+
+    /** Determine if simulation is enabled.
+
+        \return This method returns true if simulation is enabled by
+        the user via a command-line argument.
+    */
+    bool shouldSimulate() const { return simulate; }
+    
+protected:
+    /** Convenience method to parse command-line arguments into
+        instance variables in this class.
+
+        This method uses an ArgParser object to parse the command-line
+        arguments and udpate internal configuration instance
+        variables.
+        
+        \param[in,out] argc The number of command-line arguments to be
+        parsed.
+
+        \param[in,out] argv The actual command-line arguments to be
+        used to initialize this object.
+
+        \return This method returns ture if the command-line arguments
+        were successfully processed.
+    */
+    bool parseCmdLineArgs(int& argc, char *argv[]);
+    
 private:
     Policy policy;
     std::vector< School > schoolBuildings;
@@ -79,17 +152,25 @@ private:
     std::vector< std::vector < Location > > densityData;
     
     std::default_random_engine generator;
-    std::string outputFolder = "";
-    std::string imageFileLocationPath = "";
+    std::string outputFolder           = "";
+    std::string imageFileLocationPath  = "";
     std::string familyFileLocationPath = "";
-    std::string saveLocationPath = "";
+    std::string saveLocationPath       = "";
+    std::string configFilePath         = "";
+
     ConfigFile configuration;
-    bool produceImages = true;
-    bool progressDisplay = true;
-    bool exportFiles = true;
+    
+    bool produceImages    = true;
+    bool progressDisplay  = true;
+    bool exportFiles      = true;
+    bool simulate         = false;
     int numberOfBuildings = 0;
 
-
+    // The instance variable shared between generation phase and
+    // simulation phase in Haplos
+    Population pop;
+    ScheduleGenerator scheduleGen;
+    TimelineFile tl;
 };
 
 #endif /* HAPLOS_H_ */
