@@ -178,6 +178,13 @@ TransportHub* Location::getTransportHub(){
 }
 
 Building* Location::hasAvaliableBuilding(char visitorType, int startTime, int endTime, int numberOfVisitors){
+    if (endTime > 1008) {
+        std::cerr << "Location::hasAvailableBuilding method received invalid "
+                  << "endTime of: " << endTime << " (endTime must be < 1008). "
+                  << "endTime set to 1008 as workaround. There is a defect "
+                  << "in the calling method(s) that needs to be fixed.\n";
+        endTime = 1008;
+    }
     for ( auto it = buildings.begin(); it != buildings.end(); ++it ){
         switch(visitorType){
             case 'E':
