@@ -344,8 +344,39 @@ void ScheduleGenerator::generateYoungChildSchedule(Person* p, Family *f, int rad
     }
 }
 
+int getTimeSlotsPerHour() {
+    return 6;
+}
+
+int to_TimeSlot(int days) {
+    return days * 24 * getTimeSlotsPerHour();
+}
+
+
+void AdvanceSchoolSchedule(int &day, int &schoolStartTime, int &schoolEndTime, 
+        int nextCycleDayCount = 1, int INFINITE_VAL=99999) {
+    
+    if(day<4) {
+        schoolStartTime += to_TimeSlot(nextCycleDayCount);
+        schoolEndTime += to_TimeSlot(nextCycleDayCount);
+    }else{
+        schoolStartTime = INFINITE_VAL;
+        schoolEndTime = INFINITE_VAL;
+    }
+    day++;
+}
+
 void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *f, int radiusLimit, bool goToSchool){
     //Older School Aged Child (On own after school)
+    /**
+     * We get the current schedule of the child and also the schedule of the 
+     *  childCareAdult who is in-charge of the child.
+     * We assign the attending school to the location nearest to the
+     * childCareAdult's job location.
+     * We set the current schedule of the child based on the value of goToSchool
+     * If true, we determine schoolStartTime and schoolEndTime. Else we give
+     * an infinite time limit value of 99999
+     */
     Schedule *currentSchedule = p->getSchedule();
     Schedule *childCareAdultSchedule = f->getChildCareAdult()->getSchedule();
     School *attendingSchool= static_cast<School* >(allBuildings->at(currentSchedule->getJobLocation()));
@@ -353,33 +384,25 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
     currentSchedule->setGoToJobLocation(goToSchool);
     int schoolStartTime = (goToSchool ? attendingSchool->getSchoolStartTime() : 99999);
     int schoolEndTime = (goToSchool ? attendingSchool->getSchoolEndTime(): 99999);
-    //**std::cout<<"---------------------- Young School: "<<p->getID()<<" ----------------------"<<std::endl;
-    //**std::cout<<"School Location: "<<attendingSchool->getID()<<std::endl;
-    //**std::cout<<"School Time: " <<schoolStartTime <<" - "<<schoolEndTime<<std::endl;
-    //Get School start and End times for reference
+    
     int i=0;
     int day = 0;
     bool atSchool=false;
     TimeSlot *previousSlot = NULL;
     TimeSlot *nextSlot = NULL;
+    // We check until there is no specified location for a time slot.
     while(childCareAdultSchedule->getLocationAt(i)!=NULL){
         nextSlot = childCareAdultSchedule->getLocationAt(i+1);
         TimeSlot *slot =childCareAdultSchedule->getLocationAt(i);
-        
-        /* int startTimeForSlot = 0;
-        char visitorTypeForPrevious = 'H';
-        if(previousSlot!=NULL){
-            startTimeForSlot = previousSlot->getEndTime();
-            visitorTypeForPrevious= previousSlot->getVisitorType();
-        }*/
-        
+
+        // We check if the childAdult is at the school location
         if(slot->getLocation()==currentSchedule->getJobLocation()){
-            //At School Location
+            // If already at school and if School Time is Over
             if(atSchool && slot->getEndTime()>=schoolEndTime){
-                //Already at School and School Time is Over
                 //**std::cout<<"\t\tLeaving School"<<std::endl;
                 //**std::cout<<"\t\t\tS "<<currentSchedule->getJobLocation()<<": "<<slot->getEndTime()<<std::endl;
-                
+                // If the slot time exceeds the school time, we count that as
+                // visiting School after working hours and add a timeslot for it
                 if(slot->getEndTime()>schoolEndTime){
                     //Add After School Visiting Slot
                     //**std::cout<<"\t\t\tVisited School Afterwards"<<std::endl;
@@ -391,25 +414,19 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
                                                               'V'));
                     }
                 }
-                //Advance school times to next possible times
-                if(day<4){
-                    schoolStartTime+=144;
-                    schoolEndTime+=144;
-                }else{
-                    schoolStartTime = 99999;
-                    schoolEndTime = 99999;
-                }
-                day++;
-                //**std::cout<<"\t\tNext School Times: "<<schoolStartTime<<" - "<<schoolEndTime<<std::endl;
-                atSchool=false;
+            //Advance school times to next possible times
+            AdvanceSchoolSchedule(day, schoolStartTime, schoolEndTime, 1, 99999);
+            //**std::cout<<"\t\tNext School Times: "<<schoolStartTime<<" - "<<schoolEndTime<<std::endl;
+            atSchool=false;
             }else{
-                //Not Already At School or School Time is not Over
+                // Not Already At School or School Time is not Over
+                // School has started and not at School
                 if(slot->getEndTime() >= schoolStartTime  && !atSchool){
                     //School Starting
                     //**std::cout<<"\t\tAt to School"<<std::endl;
                     int schoolSlotStartTime =schoolEndTime;
                     if(slot->getEndTime()!=schoolStartTime){
-                        //Visited School Before Going to School
+                        // Visited School Before Going to School
                         //**std::cout<<"\t\tVisited School before school started."<<std::endl;
                         if(slot->getEndTime()>schoolStartTime){
                             schoolSlotStartTime=slot->getEndTime();
@@ -429,32 +446,28 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
                                                           schoolSlotStartTime,
                                                           'S'));
                     atSchool=true;
+                    // Since the childAdult is in school.
+                    // We check if the school time is over
                     if(slot->getEndTime()>=schoolEndTime){
-                        //Already at School and School Time is Over
                         //**std::cout<<"\t\tLeaving School"<<std::endl;
                         //**std::cout<<"\t\t\tS "<<currentSchedule->getJobLocation()<<": "<<slot->getEndTime()<<std::endl;
-                        
+                        // We add a visiting time slot if the slot's time
+                        // exceeds that of school time.
                         if(slot->getEndTime()>schoolEndTime){
                             //Add After School Visiting Slot
                             currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
                                                                   slot->getEndTime(),
                                                                   'V'));
                         }
-                        //Advance school times to next possible times
-                        if(day<4){
-                            schoolStartTime+=144;
-                            schoolEndTime+=144;
-                        }else{
-                            schoolStartTime = 99999;
-                            schoolEndTime = 99999;
-                        }
-                        day++;
-                        //**std::cout<<"\t\tNext School Times: "<<schoolStartTime<<" - "<<schoolEndTime<<std::endl;
-                        atSchool=false;
+                    //Advance school times to next possible times
+                    AdvanceSchoolSchedule(day, schoolStartTime, schoolEndTime, 1, 99999);
+                    //**std::cout<<"\t\tNext School Times: "<<schoolStartTime<<" - "<<schoolEndTime<<std::endl;
+                    atSchool=false;
                     }
                 }else{
                     if(!atSchool){
-                        //Not At School just copy the time slot
+                        // If Not At School just copy the time slot thereby
+                        // extending what is already going on.
                         //**std::cout<<"\t\tNot At School (Not Correct Time)"<<std::endl;
                         //**std::cout<<"\t\t\t"<<slot->getVisitorType()<<" "<<slot->getLocation()<<": "<<slot->getEndTime()<<std::endl;
                         currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
@@ -465,6 +478,8 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
             
         }else{
             if(!atSchool){
+                // If Not At School we just copy the time slot thereby extending
+                // whatever is going on.
                 //**std::cout<<"\t\tNot At School (Not At Location)"<<std::endl;
                 //**std::cout<<"\t\t\t"<<slot->getVisitorType()<<" "<<slot->getLocation()<<": "<<slot->getEndTime()<<std::endl;
                 currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
