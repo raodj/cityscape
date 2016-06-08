@@ -40,7 +40,9 @@
 #include <algorithm>
 
 Policy::Policy(){
-    int seed = time(0);
+    // int seed = time(0);
+    int seed = 1465336717;
+    std::cout << "TEST VALUE OF TIME(0):" << seed << std::endl;
     generator.seed(seed);
     std::cout<<"Policy Seed: "<<seed<<std::endl;
 }

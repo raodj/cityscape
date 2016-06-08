@@ -58,7 +58,8 @@ Population::Population(int s, double *ageProbablities, double *familySizeProbabl
 	size=s;
     //Initalize random number generator
    // std::default_random_engine generator;   //Random Generator for Distributions
-    int seed = time(0);
+    // int seed = time(0);
+    int seed = 1465336717;
     
     //Forcing Population Seed for Stable Population for Testing
     if(popSeed!=-1){
