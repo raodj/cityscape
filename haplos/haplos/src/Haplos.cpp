@@ -145,7 +145,8 @@ Haplos::generateModel() {
     double *olderSchoolWeekendProbablities = configuration.getOlderSchoolWeekendProbablities();
     
     //Set Seed
-    generator.seed(time(0));
+    //generator.seed(time(0));
+    generator.seed(1465336717);
     
     //Read in Density Data
     SedacReader sr = SedacReader();

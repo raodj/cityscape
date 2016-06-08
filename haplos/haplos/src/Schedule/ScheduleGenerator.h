@@ -98,6 +98,21 @@ class ScheduleGenerator {
                                               double *transportProbablities, int *transportRadiusLimits,
                                               int *transportRates, double *visitorTypeProbablities);
         //Helper Methods
+
+	void computeTransportSpecifics(char transportType,
+                                        int transportRate,
+					int travelTime, 
+					int travelTimeToAPlace,
+                            		int  timeLimit, 
+					double *transportProbablities, 
+					int *transportRadiusLimits,
+                            		int *transportRates,
+					Schedule *currentSchedule,
+					Building *startLoc,
+                            		Building *destination, 
+					int visitorType, 
+					int endTime);
+
         char determineTransportationType(int distance,
                                          int timeLimit,
                                          double *transportProbablities,
@@ -138,6 +153,7 @@ class ScheduleGenerator {
         std::default_random_engine generator;
 
 
+	
 };
 
 #endif /* defined(__haplos__ScheduleGenerator__) */

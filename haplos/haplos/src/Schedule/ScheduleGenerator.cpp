@@ -344,11 +344,14 @@ void ScheduleGenerator::generateYoungChildSchedule(Person* p, Family *f, int rad
     }
 }
 
+
+
+
 int getTimeSlotsPerHour() {
     return 6;
 }
 
-int to_TimeSlot(int days) {
+int to_TimeSlot(const int days) {
     return days * 24 * getTimeSlotsPerHour();
 }
 
@@ -365,6 +368,10 @@ void AdvanceSchoolSchedule(int &day, int &schoolStartTime, int &schoolEndTime,
     }
     day++;
 }
+
+enum YoungSchoolAgedChildState { WITH_CHILDCARE_ADULT, ATSCHOOL_DURING_SCHOOL_HOURS, 
+    VISITING_BEFORE_SCHOOL, VISITING_AFTER_SCHOOL};
+    
 
 void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *f, int radiusLimit, bool goToSchool){
     //Older School Aged Child (On own after school)
@@ -384,6 +391,9 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
     currentSchedule->setGoToJobLocation(goToSchool);
     int schoolStartTime = (goToSchool ? attendingSchool->getSchoolStartTime() : 99999);
     int schoolEndTime = (goToSchool ? attendingSchool->getSchoolEndTime(): 99999);
+    
+    // Giving it a default Value
+    YoungSchoolAgedChildState YSACS = WITH_CHILDCARE_ADULT;
     
     int i=0;
     int day = 0;
@@ -418,6 +428,9 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
             AdvanceSchoolSchedule(day, schoolStartTime, schoolEndTime, 1, 99999);
             //**std::cout<<"\t\tNext School Times: "<<schoolStartTime<<" - "<<schoolEndTime<<std::endl;
             atSchool=false;
+            // Change State of child to with ChildCareAdult
+            YSACS = WITH_CHILDCARE_ADULT;
+            
             }else{
                 // Not Already At School or School Time is not Over
                 // School has started and not at School
@@ -440,12 +453,15 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
                             currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(),
                                                                   schoolStartTime,
                                                                   'V'));
+                            
                         }
                     }
                     currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
                                                           schoolSlotStartTime,
                                                           'S'));
                     atSchool=true;
+                    // The child is attending school during school hours
+                    YSACS = ATSCHOOL_DURING_SCHOOL_HOURS;
                     // Since the childAdult is in school.
                     // We check if the school time is over
                     if(slot->getEndTime()>=schoolEndTime){
@@ -458,11 +474,15 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
                             currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
                                                                   slot->getEndTime(),
                                                                   'V'));
+                            // Child Staying in School post School Hours 
+                            YSACS = VISITING_AFTER_SCHOOL;
                         }
                     //Advance school times to next possible times
                     AdvanceSchoolSchedule(day, schoolStartTime, schoolEndTime, 1, 99999);
                     //**std::cout<<"\t\tNext School Times: "<<schoolStartTime<<" - "<<schoolEndTime<<std::endl;
                     atSchool=false;
+                    // Child leaves school with ChildCareAdult
+                    YSACS = WITH_CHILDCARE_ADULT;
                     }
                 }else{
                     if(!atSchool){
@@ -471,6 +491,9 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
                         //**std::cout<<"\t\tNot At School (Not Correct Time)"<<std::endl;
                         //**std::cout<<"\t\t\t"<<slot->getVisitorType()<<" "<<slot->getLocation()<<": "<<slot->getEndTime()<<std::endl;
                         currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
+                        // If not at school, the child is still with childCareADult
+                        YSACS = WITH_CHILDCARE_ADULT;
+                        
                     }
                     
                 }
@@ -483,6 +506,8 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
                 //**std::cout<<"\t\tNot At School (Not At Location)"<<std::endl;
                 //**std::cout<<"\t\t\t"<<slot->getVisitorType()<<" "<<slot->getLocation()<<": "<<slot->getEndTime()<<std::endl;
                 currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
+                // If not at school, the child is still with childCareADult
+                    YSACS = WITH_CHILDCARE_ADULT;
             }
         }
         previousSlot=slot;
@@ -515,24 +540,29 @@ void ScheduleGenerator::generateSchoolAgedChildSchedule(Person *p, Family *f, in
     ////**std::cout<<"\tGenerating Schedule"<<std::endl;
     //School Aged Child (On own after school)
     std::discrete_distribution<int> distribution{homeProb,workProb,outProb};
-    
+    /*
+     * We get the location of the attending school.
+     * Assign Student to that School.
+     * Get the Location of the school
+     * Get the location of home.
+     */
     School *attendingSchool= static_cast<School* >(allBuildings->at(currentSchedule->getJobLocation()));
     attendingSchool->assignStudentToSchool(0);
     int *schoolLoc = attendingSchool->getLocation();
     int *homeLoc = home->getLocation();
     
-    int dayTime=0;  //Time for current day (Midnight = 0, 11:59=144
-    int trueTime=0; //Actual HAPLOS Time (Monday at Midnight = 0, till Sunday at 11:59 = 1008)
-    int totalTimeSpentAtHome=0; //Total Time spent at home for the given day
+    int dayTime=0;  // Time for current day (Midnight = 0, 11:59=144
+    int trueTime=0; // Actual HAPLOS Time (Monday at Midnight = 0, till Sunday at 11:59 = 1008)
+    int totalTimeSpentAtHome=0; // Total Time spent at home for the given day
     int maxTimeAway = 96;
     int totalTimeSpentAway = 0;
-    int crewfew = 132;
+    int crewfew = 132; 
     int visitorType = 'H';
     int sleepTimeNeeded = 48;
     char transportType = 'T';
     int transportRate = 1;
-    
-    //Get School start and End times for reference
+
+    // Get School start and End times for reference
     int schoolStart = (goToSchool ? dayTime+attendingSchool->getSchoolStartTime() : 99999);
     int schoolEnd = (goToSchool ? dayTime+attendingSchool->getSchoolEndTime() : 99999);
     //Add One Hour for Sleep for Previous Day
@@ -548,7 +578,7 @@ void ScheduleGenerator::generateSchoolAgedChildSchedule(Person *p, Family *f, in
         //Kids should Always be home at the start of the day (Curfew at 23:00 (138))
         Building *lastPlace = home;
         //**std::cout<<"Starting New Day "<<day<<std::endl;
-        //Update trueTime to reflect a full day has passed
+        // Update trueTime to reflect a full day has passed
         trueTime+=dayTime;
         dayTime=0;
         int *lastPlaceLoc =lastPlace->getLocation();
@@ -568,27 +598,42 @@ void ScheduleGenerator::generateSchoolAgedChildSchedule(Person *p, Family *f, in
                                                      schoolLoc[0],
                                                      schoolLoc[1],
                                                      1);
+            // We check if the totalTime spent at home is less than sleep time
+            // needed because if it isn't we add additional time needed to rest
+            // and prepare schedule based on the accordingly.
             if(totalTimeSpentAtHome<sleepTimeNeeded){
                 //**std::cout<<"\t"<<"Adding Addtional Sleep Time"<<std::endl;
+                // We calculate the deficit in Sleep Time.
                 int timeNeeded = sleepTimeNeeded-totalTimeSpentAtHome;
+                // If there is enough time before School Start time, we make use
+                // of it by sleeping.
                 if(dayTime+timeNeeded<schoolStart-1){
                     //Progress Time to Earliest Possible Activty time
                     dayTime+=timeNeeded;
                     totalTimeSpentAway=0;
                 }else{
+                    
                     dayTime=schoolStart-1;
+                    // We consider the insufficient time before school start 
+                    // time as time spent away.
                     totalTimeSpentAway+=schoolStart-1-dayTime;
                 }
             }
-            //Add Predicted Time Spent at School to Away Time
+            // Add Predicted Time Spent at School to Away Time
+            // Essentially the entire time spent at school is considered as time
+            // spentAway.
             totalTimeSpentAway+= (schoolEnd - schoolStart)+1;
             
             //**std::cout<<"\tCheck Before School Activty"<<std::endl;
+            // If the child has spent sufficient time sleeping/at home and 
+            // child has not exceeded the limit on time spent outside and
+            // there is time before school starts, we consider this time to be
+            // useful for some activity before school hours.
             if (totalTimeSpentAtHome>=sleepTimeNeeded && dayTime<schoolStart-1 &&
                 totalTimeSpentAway<maxTimeAway){
-                //Activity before School
-                //**std::cout<<"\t\tCan go out Still"<<std::endl;
                 
+                // According the distribution option we calculate the travel
+                // type, time, cost etc to the destination.
                 switch(distribution(generator)){
                     case 0:
                         //Home
@@ -599,21 +644,32 @@ void ScheduleGenerator::generateSchoolAgedChildSchedule(Person *p, Family *f, in
                                                                  1);
                         if(lastPlace != home) {
                             
-                            transportType = determineTransportationType(travelTimeToHome,
-                                                                        schoolStart-1-travelTimeToSchool-dayTime,
-                                                                        transportProbablities,
-                                                                        transportRadiusLimits,
-                                                                        transportRates);
-                            transportRate = getTransportRate(transportType, transportRates);
                             
-                            travelTime= addMoveTo(currentSchedule,
-                                                  lastPlace,
-                                                  home,
-                                                  visitorType,
-                                                  trueTime+dayTime,
-                                                  transportType,
-                                                  transportRate,
-                                                  -1);
+/*Signature of the computeTransportSpecifics.
+ * computeTransportSpecifics(char transportType,int transportRate,int travelTime,int travelTimeToAPlace,
+   w                         int timeLimit,double transportProbablities,int transportRadiusLimits,
+                             int transportRates,Schedule *currentSchedule,Building *startLoc,
+                            Building *destination, int visitorType,int trueTime+dayTime)*/
+                            computeTransportSpecifics(transportType, transportRate, travelTime,
+                                    travelTimeToHome, schoolStart-1-travelTimeToSchool-dayTime,
+                                    transportProbablities, transportRadiusLimits,
+                                    transportRates, currentSchedule, lastPlace, home,
+                                    visitorType, trueTime+dayTime);
+//                            transportType = determineTransportationType(travelTimeToHome,
+//                                                                        schoolStart-1-travelTimeToSchool-dayTime,
+//                                                                        transportProbablities,
+//                                                                        transportRadiusLimits,
+//                                                                        transportRates);
+//                            transportRate = getTransportRate(transportType, transportRates);
+//                            
+//                            travelTime= addMoveTo(currentSchedule,
+//                                                  lastPlace,
+//                                                  home,
+//                                                  visitorType,
+//                                                  trueTime+dayTime,
+//                                                  transportType,
+//                                                  transportRate,
+//                                                  -1);
                             lastPlace=home;
                             lastPlaceLoc =lastPlace->getLocation();
                             
@@ -637,8 +693,8 @@ void ScheduleGenerator::generateSchoolAgedChildSchedule(Person *p, Family *f, in
                                                                       trueTime+dayTime+schoolStart,
                                                                       1,
                                                                       transportRate);
+                        // If there is no place to go out, we just return home.
                         if(lastPlace_tmp==NULL){
-                            //No avaliable place to go so just return back to home
                             //**std::cout<<"\t\tBefore School: No Places found to go out :("<<std::endl;
                             //**std::cout<<"\t\t\tTime Frame: "<<trueTime+dayTime<<"-"<<trueTime+dayTime+schoolStart<<std::endl;
                             if(lastPlace != home) {
@@ -669,6 +725,8 @@ void ScheduleGenerator::generateSchoolAgedChildSchedule(Person *p, Family *f, in
                             }
                             dayTime = schoolStart-travelTimeToSchool-1;
                         }else{
+                            // IF there is a place to go out and not the same as
+                            // last place, we go there
                             if(lastPlace != lastPlace_tmp) {
                                 int *lastPlaceLoc_tmp =lastPlace_tmp->getLocation();
                                 travelTimeToSchool = calculateTravelTime(lastPlaceLoc_tmp[0],
@@ -711,7 +769,10 @@ void ScheduleGenerator::generateSchoolAgedChildSchedule(Person *p, Family *f, in
             }
             
             //**std::cout<<"\tGoing to school"<<std::endl;
-            //Advance time to Start of School
+            // .Advance time to Start of School
+            // If child did not have enough sleep or if child has exceed the max
+            // time the child can spend time or if there isn't time before 
+            // school, we advance time to start of School
             totalTimeSpentAtHome=0;
             travelTimeToSchool = calculateTravelTime(lastPlaceLoc[0],
                                                      lastPlaceLoc[1],
@@ -747,7 +808,8 @@ void ScheduleGenerator::generateSchoolAgedChildSchedule(Person *p, Family *f, in
                                                        homeLoc[0],
                                                        homeLoc[1],
                                                        1);
-            
+            // While there is still time before curfew time and permission to 
+            // spend  more time away
             while(dayTime<crewfew-travelTimeToHome-1 && totalTimeSpentAway<maxTimeAway){
                 travelTime = 0;
                 //**std::cout<<"\t\tCan go out Still"<<std::endl;
@@ -923,21 +985,24 @@ void ScheduleGenerator::generateSchoolAgedChildSchedule(Person *p, Family *f, in
                 
             }
         }
+        // If it is a weekend.
         else{
             //Weekend
             //**std::cout<<"\tNon-School Day"<<std::endl;
             //Add Sleeping Time if Needed
+            // If child spent enough time at home/sleeping.
             if(totalTimeSpentAtHome<sleepTimeNeeded){
                 int timeNeeded = sleepTimeNeeded-totalTimeSpentAtHome;
-                //Progress Time to Earliest Possible Activty time
-                dayTime+=timeNeeded;
+                // Progress Time to Earliest Possible Activty time
+                dayTime += timeNeeded;
             }
             int sleepIfOutAllNight = 144-crewfew + timeUpOnMonday;
             if(sleepIfOutAllNight<sleepTimeNeeded && day==6){
                 crewfew = crewfew-(sleepTimeNeeded-sleepIfOutAllNight);
             }
             
-            while(dayTime<crewfew-travelTimeToHome-1){
+            // While there is still time left before the curfew time.
+            while(dayTime<crewfew-travelTimeToHome-1) {
                 travelTime = 0;
                 travelTimeToHome = calculateTravelTime(lastPlaceLoc[0],
                                                        lastPlaceLoc[1],
@@ -1194,7 +1259,7 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
     //Working Adult
     Schedule *currentSchedule = p->getSchedule();
     currentSchedule->setGoToJobLocation(goToWork);
-
+    // We get the home, lastPlace, jobLocation and dayCareLocation.
     Building *home =f->getHome();
     Building *lastPlace = home;
     Building *jobLocation=allBuildings->at(currentSchedule->getJobLocation());
@@ -1256,6 +1321,7 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
     int travelTime = 0;
     for(int day=0; day< 7 ; day++){
         size_t currentPlaceInSchoolTimes = 0;
+        
         std::pair<int, School*> nextSchoolTime=std::make_pair(99999,nullptr);
         int travelTimeToSchool = 0;
         int travelTimeSchoolFromJob = 0;
@@ -2425,76 +2491,111 @@ struct sort_pair{
     }
     
 };
-
+/**
+ * The determineTranportation Type function, determines the type of transportat-
+ * ion to be used based on the probabilities of transportation modes, along with
+ * distance to be covered and the time within which the distance needs to be 
+ * covered.
+ * @param distance distance to be covered
+ * @param timeLimit timiLimit within which the distance has to be covered
+ * @param transportProbablities the probabilities of various transport modes.
+ * @param transportRadiusLimits the Limits within which the transport modes operate
+ * @param transportRates the Rate/Cost for each transport Mode
+ * @return 
+ */
 char ScheduleGenerator::determineTransportationType(int distance, int timeLimit, double *transportProbablities, int *transportRadiusLimits, int *transportRates){
     double publicTransportProb = transportProbablities[0];
     double privateTransportProb = transportProbablities[1];
     double walkingTransportProb = transportProbablities[2];
+    double tmp_walkingTransportProb = walkingTransportProb;
     
+    // Given the case that there is some distance that is to be covered.
     if(distance != -1){
+        // If the distance to be covered is greater than radius of operation of
+        // public transport systems, we use a privateTransport such as car.
         if(distance>transportRadiusLimits[0]){
-            //Public Transport Distance Limit (Have to Use Private Transport)
+            // Public Transport Distance Limit (Have to Use Private Transport)
             return 'C';
         }else{
-            //Public Transport is Viable
-            if(distance>transportRadiusLimits[1]){
-                //Too far to walk
+            // If public transport is indeed viable, but before that we check
+            // if it is too far to walk.
+            if(distance>transportRadiusLimits[2]){
+                // If it is indeed too far to walk, we make use of both walking
+                // and public transport.
                 publicTransportProb = walkingTransportProb + publicTransportProb;
+                // the reason we assign waslkingTransportProb to 0 is because
+                // while choosing between the transport medium to be picked,
                 walkingTransportProb=0;
             }
+            // The reason why we do not return 'W' if distance < transportRadiusLimit[2]
+            // is because the timeLimit also has to be considered.
         }
     }
-    
+    // We consider the timeLimit also while choosing the TransportationType.
     if(timeLimit != -1){
+        // We check if we can use publicTransport and make it within the time
+        // limit, if we can't we use Private Transport.
         if(distance*transportRates[0] > timeLimit){
-            //Public Transport Time Limit (Have to Use Private Transport)
             return 'C';
         }else{
-            //Public Transport is Viable
+            // Public Transport is Viable
+            // We check if the distance can be covered within the time Limit by
+            // walking, else we use public Transport which also involves walking
             if(distance*transportRates[2] > timeLimit){
-                //Walking takes too much time
-                publicTransportProb = walkingTransportProb + publicTransportProb;
+                publicTransportProb = tmp_walkingTransportProb + publicTransportProb;
                 walkingTransportProb=0;
             }
         }
     }
+    // Create a distribution to choose Transportation Type
     std::discrete_distribution<int> distribution{publicTransportProb, privateTransportProb,walkingTransportProb};
     
     int transportType = distribution(generator);
     switch(transportType){
         case 0:
-            //Public Transport
+            // Public Transport
             return 'T';
             break;
         case 1:
-            //Private Transport
+            // Private Transport
             return 'C';
             break;
         case 2:
-            //Walking
+            // Walking
             return 'W';
             break;
         default:
             return '\0';
             break;
     }
-}
+} // End of determineTransportationType
 
+/**
+ * The getTransportRate method receives the chosen transportType as input and 
+ * returns the corresponding rate for the transportType.
+ * @param transportType The chosen transportation Type to reach the dest.
+ * @param transportRates The rate assigned in the config file for each transportation mode.
+ *                       It is value of 1 for public and pvt transportation and value of 2 for walking.
+ * @return 
+ */
 int ScheduleGenerator::getTransportRate (char transportType, int *transportRates){
     switch(transportType){
+        // T stands for publicTransport.
         case 'T':
-            return transportRates[0];
+            return transportRates[0]; // Rate of 1 is returned.
             break;
+        // C stands for Car emphasizing pvt transport.    
         case 'C':
-            return transportRates[1];
+            return transportRates[1]; // Rate of 1 is returned.
             break;
+        // W Stands for Walking
         case 'W':
-            return transportRates[2];
+            return transportRates[2]; // Rate of 2 is returned.
             break;
         default:
             return 1;
     }
-}
+} // end of getTransportRate
 
 bool ScheduleGenerator::sort_schoolTimes(const std::pair<int, School*>& firstElem, const std::pair<int, School*>& secondElem) {
     return firstElem.first < secondElem.first;
@@ -2528,19 +2629,53 @@ std::vector <std::pair<int, School*> > ScheduleGenerator::getSchoolTimes(Family 
     });
     return schoolTimes;
 }
-
+/**
+ * The addMoveTo function calculates the totalTime to reach the destination
+ * from the source and also addsTimeSlot periodically with Nearest Transportatio
+ * -n Hub from the current location. The current loc start location is iterativ
+ * -ely incremented/ decremented until the destination is reached. Until then,
+ * at every Transportation Hub in-between, a TimeSlot is added. The timeUnit bet
+ * -ween every consecutive Transport Hub that is encountered is 1 timeUnit. 
+ * At the end of the function, the totalTimeTaken to reach the destination from 
+ * source is returned.
+ * @param s The current Schedule
+ * @param start The source/current loc
+ * @param end The destination
+ * @param visitorType Describes what the purpose is
+ * @param endTime Summation of trueTime + dayTime (i.e. the HAPLOS time )
+ * @param transportType The type of transportation that is to be used
+ * @param transportRate The rate of the transportation used
+ * @param transportID The transportID which for now is assigned -1.
+ * @return 
+ */
 int ScheduleGenerator::addMoveTo(Schedule *s, Building *start, Building *end, char visitorType, int endTime, char transportType,
                                  int transportRate, int transportID){
     int *startLocation = start->getLocation();
     int *endLocation = end->getLocation();
+    // Travel Time between the Start and EndLocation.
     int totalTravelTime = calculateTravelTime(startLocation[0], startLocation[1], endLocation[0], endLocation[1],transportRate);
     int travelTime = 1;
+    
+    // We add a time slot to the schedule with startLoc Building ID, endTime
+    // and VisitorType.
     s->addTimeSlot(TimeSlot(start->getID(), endTime, visitorType));
     
+    // While the start and end location are not the same
     while(startLocation[0] != endLocation[0] and startLocation[1] != endLocation[1]){
+        // Increment the travelTime with trueTime + dayTime i.e. endTime
+        // The increment is because it's the time to reach the transportation 
+        // which is nearest to the start Location/ recent TransportHub.
+        // Consider it like a bus moving through several stops before reaching
+        // it's destination. At every strop we add a TimeSlot. The time taken
+        // between each consequtive stop is 1 time unit.
         endTime+=travelTime;
+        // We add a schedule with the Transportation hub's building ID
+        // and updated endTime.
         s->addTimeSlot(TimeSlot(densityData->at(startLocation[0]).at(startLocation[1]).getTransportHub()->getID(), endTime, transportType));
         
+        // According the StartLocation with respect to the endLocation, we
+        // increment or decrement a value. We do this until both the StartLoc
+        // and endLoc are the same.
         if(startLocation[0]< endLocation[0]){
             startLocation[0] += 1;
         }else{
@@ -2560,7 +2695,7 @@ int ScheduleGenerator::addMoveTo(Schedule *s, Building *start, Building *end, ch
     
     return totalTravelTime;
     
-}
+} // End of addMoveTo function.
 
 int ScheduleGenerator::calculateTravelTime(int start_x, int start_y, int end_x, int end_y,  int transportRate ){
     if(std::abs(start_x-end_x)>std::abs(start_y-end_y)){
@@ -2746,6 +2881,42 @@ void ScheduleGenerator::assignJobSchoolLocations(Family *f){
         
     }
     
+    
+}
+/**
+ * The purpose of computeTransportSpecifics is to make use of the multiple need to compute the
+ * transportType, transportRate and travelTime, thus effectively reducing the code length
+ * and increasing understandability.
+ * @param transportType The type of transport that will be used used ( public,pvt,walking)
+ * @param transportRate The cost associated with the transport type that will be chosen.
+ * @param travelTime The time taken to travel
+ * @param travelTimeToAPlace The travel time to a particular destination
+ * @param timeLimit The time within which the possible transportation should occur
+ * @param transportProbablities The probability with choosing a particular transportation type
+ * @param transportRadiusLimits The radius of operation of each transportation type 
+ * @param transportRates  The rates of all transportTypes (public, pvt,walking)
+ * @param currentSchedule The schedule of the current individual
+ * @param startLoc  The starting location from where the individual must travel.
+ * @param destination The destination that is to be reached with the transportType
+ * @param visitorType The purpose of visit at a location.
+ * @param endTime The HAPLOS time which is nothing but trueTime + dayTime
+ */
+void ScheduleGenerator::computeTransportSpecifics(char transportType, int transportRate, int travelTime, int travelTimeToAPlace,
+                            int timeLimit, double *transportProbablities, int *transportRadiusLimits,
+                            int *transportRates, Schedule *currentSchedule, Building *startLoc,
+                            Building *destination, int visitorType, int endTime) {
+    transportType = determineTransportationType(travelTimeToAPlace, timeLimit,
+                                                transportProbablities, transportRadiusLimits, transportRates);
+    
+//    char tmp_transportType = *transportType;
+    transportRate = getTransportRate(transportType, transportRates);
+    
+//    int tmp_transportRate = *transportRate;
+      int transportID = -1;
+//    char tmp_visitorType = *visitorType;
+                            
+    travelTime= addMoveTo(currentSchedule, startLoc, destination, visitorType, 
+                            endTime, transportType, transportRate, transportID);
     
 }
 

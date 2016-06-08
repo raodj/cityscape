@@ -81,7 +81,8 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
     std::cout<< "Generating Buildings" <<std::endl;
     
     //Set Random Generator Seed
-    int seed = time(0);
+    // int seed = time(0);
+    int seed = 1465336717;
     generator.seed(seed);
     std::cout<<"Building Seed: "<<seed<<std::endl;
     //Set Distribution
