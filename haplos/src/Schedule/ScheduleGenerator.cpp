@@ -289,9 +289,15 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
 
     
 }
-
+/*
+ * The Young Child Schedule is generated off the child care Adults schedule.
+ * 
+ * Stays with the child care adult at all times when adult is at work.
+ *      child will be taken to a daycare facility prior to the adult going job locations and
+ *      picked up after the shift is over.
+ */
 void ScheduleGenerator::generateYoungChildSchedule(Person* p, Family *f, int radiusLimit){
-    //Yougn Child (Follow Adult always or day care)
+    //Young Child (Follow Adult always or day care)
     Schedule *currentSchedule = p->getSchedule();
     Schedule *childCareAdultSchedule = f->getChildCareAdult()->getSchedule();
     Daycare  *daycareLocaiton = f->getDaycare();
@@ -300,29 +306,43 @@ void ScheduleGenerator::generateYoungChildSchedule(Person* p, Family *f, int rad
     //**std::cout<<childCareAdultSchedule->getScheduleType()<<std::endl;
     //Set Schedule Based on Child Care Adult
     int i=0;
-    bool atDaycare=false;
+    bool atDaycare=false; // This is used to denote if the Child is there or not at the dayCare.
+    // While the child care adult is present at some location.
     while(childCareAdultSchedule->getLocationAt(i)!=NULL){
-        TimeSlot *slot =childCareAdultSchedule->getLocationAt(i);
+        TimeSlot *slot = childCareAdultSchedule->getLocationAt(i);
         TimeSlot *nextSlot = NULL;
         int advance =1;
+        // I Guess Conidition is to skip the traveling Schedule in the Child Care Adult Schedule.
         while(childCareAdultSchedule->getLocationAt(i+advance)!= NULL && (childCareAdultSchedule->getLocationAt(i+advance)->getVisitorType() == 'T' ||childCareAdultSchedule->getLocationAt(i+advance)->getVisitorType() == 'C' || childCareAdultSchedule->getLocationAt(i+advance)->getVisitorType() == 'W')){
             advance++;
         }
         nextSlot=childCareAdultSchedule->getLocationAt(i+advance);
         
         if(childCareAdultSchedule->getScheduleType()!=4){
-            //Employeed Adult Responsible for Child Care
+            //Employed Adult Responsible for Child Care
+            // If the Employed Child Care Adult is in the dayCare &&
+            // if the Child Care Adult is A Visitor/ visiting &&
+            // The Child Care Adult has a schedule to follow in the next slot &&
+            // That next slot is that of work.
             if(slot->getLocation()==daycareLocaiton->getID() && slot->getVisitorType()== 'V' && nextSlot != NULL && nextSlot->getVisitorType()=='E'){
                 //**std::cout<<"\t At Daycare or Parent is at Work: "<<slot->getEndTime()<<std::endl;
                 //**std::cout<<"\t\tNot at Daycare Already"<<std::endl;
                 atDaycare=true;
             }else{
+                // If he is at the DayCare &&
+                // If it is listed as a Visiting in the slot &&
+                // The Baby is already at the dayCare
                 if(slot->getLocation() == daycareLocaiton->getID() && slot->getVisitorType()== 'V' && atDaycare){
                     //**std::cout<<"\t\tGetting Picked Up from Daycare"<<std::endl;
+                    // We add a timeslot that signifies that the child will remain at the dayCare only
+                    // until the end of that time slot and with the end of the timeSlot, the Child
+                    // will leave the dayCare with the adult.
                     currentSchedule->addTimeSlot(TimeSlot(daycareLocaiton->getID(), slot->getEndTime(), 'D'));
                     atDaycare=false;
                 }else{
                     //**std::cout<<"Other Time Slot" <<slot->getEndTime()<<std::endl;
+                    // If the child is not at the dayCare, then the child is with the adult
+                    // and hence we add a TimeSlot with details of that of the child care adult.
                     if(!atDaycare){
                         //**std::cout<<"Not currently attending Daycare"<<std::endl;
                         currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
@@ -332,6 +352,9 @@ void ScheduleGenerator::generateYoungChildSchedule(Person* p, Family *f, int rad
         }else{
             //Unemployeed Adult Responsible for Child Care
             //**std::cout<<"Not currently attending Daycare"<<std::endl;
+            // If an Unemployed Adult is responsible for the Child, then the
+            // child doesn't attend day care and is always with the unemployed child
+            // care adult ?
             currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
         }
         i++;
@@ -373,8 +396,14 @@ enum YoungSchoolAgedChildState { WITH_CHILDCARE_ADULT, ATSCHOOL_DURING_SCHOOL_HO
     VISITING_BEFORE_SCHOOL, VISITING_AFTER_SCHOOL};
     
 
+/*Rough Overview of generateYoungSchoolAgedChildSchedule
+ * Attends School Monday - Friday
+ * Is generated based off the child Care Adult's Schedule.
+ * Stays with the Child Care Adult at all times except when at school.
+ * Curfew is 20:00
+ */    
 void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *f, int radiusLimit, bool goToSchool){
-    //Older School Aged Child (On own after school)
+    
     /**
      * We get the current schedule of the child and also the schedule of the 
      *  childCareAdult who is in-charge of the child.
@@ -397,7 +426,7 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
     
     int i=0;
     int day = 0;
-    bool atSchool=false;
+    bool atSchool=false; // the var expresses if the child is at school or not
     TimeSlot *previousSlot = NULL;
     TimeSlot *nextSlot = NULL;
     // We check until there is no specified location for a time slot.
@@ -405,19 +434,22 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
         nextSlot = childCareAdultSchedule->getLocationAt(i+1);
         TimeSlot *slot =childCareAdultSchedule->getLocationAt(i);
 
-        // We check if the childAdult is at the school location
+        // We check if the childcareAdult is at the school location
         if(slot->getLocation()==currentSchedule->getJobLocation()){
             // If already at school and if School Time is Over
             if(atSchool && slot->getEndTime()>=schoolEndTime){
                 //**std::cout<<"\t\tLeaving School"<<std::endl;
                 //**std::cout<<"\t\t\tS "<<currentSchedule->getJobLocation()<<": "<<slot->getEndTime()<<std::endl;
                 // If the slot time exceeds the school time, we count that as
-                // visiting School after working hours and add a timeslot for it
-                if(slot->getEndTime()>schoolEndTime){
+                // visiting School to pick up the child
+                if(slot->getEndTime() > schoolEndTime){
                     //Add After School Visiting Slot
                     //**std::cout<<"\t\t\tVisited School Afterwards"<<std::endl;
                     ////**std::cout<<nextSlot->getLocation()<<std::endl;
                     ////**std::cout<<currentSchedule->getJobLocation()<<std::endl;
+                    // If the nextslot of the adult is not that of the school again,
+                    // then it implies school time is over and the child is leaving with the 
+                    // parent.
                     if(nextSlot != NULL && nextSlot->getLocation() != currentSchedule->getJobLocation()){
                         currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
                                                               slot->getEndTime(),
@@ -432,14 +464,14 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
             YSACS = WITH_CHILDCARE_ADULT;
             
             }else{
-                // Not Already At School or School Time is not Over
-                // School has started and not at School
+                // Else signifies-If the Child is Not At School or School Time is not Over
+                // School has started and the child is not at School
                 if(slot->getEndTime() >= schoolStartTime  && !atSchool){
                     //School Starting
                     //**std::cout<<"\t\tAt to School"<<std::endl;
                     int schoolSlotStartTime =schoolEndTime;
                     if(slot->getEndTime()!=schoolStartTime){
-                        // Visited School Before Going to School
+                        // Visited School Before School Started.
                         //**std::cout<<"\t\tVisited School before school started."<<std::endl;
                         if(slot->getEndTime()>schoolStartTime){
                             schoolSlotStartTime=slot->getEndTime();
@@ -450,12 +482,21 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
                                 //**std::cout<<"\t\t\t Previous Time Slot due to Duplicate"<<std::endl;
                                 currentSchedule->removeTimeSlot(-1);
                             }
+                            //If the child was somewhere else before the start of 
+                            // school then add that into the timeslot ?
+                            // Visiting School before school start time ?
                             currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(),
                                                                   schoolStartTime,
                                                                   'V'));
                             
                         }
                     }
+                    // My assumption as of now is that the var 'schoolSlotStartTime'
+                    // has been incorrectly named because if the slot->getEndTime
+                    // is greater than schoolStartTime, then the schoolSlotStartTime
+                    // is nothing but the schoolEndTime ?
+                    // Unless in the declaration, schoolSlotStartTime was supposed
+                    // to be equal to SchoolStartTime
                     currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
                                                           schoolSlotStartTime,
                                                           'S'));
