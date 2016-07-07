@@ -34,6 +34,7 @@
 //-----------------------------------------------------------
 
 #include "ScheduleGenerator.h"
+#include "generateYoungSchoolAgedChildSchedule.h"
 #include <stdio.h>
 #include <vector>
 #include <map>
@@ -404,6 +405,11 @@ enum YoungSchoolAgedChildState { WITH_CHILDCARE_ADULT, ATSCHOOL_DURING_SCHOOL_HO
  */    
 void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *f, int radiusLimit, bool goToSchool){
     
+    
+    YoungSchoolAgedChildSchedule childObj(p,
+            f, radiusLimit, goToSchool);
+    
+    childObj.generateSchedule();
     /**
      * We get the current schedule of the child and also the schedule of the 
      *  childCareAdult who is in-charge of the child.
@@ -421,139 +427,139 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
     int schoolStartTime = (goToSchool ? attendingSchool->getSchoolStartTime() : 99999);
     int schoolEndTime = (goToSchool ? attendingSchool->getSchoolEndTime(): 99999);
     
-    // Giving it a default Value
-    YoungSchoolAgedChildState YSACS = WITH_CHILDCARE_ADULT;
-    
-    int i=0;
-    int day = 0;
-    bool atSchool=false; // the var expresses if the child is at school or not
-    TimeSlot *previousSlot = NULL;
-    TimeSlot *nextSlot = NULL;
+//    // Giving it a default Value
+//    YoungSchoolAgedChildState YSACS = WITH_CHILDCARE_ADULT;
+//    
+//    int i=0;
+//    int day = 0;
+//    bool atSchool=false; // the var expresses if the child is at school or not
+//    TimeSlot *previousSlot = NULL;
+//    TimeSlot *nextSlot = NULL;
     // We check until there is no specified location for a time slot.
-    while(childCareAdultSchedule->getLocationAt(i)!=NULL){
-        nextSlot = childCareAdultSchedule->getLocationAt(i+1);
-        TimeSlot *slot =childCareAdultSchedule->getLocationAt(i);
-
-        // We check if the childcareAdult is at the school location
-        if(slot->getLocation()==currentSchedule->getJobLocation()){
-            // If already at school and if School Time is Over
-            if(atSchool && slot->getEndTime()>=schoolEndTime){
-                //**std::cout<<"\t\tLeaving School"<<std::endl;
-                //**std::cout<<"\t\t\tS "<<currentSchedule->getJobLocation()<<": "<<slot->getEndTime()<<std::endl;
-                // If the slot time exceeds the school time, we count that as
-                // visiting School to pick up the child
-                if(slot->getEndTime() > schoolEndTime){
-                    //Add After School Visiting Slot
-                    //**std::cout<<"\t\t\tVisited School Afterwards"<<std::endl;
-                    ////**std::cout<<nextSlot->getLocation()<<std::endl;
-                    ////**std::cout<<currentSchedule->getJobLocation()<<std::endl;
-                    // If the nextslot of the adult is not that of the school again,
-                    // then it implies school time is over and the child is leaving with the 
-                    // parent.
-                    if(nextSlot != NULL && nextSlot->getLocation() != currentSchedule->getJobLocation()){
-                        currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
-                                                              slot->getEndTime(),
-                                                              'V'));
-                    }
-                }
-            //Advance school times to next possible times
-            AdvanceSchoolSchedule(day, schoolStartTime, schoolEndTime, 1, 99999);
-            //**std::cout<<"\t\tNext School Times: "<<schoolStartTime<<" - "<<schoolEndTime<<std::endl;
-            atSchool=false;
-            // Change State of child to with ChildCareAdult
-            YSACS = WITH_CHILDCARE_ADULT;
-            
-            }else{
-                // Else signifies-If the Child is Not At School or School Time is not Over
-                // School has started and the child is not at School
-                if(slot->getEndTime() >= schoolStartTime  && !atSchool){
-                    //School Starting
-                    //**std::cout<<"\t\tAt to School"<<std::endl;
-                    int schoolSlotStartTime =schoolEndTime;
-                    if(slot->getEndTime()!=schoolStartTime){
-                        // Visited School Before School Started.
-                        //**std::cout<<"\t\tVisited School before school started."<<std::endl;
-                        if(slot->getEndTime()>schoolStartTime){
-                            schoolSlotStartTime=slot->getEndTime();
-                            
-                        }else{
-                            if(previousSlot->getLocation()== slot->getLocation()){
-                                //Was already visiting this location prior remove previous time slot
-                                //**std::cout<<"\t\t\t Previous Time Slot due to Duplicate"<<std::endl;
-                                currentSchedule->removeTimeSlot(-1);
-                            }
-                            //If the child was somewhere else before the start of 
-                            // school then add that into the timeslot ?
-                            // Visiting School before school start time ?
-                            currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(),
-                                                                  schoolStartTime,
-                                                                  'V'));
-                            
-                        }
-                    }
-                    // My assumption as of now is that the var 'schoolSlotStartTime'
-                    // has been incorrectly named because if the slot->getEndTime
-                    // is greater than schoolStartTime, then the schoolSlotStartTime
-                    // is nothing but the schoolEndTime ?
-                    // Unless in the declaration, schoolSlotStartTime was supposed
-                    // to be equal to SchoolStartTime
-                    currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
-                                                          schoolSlotStartTime,
-                                                          'S'));
-                    atSchool=true;
-                    // The child is attending school during school hours
-                    YSACS = ATSCHOOL_DURING_SCHOOL_HOURS;
-                    // Since the childAdult is in school.
-                    // We check if the school time is over
-                    if(slot->getEndTime()>=schoolEndTime){
-                        //**std::cout<<"\t\tLeaving School"<<std::endl;
-                        //**std::cout<<"\t\t\tS "<<currentSchedule->getJobLocation()<<": "<<slot->getEndTime()<<std::endl;
-                        // We add a visiting time slot if the slot's time
-                        // exceeds that of school time.
-                        if(slot->getEndTime()>schoolEndTime){
-                            //Add After School Visiting Slot
-                            currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
-                                                                  slot->getEndTime(),
-                                                                  'V'));
-                            // Child Staying in School post School Hours 
-                            YSACS = VISITING_AFTER_SCHOOL;
-                        }
-                    //Advance school times to next possible times
-                    AdvanceSchoolSchedule(day, schoolStartTime, schoolEndTime, 1, 99999);
-                    //**std::cout<<"\t\tNext School Times: "<<schoolStartTime<<" - "<<schoolEndTime<<std::endl;
-                    atSchool=false;
-                    // Child leaves school with ChildCareAdult
-                    YSACS = WITH_CHILDCARE_ADULT;
-                    }
-                }else{
-                    if(!atSchool){
-                        // If Not At School just copy the time slot thereby
-                        // extending what is already going on.
-                        //**std::cout<<"\t\tNot At School (Not Correct Time)"<<std::endl;
-                        //**std::cout<<"\t\t\t"<<slot->getVisitorType()<<" "<<slot->getLocation()<<": "<<slot->getEndTime()<<std::endl;
-                        currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
-                        // If not at school, the child is still with childCareADult
-                        YSACS = WITH_CHILDCARE_ADULT;
-                        
-                    }
-                    
-                }
-            }
-            
-        }else{
-            if(!atSchool){
-                // If Not At School we just copy the time slot thereby extending
-                // whatever is going on.
-                //**std::cout<<"\t\tNot At School (Not At Location)"<<std::endl;
-                //**std::cout<<"\t\t\t"<<slot->getVisitorType()<<" "<<slot->getLocation()<<": "<<slot->getEndTime()<<std::endl;
-                currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
-                // If not at school, the child is still with childCareADult
-                    YSACS = WITH_CHILDCARE_ADULT;
-            }
-        }
-        previousSlot=slot;
-        i++;
-    }
+//    while(childCareAdultSchedule->getLocationAt(i)!=NULL){
+//        nextSlot = childCareAdultSchedule->getLocationAt(i+1);
+//        TimeSlot *slot =childCareAdultSchedule->getLocationAt(i);
+//
+//        // We check if the childcareAdult is at the school location
+//        if(slot->getLocation()==currentSchedule->getJobLocation()){
+//            // Already at school and School Time is not Over.
+//            if(atSchool && slot->getEndTime() >= schoolEndTime) {
+//                //**std::cout<<"\t\tLeaving School"<<std::endl;
+//                //**std::cout<<"\t\t\tS "<<currentSchedule->getJobLocation()<<": "<<slot->getEndTime()<<std::endl;
+//                // If the slot time exceeds the school time, we count that as
+//                // visiting School to pick up the child
+//                if(slot->getEndTime() > schoolEndTime){
+//                    //Add After School Visiting Slot
+//                    //**std::cout<<"\t\t\tVisited School Afterwards"<<std::endl;
+//                    ////**std::cout<<nextSlot->getLocation()<<std::endl;
+//                    ////**std::cout<<currentSchedule->getJobLocation()<<std::endl;
+//                    // If the nextslot of the adult is not that of the school again,
+//                    // then it implies school time is over and the child is leaving with the 
+//                    // parent.
+//                    if(nextSlot != NULL && nextSlot->getLocation() != currentSchedule->getJobLocation()){
+//                        currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
+//                                                              slot->getEndTime(),
+//                                                              'V'));
+//                    }
+//                }
+//            //Advance school times to next possible times
+//            AdvanceSchoolSchedule(day, schoolStartTime, schoolEndTime, 1, 99999);
+//            //**std::cout<<"\t\tNext School Times: "<<schoolStartTime<<" - "<<schoolEndTime<<std::endl;
+//            atSchool=false;
+//            // Change State of child to with ChildCareAdult
+//            YSACS = WITH_CHILDCARE_ADULT;
+//            
+//            }else{
+//                // Else signifies-If the Child is Not At School or School Time is not Over
+//                // School has started and the child is not at School
+//                if(slot->getEndTime() >= schoolStartTime  && !atSchool){
+//                    //School Starting
+//                    //**std::cout<<"\t\tAt to School"<<std::endl;
+//                    int schoolSlotStartTime =schoolEndTime;
+//                    if(slot->getEndTime()!=schoolStartTime){
+//                        // Visited School Before School Started.
+//                        //**std::cout<<"\t\tVisited School before school started."<<std::endl;
+//                        if(slot->getEndTime()>schoolStartTime){
+//                            schoolSlotStartTime=slot->getEndTime();
+//                            
+//                        }else{
+//                            if(previousSlot->getLocation()== slot->getLocation()){
+//                                //Was already visiting this location prior remove previous time slot
+//                                //**std::cout<<"\t\t\t Previous Time Slot due to Duplicate"<<std::endl;
+//                                currentSchedule->removeTimeSlot(-1);
+//                            }
+//                            //If the child was somewhere else before the start of 
+//                            // school then add that into the timeslot ?
+//                            // Visiting School before school start time ?
+//                            currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(),
+//                                                                  schoolStartTime,
+//                                                                  'V'));
+//                            
+//                        }
+//                    }
+//                    // My assumption as of now is that the var 'schoolSlotStartTime'
+//                    // has been incorrectly named because if the slot->getEndTime
+//                    // is greater than schoolStartTime, then the schoolSlotStartTime
+//                    // is nothing but the schoolEndTime ?
+//                    // Unless in the declaration, schoolSlotStartTime was supposed
+//                    // to be equal to SchoolStartTime
+//                    currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
+//                                                          schoolSlotStartTime,
+//                                                          'S'));
+//                    atSchool=true;
+//                    // The child is attending school during school hours
+//                    YSACS = ATSCHOOL_DURING_SCHOOL_HOURS;
+//                    // Since the childAdult is in school.
+//                    // We check if the school time is over
+//                    if(slot->getEndTime()>=schoolEndTime){
+//                        //**std::cout<<"\t\tLeaving School"<<std::endl;
+//                        //**std::cout<<"\t\t\tS "<<currentSchedule->getJobLocation()<<": "<<slot->getEndTime()<<std::endl;
+//                        // We add a visiting time slot if the slot's time
+//                        // exceeds that of school time.
+//                        if(slot->getEndTime()>schoolEndTime){
+//                            //Add After School Visiting Slot
+//                            currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
+//                                                                  slot->getEndTime(),
+//                                                                  'V'));
+//                            // Child Staying in School post School Hours 
+//                            YSACS = VISITING_AFTER_SCHOOL;
+//                        }
+//                    //Advance school times to next possible times
+//                    AdvanceSchoolSchedule(day, schoolStartTime, schoolEndTime, 1, 99999);
+//                    //**std::cout<<"\t\tNext School Times: "<<schoolStartTime<<" - "<<schoolEndTime<<std::endl;
+//                    atSchool=false;
+//                    // Child leaves school with ChildCareAdult
+//                    YSACS = WITH_CHILDCARE_ADULT;
+//                    }
+//                }else{
+//                    if(!atSchool){
+//                        // If Not At School just copy the time slot thereby
+//                        // extending what is already going on.
+//                        //**std::cout<<"\t\tNot At School (Not Correct Time)"<<std::endl;
+//                        //**std::cout<<"\t\t\t"<<slot->getVisitorType()<<" "<<slot->getLocation()<<": "<<slot->getEndTime()<<std::endl;
+//                        currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
+//                        // If not at school, the child is still with childCareADult
+//                        YSACS = WITH_CHILDCARE_ADULT;
+//                        
+//                    }
+//                    
+//                }
+//            }
+//            
+//        }else{
+//            if(!atSchool){
+//                // If Not At School we just copy the time slot thereby extending
+//                // whatever is going on.
+//                //**std::cout<<"\t\tNot At School (Not At Location)"<<std::endl;
+//                //**std::cout<<"\t\t\t"<<slot->getVisitorType()<<" "<<slot->getLocation()<<": "<<slot->getEndTime()<<std::endl;
+//                currentSchedule->addTimeSlot(TimeSlot(slot->getLocation(), slot->getEndTime(), slot->getVisitorType()));
+//                // If not at school, the child is still with childCareADult
+//                    YSACS = WITH_CHILDCARE_ADULT;
+//            }
+//        }
+//        previousSlot=slot;
+//        i++;
+//    }
     
 }
 
