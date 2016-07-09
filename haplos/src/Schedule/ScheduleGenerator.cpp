@@ -225,13 +225,24 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
                                        currentFamily,
                                        radiusLimit[0]);
             break;
-        case 1:
+        case 1: 
+        {
             ////**std::cout<<"Generating Young School Aged Child Schedule"<<std::endl;
-            generateYoungSchoolAgedChildSchedule(p1,
-                                                 currentFamily,
-                                                 radiusLimit[1],
-                                                 specialLocationFlag);
+            int radLimit = radiusLimit[1];
+            YoungSchoolAgedChildSchedule childObj(p1, currentFamily, 
+                                        radLimit, specialLocationFlag);;
+            //YoungSchoolAgedChildSchedule childObj(p1,
+                                                // currentFamily,
+                                                //radiusLimit[1],
+                                                // specialLocationFlag);
+            childObj.generateSchedule();
+            
+//            generateYoungSchoolAgedChildSchedule(p1,
+//                                                 currentFamily,
+//                                                 radiusLimit[1],
+//                                                 specialLocationFlag);
             break;
+        }
         case 2:
             ////**std::cout<<"Generating School Aged Child Schedule"<<std::endl;
             if(p1->getAge()<16){
@@ -403,13 +414,15 @@ enum YoungSchoolAgedChildState { WITH_CHILDCARE_ADULT, ATSCHOOL_DURING_SCHOOL_HO
  * Stays with the Child Care Adult at all times except when at school.
  * Curfew is 20:00
  */    
+    
 void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *f, int radiusLimit, bool goToSchool){
     
     
-    YoungSchoolAgedChildSchedule childObj(p,
-            f, radiusLimit, goToSchool);
+//    YoungSchoolAgedChildSchedule childObj(p,
+//            f, radiusLimit, goToSchool);
+
     
-    childObj.generateSchedule();
+//    childObj.generateSchedule();
     /**
      * We get the current schedule of the child and also the schedule of the 
      *  childCareAdult who is in-charge of the child.
@@ -419,13 +432,13 @@ void ScheduleGenerator::generateYoungSchoolAgedChildSchedule(Person *p, Family *
      * If true, we determine schoolStartTime and schoolEndTime. Else we give
      * an infinite time limit value of 99999
      */
-    Schedule *currentSchedule = p->getSchedule();
-    Schedule *childCareAdultSchedule = f->getChildCareAdult()->getSchedule();
-    School *attendingSchool= static_cast<School* >(allBuildings->at(currentSchedule->getJobLocation()));
-    attendingSchool->assignStudentToSchool(0);
-    currentSchedule->setGoToJobLocation(goToSchool);
-    int schoolStartTime = (goToSchool ? attendingSchool->getSchoolStartTime() : 99999);
-    int schoolEndTime = (goToSchool ? attendingSchool->getSchoolEndTime(): 99999);
+//    Schedule *currentSchedule = p->getSchedule();
+//    Schedule *childCareAdultSchedule = f->getChildCareAdult()->getSchedule();
+//    School *attendingSchool= static_cast<School* >(allBuildings->at(currentSchedule->getJobLocation()));
+//    attendingSchool->assignStudentToSchool(0);
+//    currentSchedule->setGoToJobLocation(goToSchool);
+//    int schoolStartTime = (goToSchool ? attendingSchool->getSchoolStartTime() : 99999);
+//    int schoolEndTime = (goToSchool ? attendingSchool->getSchoolEndTime(): 99999);
     
 //    // Giving it a default Value
 //    YoungSchoolAgedChildState YSACS = WITH_CHILDCARE_ADULT;
