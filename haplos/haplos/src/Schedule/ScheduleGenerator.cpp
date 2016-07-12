@@ -230,7 +230,7 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
             ////**std::cout<<"Generating Young School Aged Child Schedule"<<std::endl;
             int radLimit = radiusLimit[1];
             YoungSchoolAgedChildSchedule childObj(p1, currentFamily, 
-                                        radLimit, specialLocationFlag);;
+                                        radLimit, specialLocationFlag, allBuildings);
             //YoungSchoolAgedChildSchedule childObj(p1,
                                                 // currentFamily,
                                                 //radiusLimit[1],
@@ -382,30 +382,30 @@ void ScheduleGenerator::generateYoungChildSchedule(Person* p, Family *f, int rad
 
 
 
-int getTimeSlotsPerHour() {
-    return 6;
-}
-
-int to_TimeSlot(const int days) {
-    return days * 24 * getTimeSlotsPerHour();
-}
-
-
-void AdvanceSchoolSchedule(int &day, int &schoolStartTime, int &schoolEndTime, 
-        int nextCycleDayCount = 1, int INFINITE_VAL=99999) {
-    
-    if(day<4) {
-        schoolStartTime += to_TimeSlot(nextCycleDayCount);
-        schoolEndTime += to_TimeSlot(nextCycleDayCount);
-    }else{
-        schoolStartTime = INFINITE_VAL;
-        schoolEndTime = INFINITE_VAL;
-    }
-    day++;
-}
-
-enum YoungSchoolAgedChildState { WITH_CHILDCARE_ADULT, ATSCHOOL_DURING_SCHOOL_HOURS, 
-    VISITING_BEFORE_SCHOOL, VISITING_AFTER_SCHOOL};
+//int getTimeSlotsPerHour() {
+//    return 6;
+//}
+//
+//int to_TimeSlot(const int days) {
+//    return days * 24 * getTimeSlotsPerHour();
+//}
+//
+//
+//void AdvanceSchoolSchedule(int &day, int &schoolStartTime, int &schoolEndTime, 
+//        int nextCycleDayCount = 1, int INFINITE_VAL=99999) {
+//    
+//    if(day<4) {
+//        schoolStartTime += to_TimeSlot(nextCycleDayCount);
+//        schoolEndTime += to_TimeSlot(nextCycleDayCount);
+//    }else{
+//        schoolStartTime = INFINITE_VAL;
+//        schoolEndTime = INFINITE_VAL;
+//    }
+//    day++;
+//}
+//
+//enum YoungSchoolAgedChildState { WITH_CHILDCARE_ADULT, ATSCHOOL_DURING_SCHOOL_HOURS, 
+//    VISITING_BEFORE_SCHOOL, VISITING_AFTER_SCHOOL};
     
 
 /*Rough Overview of generateYoungSchoolAgedChildSchedule
