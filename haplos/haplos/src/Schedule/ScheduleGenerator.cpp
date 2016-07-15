@@ -229,8 +229,8 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
         {
             ////**std::cout<<"Generating Young School Aged Child Schedule"<<std::endl;
             int radLimit = radiusLimit[1];
-            YoungSchoolAgedChildSchedule childObj(p1, currentFamily, 
-                                        radLimit, specialLocationFlag, allBuildings);
+            YoungSchoolAgedChildSchedule childObj(*p1, *currentFamily, 
+                                        radLimit, specialLocationFlag, *allBuildings);
             //YoungSchoolAgedChildSchedule childObj(p1,
                                                 // currentFamily,
                                                 //radiusLimit[1],

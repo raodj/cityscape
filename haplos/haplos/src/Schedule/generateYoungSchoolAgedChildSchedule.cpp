@@ -15,12 +15,11 @@
 
 
 
-YoungSchoolAgedChildSchedule::YoungSchoolAgedChildSchedule(Person *p, 
-        Family *f, int radiusLimit, bool goToSchool, std::unordered_map<int, Building*> *allBuildingscopy) {
-    allBuildings = allBuildingscopy;
-    currentSchedule = p->getSchedule();
-    childCareAdultSchedule = f->getChildCareAdult()->getSchedule();
-    attendingSchool= static_cast<School* >(allBuildings->at(currentSchedule->getJobLocation()));
+YoungSchoolAgedChildSchedule::YoungSchoolAgedChildSchedule(Person &p, 
+        Family &f, int radiusLimit, bool goToSchool, std::unordered_map<int, Building*> &allBuildings) {
+    currentSchedule = p.getSchedule();
+    childCareAdultSchedule = f.getChildCareAdult()->getSchedule();
+    attendingSchool= static_cast<School* >(allBuildings.at(currentSchedule->getJobLocation()));
     attendingSchool->assignStudentToSchool(0);
     currentSchedule->setGoToJobLocation(goToSchool);
     schoolStartTime = (goToSchool ? attendingSchool->getSchoolStartTime() : 99999);
@@ -38,20 +37,20 @@ YoungSchoolAgedChildSchedule::YoungSchoolAgedChildSchedule(Person *p,
 //    return (os << EnumNames[cs]);
 //}
 
-bool checkif_Adult_AtSchool(TimeSlot *slot, Schedule *currentSchedule) {
-    return slot->getLocation() == currentSchedule->getJobLocation();
+bool checkif_Adult_AtSchool(TimeSlot &slot, Schedule *currentSchedule) {
+    return slot.getLocation() == currentSchedule->getJobLocation();
 }
 
 //The method is called when the child's current state is With the Adult.
-YoungSchoolAgedChildSchedule::ChildState YoungSchoolAgedChildSchedule::changefrom_WITH_ADULT(ChildState& state, TimeSlot *slot) {
+YoungSchoolAgedChildSchedule::ChildState YoungSchoolAgedChildSchedule::changefrom_WITH_ADULT(ChildState& state, TimeSlot &slot) {
 
     // School has started and the child is not at School
-    if(slot->getEndTime() >= schoolStartTime  && !Child_atSchool){
+    if(slot.getEndTime() >= schoolStartTime  && !Child_atSchool){
         //School Starting
-        if(slot->getEndTime() != schoolStartTime){
+        if(slot.getEndTime() != schoolStartTime){
         // Visited School Before School Started.
-            if(slot->getEndTime() > schoolStartTime){
-                schoolSlotStartTime = slot->getEndTime();
+            if(slot.getEndTime() > schoolStartTime){
+                schoolSlotStartTime = slot.getEndTime();
                             
             }
             state = BEFORE_SCHOOL;
@@ -68,7 +67,7 @@ YoungSchoolAgedChildSchedule::ChildState YoungSchoolAgedChildSchedule::changefro
 }
 
 
-YoungSchoolAgedChildSchedule::ChildState YoungSchoolAgedChildSchedule::changefrom_BEFORE_SCHOOL(ChildState& state, TimeSlot *slot) {
+YoungSchoolAgedChildSchedule::ChildState YoungSchoolAgedChildSchedule::changefrom_BEFORE_SCHOOL(ChildState& state, TimeSlot &slot) {
     // Add a time slot for time at school
     currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
                                                           schoolSlotStartTime,
@@ -80,20 +79,20 @@ YoungSchoolAgedChildSchedule::ChildState YoungSchoolAgedChildSchedule::changefro
     
 }
 
-YoungSchoolAgedChildSchedule::ChildState YoungSchoolAgedChildSchedule::changefrom_AT_SCHOOL(ChildState& state, TimeSlot *slot) {
+YoungSchoolAgedChildSchedule::ChildState YoungSchoolAgedChildSchedule::changefrom_AT_SCHOOL(ChildState& state, TimeSlot &slot) {
     // if the Adult is at School location
         
         // Already at school and School Time is not Over.
-            if(Child_atSchool && slot->getEndTime() >= schoolEndTime) {
+            if(Child_atSchool && slot.getEndTime() >= schoolEndTime) {
                 // checking if it past school time.
-                if(slot->getEndTime() > schoolEndTime){
+                if(slot.getEndTime() > schoolEndTime){
                     // After School Visitng slot is updated.
                     // If the nextslot of the adult is not that of the school again,
                     // then it implies school time is over and the child is leaving with the 
                     // parent.
                     if(nextSlot != NULL && nextSlot->getLocation() != currentSchedule->getJobLocation())
                         currentSchedule->addTimeSlot(TimeSlot(currentSchedule->getJobLocation(),
-                                                              slot->getEndTime(),
+                                                              slot.getEndTime(),
                                                               'V'));                        
                         //Update the child State
                         state = AFTER_SCHOOL;
@@ -127,7 +126,7 @@ void YoungSchoolAgedChildSchedule::AdvanceSchoolSchedule(int &day, int &schoolSt
     day++;
 }
 
-YoungSchoolAgedChildSchedule::ChildState YoungSchoolAgedChildSchedule::changefrom_AFTER_SCHOOL(ChildState& state, TimeSlot *slot) {
+YoungSchoolAgedChildSchedule::ChildState YoungSchoolAgedChildSchedule::changefrom_AFTER_SCHOOL(ChildState& state, TimeSlot &slot) {
     // Advance school times to next possible times
     AdvanceSchoolSchedule(day, schoolStartTime, schoolEndTime, 1, 99999);
     // The leaves the school with adult
@@ -149,19 +148,19 @@ void YoungSchoolAgedChildSchedule::generateSchedule() {
         TimeSlot *slot =childCareAdultSchedule->getLocationAt(i);
         switch(state) {
             case WITH_ADULT:
-                state = changefrom_WITH_ADULT(state, slot);
+                state = changefrom_WITH_ADULT(state, *slot);
                 break;
                 
             case BEFORE_SCHOOL:
-                state = changefrom_BEFORE_SCHOOL(state, slot);
+                state = changefrom_BEFORE_SCHOOL(state, *slot);
                 break;
                 
             case AT_SCHOOL:
-                state = changefrom_AT_SCHOOL(state, slot);
+                state = changefrom_AT_SCHOOL(state, *slot);
                 break;
                 
             case AFTER_SCHOOL:
-                state = changefrom_AFTER_SCHOOL(state, slot);
+                state = changefrom_AFTER_SCHOOL(state, *slot);
                 break;
                       
         }
