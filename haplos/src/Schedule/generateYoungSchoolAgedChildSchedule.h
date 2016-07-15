@@ -30,7 +30,7 @@ public:
     Schedule *currentSchedule;
     Schedule *childCareAdultSchedule;
     School *attendingSchool;
-    std::unordered_map<int, Building*> *allBuildings;
+    //std::unordered_map<int, Building*> *allBuildings;
     int schoolStartTime;
     int schoolEndTime;
     
@@ -44,15 +44,15 @@ public:
     TimeSlot *nextSlot;
     // Constructor
     YoungSchoolAgedChildSchedule();
-    YoungSchoolAgedChildSchedule(Person *p, Family *f, int radiusLimit,
-                                bool goToSchool, std::unordered_map<int, Building*> *allBuildingscopy);
+    YoungSchoolAgedChildSchedule(Person &p, Family &f, int radiusLimit,
+                                bool goToSchool, std::unordered_map<int, Building*> &allBuildingscopy);
 
     //By default he should be at home initially.
     void generateSchedule();
-    ChildState changefrom_WITH_ADULT(ChildState& state, TimeSlot *slot);
-    ChildState changefrom_BEFORE_SCHOOL(ChildState& state, TimeSlot *slot);
-    ChildState changefrom_AT_SCHOOL(ChildState& state, TimeSlot *slot);
-    ChildState changefrom_AFTER_SCHOOL(ChildState& state, TimeSlot *slot);
+    ChildState changefrom_WITH_ADULT(ChildState& state, TimeSlot &slot);
+    ChildState changefrom_BEFORE_SCHOOL(ChildState& state, TimeSlot &slot);
+    ChildState changefrom_AT_SCHOOL(ChildState& state, TimeSlot &slot);
+    ChildState changefrom_AFTER_SCHOOL(ChildState& state, TimeSlot &slot);
     
     int getTimeSlotsPerHour();
     int to_TimeSlot(const int days);

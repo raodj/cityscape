@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="97">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df root="." name="0">
+      <df name="examples">
+        <df name="config">
+        </df>
+        <df name="data">
+        </df>
+        <df name="timeline">
+        </df>
+      </df>
+      <df name="misc">
+      </df>
+      <df name="src">
+        <df name="Buildings">
+          <in>Building.cpp</in>
+          <in>Building.h</in>
+          <in>BuildingGenerator.cpp</in>
+          <in>BuildingGenerator.h</in>
+          <in>Business.cpp</in>
+          <in>Business.h</in>
+          <in>Daycare.cpp</in>
+          <in>Daycare.h</in>
+          <in>Medical.cpp</in>
+          <in>Medical.h</in>
+          <in>School.cpp</in>
+          <in>School.h</in>
+          <in>TransportHub.cpp</in>
+          <in>TransportHub.h</in>
+        </df>
+        <df name="Files">
+          <in>ArgParser.cpp</in>
+          <in>ArgParser.h</in>
+          <in>ConfigFile.cpp</in>
+          <in>ConfigFile.h</in>
+          <in>ImageFileGenerator.cpp</in>
+          <in>ImageFileGenerator.h</in>
+          <in>TimelineFile.cpp</in>
+          <in>TimelineFile.h</in>
+        </df>
+        <df name="ImageGeneration">
+          <in>ImageGen.cpp</in>
+          <in>ImageGen.h</in>
+          <in>ImageGenerator.cpp</in>
+          <in>ImageGenerator.h</in>
+          <in>XFigHelper.cpp</in>
+          <in>XFigHelper.h</in>
+          <in>XFigImageGenerator.cpp</in>
+          <in>XFigImageGenerator.h</in>
+        </df>
+        <df name="Schedule">
+          <in>Schedule.cpp</in>
+          <in>Schedule.h</in>
+          <in>ScheduleGenerator.cpp</in>
+          <in>ScheduleGenerator.h</in>
+          <in>TimeSlot.cpp</in>
+          <in>TimeSlot.h</in>
+          <in>generateYoungSchoolAgedChildSchedule.cpp</in>
+          <in>generateYoungSchoolAgedChildSchedule.h</in>
+        </df>
+        <in>Assert.h</in>
+        <in>Family.cpp</in>
+        <in>Family.h</in>
+        <in>Haplos.cpp</in>
+        <in>Haplos.h</in>
+        <in>Location.cpp</in>
+        <in>Location.h</in>
+        <in>Person.cpp</in>
+        <in>Person.h</in>
+        <in>Policy.cpp</in>
+        <in>Policy.h</in>
+        <in>Population.cpp</in>
+        <in>Population.h</in>
+        <in>SedacReader.cpp</in>
+        <in>SedacReader.h</in>
+        <in>main.cpp</in>
+      </df>
+      <df name="tests">
+      </df>
+    </df>
+  </logicalFolder>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <platform>2</platform>
+      </toolsSet>
+      <compile>
+        <compiledirpicklist>
+          <compiledirpicklistitem>.</compiledirpicklistitem>
+          <compiledirpicklistitem>${AUTO_FOLDER}</compiledirpicklistitem>
+        </compiledirpicklist>
+        <compiledir>${AUTO_FOLDER}</compiledir>
+        <compilecommandpicklist>
+          <compilecommandpicklistitem>${MAKE} ${ITEM_NAME}.o</compilecommandpicklistitem>
+          <compilecommandpicklistitem>${AUTO_COMPILE}</compilecommandpicklistitem>
+        </compilecommandpicklist>
+        <compilecommand>${AUTO_COMPILE}</compilecommand>
+      </compile>
+      <dbx_gdbdebugger version="1">
+        <gdb_pathmaps>
+        </gdb_pathmaps>
+        <gdb_interceptlist>
+          <gdbinterceptoptions gdb_all="false" gdb_unhandled="true" gdb_unexpected="true"/>
+        </gdb_interceptlist>
+        <gdb_options>
+          <DebugOptions>
+          </DebugOptions>
+        </gdb_options>
+        <gdb_buildfirst gdb_buildfirst_overriden="false" gdb_buildfirst_old="false"/>
+      </dbx_gdbdebugger>
+      <nativedebugger version="1">
+        <engine>gdb</engine>
+      </nativedebugger>
+      <runprofile version="9">
+        <runcommandpicklist>
+          <runcommandpicklistitem>"${OUTPUT_PATH}"</runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" -c examples/config/MidWorldData.hapl</runcommandpicklistitem>
+        </runcommandpicklist>
+        <runcommand>"${OUTPUT_PATH}" -c examples/config/MidWorldData.hapl</runcommand>
+        <rundir></rundir>
+        <buildfirst>false</buildfirst>
+        <terminal-type>0</terminal-type>
+        <remove-instrumentation>0</remove-instrumentation>
+        <environment>
+        </environment>
+      </runprofile>
+    </conf>
+  </confs>
+</configurationDescriptor>

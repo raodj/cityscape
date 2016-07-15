@@ -1,0 +1,25 @@
+g++ `Magick++-config --cxxflags --cppflags --ldflags --libs` -g -O3 -Wall -std=c++11 -DDEVELOPER_ASSERTIONS -o haplos  src/Location.cpp src/Buildings/Building.cpp src/Person.cpp src/Population.cpp src/SedacReader.cpp src/Family.cpp src/main.cpp src/ImageGeneration/XFigHelper.cpp src/ImageGeneration/ImageGenerator.cpp src/ImageGeneration/XFigImageGenerator.cpp src/Files/ConfigFile.cpp src/Files/TimelineFile.cpp src/Files/ImageFileGenerator.cpp src/Buildings/Daycare.cpp src/Buildings/TransportHub.cpp src/Buildings/Business.cpp src/Buildings/Medical.cpp src/Buildings/School.cpp src/Schedule/ScheduleGenerator.cpp src/Schedule/Schedule.cpp src/Schedule/generateYoungSchoolAgedChildSchedule.cpp src/Schedule/TimeSlot.cpp src/Buildings/BuildingGenerator.cpp src/Policy.cpp src/Haplos.cpp src/Files/ArgParser.cpp 
+/bin/sh: 1: Magick++-config: not found
+src/Population.cpp: In member function ‘int Population::determineScheduleType(int)’:
+src/Population.cpp:373:107: warning: ‘adultScheduleProbablities[1]’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+     std::discrete_distribution<int> distribution{adultScheduleProbablities[0],adultScheduleProbablities[1]};
+                                                                                                           ^
+src/Population.cpp:373:107: warning: ‘adultScheduleProbablities[0]’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+src/Buildings/School.cpp: In constructor ‘School::School(int, int, int, int)’:
+src/Buildings/School.cpp:48:9: warning: variable ‘currentGrade’ set but not used [-Wunused-but-set-variable]
+     int currentGrade =0;
+         ^
+src/Buildings/School.cpp:49:9: warning: variable ‘endGrade’ set but not used [-Wunused-but-set-variable]
+     int endGrade=0;
+         ^
+src/Buildings/School.cpp:50:9: warning: variable ‘startGrade’ set but not used [-Wunused-but-set-variable]
+     int startGrade=0;
+         ^
+src/Buildings/School.cpp: In constructor ‘School::School(int, int, int, int, int)’:
+src/Buildings/School.cpp:103:9: warning: variable ‘currentGrade’ set but not used [-Wunused-but-set-variable]
+     int currentGrade =0;
+         ^
+src/Buildings/School.cpp: In constructor ‘School::School(int, int, int, int, int, int, int, int, int)’:
+src/Buildings/School.cpp:158:9: warning: unused variable ‘currentGrade’ [-Wunused-variable]
+     int currentGrade =0;
+         ^
