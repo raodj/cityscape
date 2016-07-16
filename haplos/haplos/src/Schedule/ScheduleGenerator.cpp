@@ -35,6 +35,7 @@
 
 #include "ScheduleGenerator.h"
 #include "generateYoungSchoolAgedChildSchedule.h"
+#include "YoungChildSchedule.h"
 #include <stdio.h>
 #include <vector>
 #include <map>
@@ -220,11 +221,15 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
     
     switch(currentSchedule->getScheduleType()){
         case 0:
+        {
             ////**std::cout<<"Generating Young Child Schedule"<<std::endl;
-            generateYoungChildSchedule(p1,
-                                       currentFamily,
-                                       radiusLimit[0]);
+//            generateYoungChildSchedule(p1,
+//                                       currentFamily,
+//                                       radiusLimit[0]);
+            YoungChildSchedule childObj(p1, currentFamily, radiusLimit[0]);
+            childObj.generateSchedule();
             break;
+        }
         case 1: 
         {
             ////**std::cout<<"Generating Young School Aged Child Schedule"<<std::endl;
