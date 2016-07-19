@@ -54,6 +54,8 @@
           <in>Schedule.h</in>
           <in>ScheduleGenerator.cpp</in>
           <in>ScheduleGenerator.h</in>
+          <in>SchoolAgedChildSchedule.cpp</in>
+          <in>SchoolAgedChildSchedule.h</in>
           <in>TimeSlot.cpp</in>
           <in>TimeSlot.h</in>
           <in>YoungChildSchedule.cpp</in>

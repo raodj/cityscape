@@ -36,6 +36,7 @@
 #include "ScheduleGenerator.h"
 #include "generateYoungSchoolAgedChildSchedule.h"
 #include "YoungChildSchedule.h"
+#include "SchoolAgedChildSchedule.h"
 #include <stdio.h>
 #include <vector>
 #include <map>
@@ -672,11 +673,11 @@ void ScheduleGenerator::generateSchoolAgedChildSchedule(Person *p, Family *f, in
                 int timeNeeded = sleepTimeNeeded-totalTimeSpentAtHome;
                 // If there is enough time before School Start time, we make use
                 // of it by sleeping.
-                if(dayTime+timeNeeded<schoolStart-1){
+                if(dayTime+timeNeeded<schoolStart-1) {
                     //Progress Time to Earliest Possible Activty time
                     dayTime+=timeNeeded;
                     totalTimeSpentAway=0;
-                }else{
+                } else{
                     
                     dayTime=schoolStart-1;
                     // We consider the insufficient time before school start 
