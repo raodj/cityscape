@@ -26,6 +26,8 @@
         <df name="Schedule">
           <in>Schedule.cpp</in>
           <in>ScheduleGenerator.cpp</in>
+          <in>SchoolAgedChildSchedule.cpp</in>
+          <in>SchoolAgedChildSchedule.h</in>
           <in>TimeSlot.cpp</in>
           <in>YoungChildSchedule.cpp</in>
           <in>YoungChildSchedule.h</in>
@@ -182,6 +184,16 @@
       <item path="src/Schedule/ScheduleGenerator.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
         </ccTool>
+      </item>
+      <item path="src/Schedule/SchoolAgedChildSchedule.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/Schedule/SchoolAgedChildSchedule.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
       </item>
       <item path="src/Schedule/TimeSlot.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
