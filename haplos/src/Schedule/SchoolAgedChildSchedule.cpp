@@ -12,17 +12,24 @@
  */
 
 #include "SchoolAgedChildSchedule.h"
-#include "ScheduleGenerator.cpp"
+#include "ScheduleGenerator.h"
+
+#include <stdio.h>
+#include <vector>
+#include <map>
+#include <utility>
+#include <algorithm>
 
 SchoolAgedChildSchedule::SchoolAgedChildSchedule() {
 }
+
 
 SchoolAgedChildSchedule::SchoolAgedChildSchedule(Person *p, Family *f, int radiusLimit,
         double *transportProbablities,
         int *transportRadiusLimits, int *transportRates,
         double *schoolDayVisitorTypeProbablities,
         double *weekendVisitorTypeProbablities,
-        bool goToSchool, std::unordered_map<int, Building*> &allBuildings, 
+        bool goToSchool, std::unordered_map<int, Building*> *allBuildings, 
         std::vector< std::vector < Location > > *densityData) {
     // Older School Aged Child (On own after school)
     currentSchedule = p->getSchedule();
@@ -115,8 +122,121 @@ void SchoolAgedChildSchedule::computeTransportSpecifics(char transportType, int 
     
 }
 
+void SchoolAgedChildSchedule::determinePlace_basedOn_Prob_AfterSchool(Building* lastPlace, int* lastPlaceLoc) {
+    switch(distribution(generator)){
+        case 0:{
+            //Home
+            //update time to reflect staying at home once home
+            //**std::cout<<"\t\t\t Staying Home"<<std::endl;
+            totalTimeSpentAtHome += crewfew - dayTime;
+            if(lastPlace != home){
+                computeTransportSpecifics(transportType, transportRate, travelTime,
+                    travelTimeToHome, crewfew - dayTime,
+                    transportProbablities, transportRadiusLimits,
+                    transportRates, currentSchedule, lastPlace, home,
+                    visitorType, trueTime+dayTime);
+            
+                visitorType='H';
+                lastPlace= home;
+                lastPlaceLoc =lastPlace->getLocation();
+            }
+            totalTimeSpentAtHome-=travelTime;
+            totalTimeSpentAway+=travelTime;
+            if(totalTimeSpentAtHome > sleepTimeNeeded){
+                totalTimeSpentAway=0;
+            }
+            dayTime =crewfew;
+            // Update state of the child to ATHOME
+            state = ATHOME;
+            break;
+        }
+        case 1:
+            //Job (Should not Happen)
+            break;
+        case 2:
+        {
+            //Out
+            //**std::cout<< "\t\t\tFind Place To Go Out (After)" <<std::endl;
+            int timeSpentOut=1;
+            if(crewfew-dayTime-travelTimeToHome>1){
+                timeSpentOut=(int)rand() % (crewfew-dayTime-travelTimeToHome)+1;
+            }
+                        
+            //**std::cout<<"\t\t\tTime To Spend Out: "<<timeSpentOut<<std::endl;
+            //(radiusLimit<timeSpentOut-1?radiusLimit:timeSpentOut-1)
+            Building *lastPlace_tmp=findAvaliableBuilding(home->getLocation()[0],
+                            home->getLocation()[1], 'V', radiusLimit, 
+                            trueTime+dayTime, trueTime+dayTime+timeSpentOut,
+                            1, transportRate);
+            
+            if(lastPlace_tmp==NULL){
+                //No avaliable place to go so just return back to home
+                //**std::cout<<"\t\t After School: No Places found to go out :("<<std::endl;
+                //**std::cout<<"\t\t\tTime Frame: "<<trueTime+dayTime<<"-"<<trueTime+dayTime+timeSpentOut<<std::endl;
+                if(lastPlace_tmp != home){
+                //**std::cout<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+                    computeTransportSpecifics(transportType, transportRate, travelTime,
+                            travelTimeToHome, crewfew - dayTime,
+                            transportProbablities, transportRadiusLimits,
+                            transportRates, currentSchedule, lastPlace, home,
+                            visitorType, trueTime+dayTime);
+                    
+                    visitorType='H';
+                    lastPlace=home;
+                    lastPlaceLoc =lastPlace->getLocation();
+                    // Update state of the child to ATHOME
+                    state = ATHOME;
+                }
+                            
+                //update time to reflect staying at home once home
+                totalTimeSpentAtHome += crewfew - dayTime;
+                if(totalTimeSpentAtHome >=sleepTimeNeeded){
+                    totalTimeSpentAway=0;
+                }
+                dayTime =crewfew;
+            } else{
+                //Found a Place to go Visit
+                if(lastPlace != lastPlace_tmp || visitorType!='V') {
+                    //**std::cout<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+                    int *lastPlaceLoc_tmp =lastPlace_tmp->getLocation();
+                    //**std::cout<<"Last Place Tmp: "<<lastPlace_tmp->getID()<<std::endl;
+                    int travelTimeToNext = calculateTravelTime(lastPlaceLoc[0],
+                                            lastPlaceLoc[1], lastPlaceLoc_tmp[0],
+                                            lastPlaceLoc_tmp[1], 1);
+                    travelTimeToHome = calculateTravelTime(lastPlaceLoc_tmp[0],
+                                            lastPlaceLoc_tmp[1], homeLoc[0],
+                                            homeLoc[1], 1);
+                    computeTransportSpecifics(transportType, transportRate, travelTime,
+                            travelTimeToNext, crewfew - dayTime-travelTimeToHome,
+                            transportProbablities, transportRadiusLimits,
+                            transportRates, currentSchedule, lastPlace, lastPlace_tmp,
+                            visitorType, trueTime+dayTime);
+                                
+                    lastPlace=lastPlace_tmp;
+                    lastPlaceLoc =lastPlace->getLocation();
+                }
+                visitorType='V';
+                dayTime+=timeSpentOut;
+                totalTimeSpentAway+=timeSpentOut;
+                totalTimeSpentAway+= travelTime;
+                dayTime+=travelTime;
+                totalTimeSpentAtHome=0;
+                lastPlace->addVisitorTimeSlot(trueTime+dayTime,trueTime+dayTime+timeSpentOut);
+                // Update state of the child to ATHOME
+                state = OUTSIDE;
+            }                        
+            break;
+        }
+    }
+     travelTimeToHome = calculateTravelTime(lastPlaceLoc[0],
+                                                       lastPlaceLoc[1],
+                                                       homeLoc[0],
+                                                       homeLoc[1],
+                                                       1);
+}
 
-void SchoolAgedChildSchedule::determinePlace_basedOn_Prob(Building &lastPlace, int &lastPlaceLoc) {
+
+void SchoolAgedChildSchedule::determinePlace_basedOn_Prob(Building *lastPlace, int *lastPlaceLoc) {
     switch(distribution(generator)){
         case 0:
         // Home
@@ -221,13 +341,7 @@ void SchoolAgedChildSchedule::determinePlace_basedOn_Prob(Building &lastPlace, i
 }
 
 
-void SchoolAgedChildSchedule::generateWeekEndSchedule() {
-    
-}
-
-
-
-void SchoolAgedChildSchedule::generateBeforeSchoolSchedule(Building &lastPlace, int &lastPlaceLoc) {
+void SchoolAgedChildSchedule::generateBeforeSchoolSchedule(Building *lastPlace, int *lastPlaceLoc) {
     // We check if the totalTime spent at home is less than sleep time
     // needed because if it isn't we add additional time needed to rest
     // and prepare schedule based on the accordingly.
@@ -267,7 +381,7 @@ void SchoolAgedChildSchedule::generateBeforeSchoolSchedule(Building &lastPlace, 
     }
 }
 
-void SchoolAgedChildSchedule::goingToSchoolSchedule(Building &lastPlace, int &lastPlaceLoc) {
+void SchoolAgedChildSchedule::goingToSchoolSchedule(Building *lastPlace, int *lastPlaceLoc) {
     //**std::cout<<"\tGoing to school"<<std::endl;
     // .Advance time to Start of School
     // If child did not have enough sleep or if child has exceed the max
@@ -289,20 +403,278 @@ void SchoolAgedChildSchedule::goingToSchoolSchedule(Building &lastPlace, int &la
     totalTimeSpentAtHome=0;
     lastPlace=attendingSchool;
     lastPlaceLoc =lastPlace->getLocation();
-    // Update state of the child
+    // Update state of the child, incase the child stayed at home.
     state = ATSCHOOL;
 }
 
-void SchoolAgedChildSchedule::generateWeekDaySchedule(Building &lastPlace, int &lastPlaceLoc) {
+void SchoolAgedChildSchedule::generateAfterSchoolSchedule(Building *lastPlace, 
+        int *lastPlaceLoc) {
+    int travelTimeToHome = calculateTravelTime(lastPlaceLoc[0],
+                                                       lastPlaceLoc[1],
+                                                       homeLoc[0],
+                                                       homeLoc[1],
+                                                       1);
+    // While there is still time before curfew time and permission to 
+    // spend  more time away
+    while(dayTime<crewfew-travelTimeToHome-1 && totalTimeSpentAway<maxTimeAway) {
+                travelTime = 0;
+                determinePlace_basedOn_Prob_AfterSchool(lastPlace, lastPlaceLoc);
+    }
+
+    if(lastPlace != home){
+        transportType = determineTransportationType(travelTimeToHome,
+                            travelTimeToHome, transportProbablities,
+                            transportRadiusLimits, transportRates);
+                
+                
+        transportRate = getTransportRate(transportType, transportRates);
+                
+        travelTime = addMoveTo(currentSchedule, lastPlace, home,
+                                visitorType, trueTime+dayTime, transportType,
+                                transportRate, -1);
+        lastPlace = home;
+        lastPlaceLoc =lastPlace->getLocation();
+                
+        visitorType='H';
+        totalTimeSpentAway+= travelTime;
+        // Update state of the child to ATHOME
+        state = ATHOME;
+                
+    }
+}
+void SchoolAgedChildSchedule::generateWeekDaySchedule(Building *lastPlace, int *lastPlaceLoc) {
 
     SchoolAgedChildSchedule::generateBeforeSchoolSchedule(lastPlace, lastPlaceLoc);
     
     SchoolAgedChildSchedule::goingToSchoolSchedule(lastPlace, lastPlaceLoc);
     
-    SchoolAgedChildSchedule::generateAfterSchoolSchedule();
+    SchoolAgedChildSchedule::generateAfterSchoolSchedule(lastPlace, lastPlaceLoc);
     
 }
 
+
+void SchoolAgedChildSchedule::determinePlace_basedOn_Prob_WeekEnd(Building *lastPlace, int *lastPlaceLoc, int &timeSpentOut) {
+    switch(distribution(generator)){
+        case 0:
+        {
+            //Home
+            //update time to reflect staying at home once home
+            int travelTime=0;
+            if (lastPlace!=home){
+                // Update Schedule to Reflect Change of Location
+                //**std::cout<<"\tStay Home Case: "<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+                computeTransportSpecifics(transportType, transportRate, travelTime,
+                    travelTimeToHome, crewfew-dayTime-1, transportProbablities, 
+                    transportRadiusLimits, transportRates, currentSchedule, lastPlace, 
+                    home, visitorType, trueTime+dayTime);
+                
+                lastPlace=home;
+                lastPlaceLoc =lastPlace->getLocation();
+                                
+            }
+            dayTime+=travelTime;
+            timeSpentOut=(int)rand() % (crewfew-dayTime)+1;
+            totalTimeSpentAtHome+= timeSpentOut;
+                            
+            totalTimeSpentAway+=timeSpentOut+travelTime;
+            if(totalTimeSpentAtHome>=sleepTimeNeeded){
+                totalTimeSpentAway=0;
+            }
+            visitorType='H';
+            dayTime +=timeSpentOut;
+            // Update state of the child to ATHOME
+            state = ATHOME;
+            break;
+        }
+        case 1:
+            //Job (Should not Happen)
+            break;
+            
+        case 2:
+            //Out
+            ////**std::cout<< "\t\t\tFind Place To Go Out (After)" <<std::endl;
+            timeSpentOut=0;
+            //**std::cout<<"\t\t\tcrewfew-dayTime-travelTimeToHome-radiusLimit-1: "<<crewfew-dayTime-travelTimeToHome-radiusLimit-1<<std::endl;
+            if(crewfew-dayTime-travelTimeToHome-radiusLimit-1>2){
+                timeSpentOut=(int)rand() % (crewfew-dayTime-travelTimeToHome-radiusLimit-1)+2;
+            }
+                            
+            if(timeSpentOut+totalTimeSpentAway+travelTimeToHome>maxTimeAway-radiusLimit-1){
+                //**std::cout<<"\t\t\tOver Max Time Away: "<<maxTimeAway-totalTimeSpentAway-travelTimeToHome-radiusLimit-1<<std::endl;
+                timeSpentOut= maxTimeAway-totalTimeSpentAway-travelTimeToHome-radiusLimit-1;
+            }
+            int radiusLimitTemp = radiusLimit;
+            if(radiusLimit> timeSpentOut) {
+                radiusLimit = timeSpentOut-1;
+            }
+                            
+            //**std::cout<<"\t\t\tMax Time Out: "<<maxTimeAway<<std::endl;
+            Building *lastPlace_tmp=findAvaliableBuilding(home->getLocation()[0],
+                                        home->getLocation()[1], 'V', radiusLimit,
+                                        trueTime+dayTime, trueTime+dayTime+timeSpentOut,
+                                        1, transportRate);
+            
+            radiusLimit = radiusLimitTemp;
+            int travelTime=0;
+            if(lastPlace_tmp==NULL){
+            //No avaliable place to go so just return back to home
+            //**std::cout<<"\t\t\tNo Places found to go out :(";
+            //update time to reflect staying at home once home
+                totalTimeSpentAtHome+= crewfew - dayTime;
+                totalTimeSpentAway+=crewfew - dayTime;
+                if(lastPlace != home) {
+                    //**std::cout<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+                    computeTransportSpecifics(transportType, transportRate, travelTime,
+                        travelTimeToHome, crewfew-dayTime-1, transportProbablities, 
+                        transportRadiusLimits, transportRates, currentSchedule, lastPlace, 
+                        home, visitorType, trueTime+dayTime);
+
+                                    
+                    lastPlace=home;
+                    lastPlaceLoc =lastPlace->getLocation();
+                                    
+                }
+                visitorType='H';
+                dayTime+=travelTime;
+                totalTimeSpentAway+=travelTime;
+                if(totalTimeSpentAtHome>=sleepTimeNeeded){
+                    totalTimeSpentAway=0;
+                }
+                dayTime =crewfew;
+                // Update State of the child to ATHOME
+                state = ATHOME;
+            } else{
+                // There is a place to go outside
+                //**std::cout<<"\tVisitor Case: "<<visitorType<<" "<<lastPlace->getID()<<"->"<<lastPlace_tmp->getID()<<" "<<trueTime+dayTime<<std::endl;
+                if(lastPlace != lastPlace_tmp || visitorType!= 'V') {
+                    int *lastPlaceLoc_tmp =lastPlace_tmp->getLocation();
+                    int travelTimeToNext = calculateTravelTime(lastPlaceLoc[0],
+                            lastPlaceLoc[1], lastPlaceLoc_tmp[0], lastPlaceLoc_tmp[1],
+                            1);
+                    
+                    travelTimeToHome = calculateTravelTime(lastPlaceLoc_tmp[0],
+                                        lastPlaceLoc_tmp[1], homeLoc[0],
+                                        homeLoc[1], 1);
+                    computeTransportSpecifics(transportType, transportRate, travelTime,
+                        travelTimeToNext, crewfew-dayTime-1, transportProbablities, 
+                        transportRadiusLimits, transportRates, currentSchedule, lastPlace, 
+                        lastPlace_tmp, visitorType, trueTime+dayTime);     
+                    
+                }
+                //**std::cout<<"\t\tTime Spent Out: "<<timeSpentOut<<std::endl;
+                lastPlace=lastPlace_tmp;
+                lastPlaceLoc =lastPlace->getLocation();
+                                
+                dayTime+=travelTime;
+                totalTimeSpentAway+=travelTime;
+                visitorType='V';
+                totalTimeSpentAtHome=0;
+                totalTimeSpentAway+=timeSpentOut;
+                lastPlace->addVisitorTimeSlot(trueTime+dayTime,trueTime+dayTime+timeSpentOut);
+                dayTime+=timeSpentOut;
+                // Update State of the child to OUTSIDE
+                state = OUTSIDE;                
+            }
+                            
+            break;
+    }
+}
+
+void SchoolAgedChildSchedule::generateWeekEndSchedule(Building *lastPlace, int *lastPlaceLoc, const int &day) {
+    state = ATHOME;
+    //Weekend
+    //**std::cout<<"\tNon-School Day"<<std::endl;
+    // Add Sleeping Time if Needed
+    // If child spent enough time at home/sleeping.
+    if(totalTimeSpentAtHome<sleepTimeNeeded){
+        int timeNeeded = sleepTimeNeeded-totalTimeSpentAtHome;
+        // Progress Time to Earliest Possible Activty time
+        dayTime += timeNeeded;
+    }
+    int sleepIfOutAllNight = 144-crewfew + timeUpOnMonday;
+    if(sleepIfOutAllNight<sleepTimeNeeded && day==6){
+        crewfew = crewfew-(sleepTimeNeeded-sleepIfOutAllNight);
+    }
+    
+    // While there is still time left before the curfew time.
+            while(dayTime<crewfew-travelTimeToHome-1) {
+                travelTime = 0;
+                travelTimeToHome = calculateTravelTime(lastPlaceLoc[0],
+                                                       lastPlaceLoc[1],
+                                                       homeLoc[0],
+                                                       homeLoc[1],
+                                                       1);
+                int timeSpentOut=1;
+                if(totalTimeSpentAway+travelTimeToHome+radiusLimit+1>=maxTimeAway){
+                    //**std::cout<<"\tForce Home ("<<trueTime+dayTime<<"): "<<dayTime<<std::endl;
+                    //**std::cout<<"\t\tTime Need to be Home: "<<sleepTimeNeeded-totalTimeSpentAtHome<<std::endl;
+                    //**std::cout<<"\t\tTime Already Spent at Home: "<< totalTimeSpentAtHome<<std::endl;
+                    //Been out too Long Need to Get Sleep
+                    int timeNeedToBeHome= sleepTimeNeeded-totalTimeSpentAtHome;
+                    int travelTime = 0;
+                    if(lastPlace != home){
+                        //**std::cout<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+                        transportType = determineTransportationType(travelTimeToHome,
+                                                                    travelTimeToHome,
+                                                                    transportProbablities,
+                                                                    transportRadiusLimits,
+                                                                    transportRates);
+                        transportRate = getTransportRate(transportType, transportRates);
+                        
+                        travelTime=addMoveTo(currentSchedule,
+                                             lastPlace,
+                                             home,
+                                             visitorType,
+                                             trueTime+dayTime,
+                                             transportType,
+                                             transportRate,
+                                             -1);
+                    }
+                    lastPlace=home;
+                    lastPlaceLoc =lastPlace->getLocation();
+                    
+                    dayTime+=timeNeedToBeHome+travelTime;
+                    totalTimeSpentAtHome+=timeNeedToBeHome;
+                    totalTimeSpentAway+=travelTime+timeNeedToBeHome;
+                    if(totalTimeSpentAtHome >=sleepTimeNeeded){
+                        totalTimeSpentAway=0;
+                    }
+                    visitorType='H';
+                    
+                } else {
+                    determinePlace_basedOn_Prob_WeekEnd(lastPlace, lastPlaceLoc, timeSpentOut);
+                }
+                travelTimeToHome = calculateTravelTime(lastPlaceLoc[0],
+                                                       lastPlaceLoc[1],
+                                                       homeLoc[0],
+                                                       homeLoc[1],
+                                                       1);
+            }
+            if(lastPlace != home){
+                //**std::cout<<"\tCrewfew: "<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
+                transportType = determineTransportationType(travelTimeToHome,
+                                                            travelTimeToHome,
+                                                            transportProbablities,
+                                                            transportRadiusLimits,
+                                                            transportRates);
+                transportRate = getTransportRate(transportType, transportRates);
+                
+                travelTime=addMoveTo(currentSchedule,
+                                     lastPlace,
+                                     home,
+                                     visitorType,
+                                     trueTime+dayTime,
+                                     transportType,
+                                     transportRate,
+                                     -1);
+                lastPlace = home;
+                lastPlaceLoc =lastPlace->getLocation();
+                
+                visitorType='H';
+                totalTimeSpentAway+=travelTime;
+            }
+
+}
 
 
 
@@ -327,9 +699,21 @@ void SchoolAgedChildSchedule::generateSchedule() {
         visitorType='H';
         // If it a weekday and child Attends School
         if(day < 5 && goToSchool) {            
-            generateWeekDaySchedule(*lastPlace, *lastPlaceLoc);
+            generateWeekDaySchedule(lastPlace, lastPlaceLoc);
         } else
-            generateWeekEndSchedule();
+            generateWeekEndSchedule(lastPlace, lastPlaceLoc, day);
+        
+        totalTimeSpentAtHome+=144-dayTime;
+        totalTimeSpentAway+= 144-dayTime;
+        if(totalTimeSpentAtHome>=sleepTimeNeeded){
+            totalTimeSpentAway=0;
+        }
+        dayTime=144;
+    }    
+    //Check for Completely Empty Schedule
+    if(currentSchedule->peekNextLocation()==NULL){
+        //**std::cout<<"Didn't go Anywhere :("<<std::endl;
+        currentSchedule->addTimeSlot(TimeSlot(home->getID(), 1008, 'H'));
     }
 }
 
