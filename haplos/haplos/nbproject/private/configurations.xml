@@ -63,6 +63,8 @@
           <in>generateYoungSchoolAgedChildSchedule.cpp</in>
           <in>generateYoungSchoolAgedChildSchedule.h</in>
         </df>
+        <df name="tests">
+        </df>
         <in>Assert.h</in>
         <in>Family.cpp</in>
         <in>Family.h</in>
@@ -79,8 +81,6 @@
         <in>SedacReader.cpp</in>
         <in>SedacReader.h</in>
         <in>main.cpp</in>
-      </df>
-      <df name="tests">
       </df>
     </df>
   </logicalFolder>

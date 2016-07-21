@@ -73,13 +73,15 @@ public:
     
     
     void generateSchedule();
-    void generateWeekDaySchedule(Building &lastPlace, int &lastPlaceLoc);
-    void generateWeekEndSchedule();
-    void generateBeforeSchoolSchedule(Building &lastPlace, int &lastPlaceLoc);
-    void generateAfterSchoolSchedule();
-    void goingToSchoolSchedule(Building &lastPlace, int &lastPlaceLoc);
+    void generateWeekDaySchedule(Building *lastPlace, int *lastPlaceLoc);
+    void generateWeekEndSchedule(Building *lastPlace, int *lastPlaceLoc, const int &day);
+    void generateBeforeSchoolSchedule(Building *lastPlace, int *lastPlaceLoc);
+    void generateAfterSchoolSchedule(Building *lastPlace, int *lastPlaceLoc);
+    void goingToSchoolSchedule(Building *lastPlace, int *lastPlaceLoc);
     
-    void determinePlace_basedOn_Prob();
+    void determinePlace_basedOn_Prob(Building *lastPlace, int *lastPlaceLoc);
+    void determinePlace_basedOn_Prob_AfterSchool(Building *lastPlace, int *lastPlaceLoc);
+    void determinePlace_basedOn_Prob_WeekEnd(Building *lastPlace, int *lastPlaceLoc, int &timeSpentOut);
     
     int calculateTravelTime(int start_x,
                                 int start_y,
@@ -122,7 +124,7 @@ public:
         int *transportRadiusLimits, int *transportRates,
         double *schoolDayVisitorTypeProbablities,
         double *weekendVisitorTypeProbablities,
-        bool goToSchool, std::unordered_map<int, Building*> &allBuildings, 
+        bool goToSchool, std::unordered_map<int, Building*>  *allBuildings, 
         std::vector< std::vector < Location > > *densityData);
     virtual ~SchoolAgedChildSchedule();
 private:

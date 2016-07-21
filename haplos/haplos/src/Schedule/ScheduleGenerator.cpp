@@ -252,25 +252,42 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
         case 2:
             ////**std::cout<<"Generating School Aged Child Schedule"<<std::endl;
             if(p1->getAge()<16){
-                generateSchoolAgedChildSchedule(p1,
-                                                currentFamily,
-                                                radiusLimit[2],
-                                                transportProbablities,
-                                                transportRadiusLimits,
-                                                transportRates,
-                                                primaryVisitorTypeProb,
-                                                secondaryVisitorTypeProb,
-                                                specialLocationFlag);
+//                generateSchoolAgedChildSchedule(p1,
+//                                                currentFamily,
+//                                                radiusLimit[2],
+//                                                transportProbablities,
+//                                                transportRadiusLimits,
+//                                                transportRates,
+//                                                primaryVisitorTypeProb,
+//                                                secondaryVisitorTypeProb,
+//                                                specialLocationFlag);
+                
+        SchoolAgedChildSchedule childObj(p1, currentFamily, radiusLimit[2],
+            transportProbablities, transportRadiusLimits, 
+            transportRates, primaryVisitorTypeProb,
+            secondaryVisitorTypeProb, specialLocationFlag,
+            allBuildings, densityData);
+        
+        childObj.generateSchedule();
             }else{
-                generateSchoolAgedChildSchedule(p1,
-                                                currentFamily,
-                                                radiusLimit[3],
-                                                transportProbablities,
-                                                transportRadiusLimits,
-                                                transportRates,
-                                                primaryVisitorTypeProb,
-                                                secondaryVisitorTypeProb,
-                                                specialLocationFlag);
+                
+                SchoolAgedChildSchedule childObj(p1, currentFamily, radiusLimit[3],
+                    transportProbablities, transportRadiusLimits, 
+                    transportRates, primaryVisitorTypeProb,
+                    secondaryVisitorTypeProb, specialLocationFlag,
+                    allBuildings, densityData);
+        
+                childObj.generateSchedule();
+                
+//                generateSchoolAgedChildSchedule(p1,
+//                                                currentFamily,
+//                                                radiusLimit[3],
+//                                                transportProbablities,
+//                                                transportRadiusLimits,
+//                                                transportRates,
+//                                                primaryVisitorTypeProb,
+//                                                secondaryVisitorTypeProb,
+//                                                specialLocationFlag);
             }
             break;
         case 3:
@@ -885,7 +902,7 @@ void ScheduleGenerator::generateSchoolAgedChildSchedule(Person *p, Family *f, in
                         //Home
                         //update time to reflect staying at home once home
                         //**std::cout<<"\t\t\t Staying Home"<<std::endl;
-                        totalTimeSpentAtHome+= crewfew - dayTime;
+                        totalTimeSpentAtHome += crewfew - dayTime;
                         if(lastPlace != home){
                             //**std::cout<<visitorType<<" "<<lastPlace->getID()<<" "<<trueTime+dayTime<<std::endl;
                             transportType = determineTransportationType(travelTimeToHome,
