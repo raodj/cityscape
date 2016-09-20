@@ -37,6 +37,7 @@
 #include "generateYoungSchoolAgedChildSchedule.h"
 #include "YoungChildSchedule.h"
 #include "SchoolAgedChildSchedule.h"
+#include "generateEmployedAdultSchedule.h"
 #include <stdio.h>
 #include <vector>
 #include <map>
@@ -108,7 +109,8 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                                transportRate,
                                                NULL,
                                                NULL,
-                                               true);
+                                               true,
+                                               generator);
                         break;
                     case 1:
                         generatePersonSchedule(currentFamily,
@@ -119,7 +121,8 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                                transportRate,
                                                NULL,
                                                NULL,
-                                               true);
+                                               true,
+                                               generator);
                         break;
                     case 2:
                         generatePersonSchedule(currentFamily,
@@ -130,7 +133,7 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                                transportRate,
                                                olderSchoolChildSchoolDayVisitorProbablities,
                                                olderSchoolChildWeekendVisitorProbablities,
-                                               true);
+                                               true,generator);
                         break;
                     case 3:
                         generatePersonSchedule(currentFamily,
@@ -141,7 +144,7 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                                transportRate,
                                                adultWorkVisitorProbablities,
                                                adultNoworkVisitorProbablites,
-                                               true);
+                                               generator);
                         break;
                     case 4:
                         generatePersonSchedule(currentFamily,
@@ -152,7 +155,7 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                                transportRate,
                                                adultUnemployeedVisitorProbablities,
                                                NULL,
-                                               false);
+                                               generator);
                         break;
                     default:
                         //**std::cout<<"ERROR: Unknown Schedule Type"<<std::endl;
@@ -198,7 +201,8 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
                                                int *transportRates,
                                                double *primaryVisitorTypeProb,
                                                double *secondaryVisitorTypeProb,
-                                               bool specialLocationFlag){
+                                               bool specialLocationFlag,
+                                        std::default_random_engine generator){
     //std::cout<<"Generating Schedule"<<std::endl;
     Schedule *currentSchedule = p1->getSchedule();
     int childModification = -1;
@@ -291,6 +295,22 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
             }
             break;
         case 3:
+        {
+            generateEmployedAdultSchedule employedAdult(p1,
+                                           currentFamily,
+                                           childModification,
+                                           youngChildModification,
+                                           radiusLimit[4],
+                                           transportProbablities,
+                                           transportRadiusLimits,
+                                           transportRates,
+                                           primaryVisitorTypeProb,
+                                           secondaryVisitorTypeProb,
+                                           specialLocationFlag, 
+                                           allBuildings,densityData,generator);
+            
+            employedAdult.generateSchedule();
+            
             ////**std::cout<<"Generating Employeed Adult Schedule"<<std::endl;
             generateEmployeedAdultSchedule(p1,
                                            currentFamily,
@@ -304,6 +324,7 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
                                            secondaryVisitorTypeProb,
                                            specialLocationFlag);
             break;
+        }
         case 4:
             ////**std::cout<<"Generating UnEmployeed Schedule"<<std::endl;
             generateUnemployeedAdultSchedule(p1,
@@ -1339,7 +1360,7 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
                                                        double *visitorTypeProbablities_work,
                                                        double *visitorTypeProbablities_noWork,
                                                        bool goToWork){
-    //Working Adult
+    // Working Adult
     Schedule *currentSchedule = p->getSchedule();
     currentSchedule->setGoToJobLocation(goToWork);
     // We get the home, lastPlace, jobLocation and dayCareLocation.
@@ -1351,10 +1372,19 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
     //double workProb=0.90;
     //double outProb=0.05;
     //double homeProb=0.05;
+    
+    //For MidWorldData
+//Schedule_Adult_Employeed_Work_Home_Probablity=0.50
+//Schedule_Adult_Employeed_Work_Out_Probablity=0.17
+//Schedule_Adult_Employeed_Work_Job_Probablity=0.33
     double workProb_work = visitorTypeProbablities_work[0];
     double outProb_work = visitorTypeProbablities_work[1];
     double homeProb_work = visitorTypeProbablities_work[2];
     
+//    MidWorldData
+//    Schedule_Adult_Employeed_No_Work_Home_Probablity=0.5
+//    Schedule_Adult_Employeed_No_Work_Out_Probablity=0.5
+//    Schedule_Adult_Employeed_No_Work_Job_Probablity=0
     
     double workProb_nowork = visitorTypeProbablities_noWork[0];
     double outProb_nowork = visitorTypeProbablities_noWork[1];
@@ -1386,6 +1416,7 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
     int *jobLoc = jobLocation->getLocation();
     int crewfew = (schoolChildModification>=0 || youngChildModification) ? 120 : 144;
     bool goneToWork = false;
+    
     //If Need to Take care of Child give a little more buffer in case kid needs to be taken to school
     int maxTimeAway = ((youngChildModification || schoolChildModification)? 90 : 96);
     int fullDay=144;
@@ -1402,6 +1433,7 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
     }
     char visitorType='H';
     int travelTime = 0;
+    
     for(int day=0; day< 7 ; day++){
         size_t currentPlaceInSchoolTimes = 0;
         
@@ -1412,8 +1444,8 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
         int travelTimeToJob =0;
         transportRate =1;
         
-        //Reset School Time to first one if a week day.
-        //Reset to first School Time if Needed
+        // Reset School Time to first one if a week day.
+        // Reset to first School Time if Needed
         if(schoolChildModification>-1 && schoolTimes.size()>0 && day<5){
             nextSchoolTime=schoolTimes.at(0);
             nextSchoolTime.first+=trueTime;
@@ -1447,12 +1479,16 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
         while(dayTime<crewfew-travelTimeToHome-1){
             int maxTimeOut=0;
             travelTime=0;
+            // The time left for the curfew is lesser than the time that can be spent away
             if(crewfew != fullDay && ( crewfew-dayTime-travelTimeToHome )< (maxTimeAway-totalTimeSpentAway-travelTimeToHome)){
                 maxTimeOut=crewfew-dayTime-travelTimeToHome;
             }else{
+                // if the time that can be spent away is lesser than the time 
+                // left until the curfew time, then,
+                // maxTimeOut is the time left until maxTimeAway can be reached.
                 maxTimeOut=maxTimeAway-totalTimeSpentAway-travelTimeToHome;
             }
-            if(maxTimeOut<0){
+            if(maxTimeOut < 0){
                 maxTimeOut=0;
             }
             //**std::cout<<"\ttotalTimeSpendAway"<<totalTimeSpentAway<<std::endl;
@@ -1463,6 +1499,7 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
             travelTimeSchoolFromJob = 0;
             travelTimeToDayCare = 0;
             travelTimeToJob =0;
+            // If the child is in school, we calculate the time from school ?
             if(nextSchoolTime.second != nullptr){
                 int *schoolLocation = nextSchoolTime.second->getLocation();
                 travelTimeToSchool = calculateTravelTime(lastPlaceLoc[0],
@@ -1483,7 +1520,7 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
                                                   jobLoc[0],
                                                   jobLoc[1],
                                                   1);
-            
+           // If the child attends dayCare, take that into account.
             if(dayCareLocation != NULL){
                 int *dayLoc = dayCareLocation->getLocation();
                 
@@ -1498,7 +1535,11 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
             //Check if child needs to go to School
             //**std::cout<<"--- Next School Time: "<<nextSchoolTime.first+1-trueTime-travelTimeToSchool<<std::endl;
             //**std::cout<<"--- Day Time: "<<dayTime<<std::endl;
-            if(schoolChildModification>-1 && dayTime>=nextSchoolTime.first-1-trueTime-travelTimeToSchool && nextSchoolTime.second!=nullptr && day<5){
+            // Child goes to school and
+            // the daytime is greater than schoolTime ( is it school starttime or school end time ?) and
+            // the nextSchoolTime loc is not null ()
+            if(schoolChildModification>-1 && dayTime>=nextSchoolTime.first-1-trueTime-travelTimeToSchool &&
+                    nextSchoolTime.second!=nullptr && day<5){
                 //Get From School
                 //**std::cout<<"\tGet Kid from School"<<std::endl;
                 if(lastPlace != nextSchoolTime.second || visitorType!='V'){
@@ -1518,11 +1559,17 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
                                          transportRate,
                                          -1);
                 }
+                // Update the lastPlace 
                 lastPlace=nextSchoolTime.second;
+                // currentPlaceInSchoolTime is like the ptr of which day it
+                // currently is in to update the and correctly assign the 
+                // school timings.
                 if(currentPlaceInSchoolTimes<schoolTimes.size()-1){
+                    // What does currentPlaceInSchoolTimes exactly mean ?
                     currentPlaceInSchoolTimes++;
                     nextSchoolTime=schoolTimes.at(currentPlaceInSchoolTimes);
                     nextSchoolTime.first+=day*fullDay;
+                    // Why are we dividing it by 2 ? 
                     if(currentPlaceInSchoolTimes==schoolTimes.size()/2){
                         //**std::cout<<"**Kids At School"<<std::endl;
                         kidsAtSchool=true;
@@ -1532,6 +1579,7 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
                     }
                     
                 }else{
+                    // Resets the school time values !
                     //**std::cout<<"**Kids At Not School"<<std::endl;
                     nextSchoolTime=schoolTimes.at(0);
                     currentPlaceInSchoolTimes=0;
@@ -1574,10 +1622,11 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
                     
                     transportRate = getTransportRate(transportType, transportRates);
                     
+                    
                     if(youngChildModification && kidsAtDaycare){
                         //Pick Up Young Child at Daycare
                         //**std::cout<<"\t\tPicking Up Kid At Daycare: " <<dailyTotalTimeAtJob<<std::endl;
-                        if(lastPlace != f->getDaycare() || visitorType!= 'V'){
+                        if(lastPlace != f->getDaycare() || visitorType!= 'V') {
                             travelTime= addMoveTo(currentSchedule,
                                                   lastPlace,
                                                   f->getDaycare(),
@@ -1635,7 +1684,7 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
                     }
                     visitorType='H';
                     
-                }else{
+                } else {
                     
                     int timeLeft=(youngChildModification ? crewfew-dayTime-travelTimeToHome-travelTimeToDayCare+1 :
                                   crewfew-dayTime-travelTimeToHome);
@@ -1706,9 +1755,13 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
                             timeSpentAtJob = 1;
                         }
                         
+                        // If the place place isn't the job location but the 
+                        // visitor type signifies that he / she is an employee
                         //**std::cout<<"\t\tTime Spent at Job: " <<timeSpentAtJob<<std::endl;
                         //**std::cout<<"\t\tTime Already Spent at Home: "<< totalTimeSpentAtHome<<std::endl;
                         if(lastPlace != jobLocation || visitorType!='E'){
+                            
+                            // determine transport type to Job !
                             transportType = determineTransportationType(travelTimeToJob,
                                                                         travelTimeToJob,
                                                                         transportProbablities,
@@ -1795,8 +1848,7 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
                                         timeSpentAtLocation=(int)rand() % ((nextSchoolTime.first-1-trueTime)-dayTime)+1;
                                     }
                                 }else{
-                                    timeSpentAtLocation=((int)rand() % (maxTimeOut>timeLeft && timeLeft>0? timeLeft : maxTimeOut))+1;
-                                    
+                                    timeSpentAtLocation=((int)rand() % (maxTimeOut>timeLeft && timeLeft>0? timeLeft : maxTimeOut))+1;                   
                                 }
                                 totalTimeSpentAtHome+= timeSpentAtLocation;
                                 //**std::cout<<"\t\tTime Spent Here: "<<timeSpentAtLocation<<std::endl;

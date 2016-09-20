@@ -67,7 +67,8 @@ class ScheduleGenerator {
                                     int *transportRates,
                                     double *primaryVisitorTypeProb,
                                     double *secondaryVisitorTypeProbs,
-                                    bool specialLocationFlag);
+                                    bool specialLocationFlag,
+                                    std::default_random_engine generator);
     private:
 
         //Schedue Types
