@@ -31,6 +31,8 @@
           <in>TimeSlot.cpp</in>
           <in>YoungChildSchedule.cpp</in>
           <in>YoungChildSchedule.h</in>
+          <in>generateEmployedAdultSchedule.cpp</in>
+          <in>generateEmployedAdultSchedule.h</in>
           <in>generateYoungSchoolAgedChildSchedule.cpp</in>
         </df>
         <in>Family.cpp</in>
@@ -205,6 +207,16 @@
             flavor2="0">
       </item>
       <item path="src/Schedule/YoungChildSchedule.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/Schedule/generateEmployedAdultSchedule.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/Schedule/generateEmployedAdultSchedule.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
       </item>
       <item path="src/Schedule/generateYoungSchoolAgedChildSchedule.cpp"
             ex="false"

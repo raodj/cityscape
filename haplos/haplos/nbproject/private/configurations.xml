@@ -60,6 +60,8 @@
           <in>TimeSlot.h</in>
           <in>YoungChildSchedule.cpp</in>
           <in>YoungChildSchedule.h</in>
+          <in>generateEmployedAdultSchedule.cpp</in>
+          <in>generateEmployedAdultSchedule.h</in>
           <in>generateYoungSchoolAgedChildSchedule.cpp</in>
           <in>generateYoungSchoolAgedChildSchedule.h</in>
         </df>
