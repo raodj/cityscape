@@ -80,6 +80,7 @@ public:
     double *transportProbablities;
     int *transportRadiusLimits;
     int *transportRates;
+    int radiusLimit;
     
     generateEmployedAdultSchedule();
     generateEmployedAdultSchedule(Person *p, Family *f, int schoolChildModification,
@@ -92,8 +93,9 @@ public:
                                     std::unordered_map<int, Building*> *allBuildingsTemp,
                                     std::vector< std::vector < Location > > *densityData,
                                     std::default_random_engine generator);
+
     
-    virtual ~generateEmployedAdultSchedule();
+   // virtual ~generateEmployedAdultSchedule();
     
     void generateSchedule();
     
@@ -107,14 +109,31 @@ public:
     void calculateMaxTime(int &maxTimeOut, int &travelTimeToHome);
     
     void ChildNeedsToGoToSchool(int &day,int &lastPlaceLoc);
-    void ChildDoesntNeedToGoToSchool(int &travelTimeToHome, int &maxTimeOut);
+    void ChildDoesntNeedToGoToSchool(int &travelTimeToHome, int &maxTimeOut, int &lastPlaceLoc);
     
     
     void NeedToSleep(int &travelTimeToHome);
-    void TimeLeftToDoStuff(int &travelTimeToHome);
+    void TimeLeftToDoStuff(int &travelTimeToHome, int &maxTimeOut, int &lastPlaceLoc);
 
     void PickUpChildFromDayCare();
     void DroppingKidAtDayCare(int &timeLeft, int &travelTimeToHome);
+    void goBackToJobLoc(int &timeSpentAtJob);
+    void determineActivity(int &travelTimeToHome, int &timeLeft, int &maxTimeOut, int &lastPlaceLoc);
+    int determineDistribution(int &travelTimeToHome, int &maxTimeOut);
+    void selectActivity(int &activity, int &travelTimeToHome, int &timeLeft, int &maxTimeOut, int &lastPlaceLoc);
+    
+    void GoingHome(int &timeSpentAtLocation, int &travelTimeToHome, int &timeLeft, int &maxTimeOut);
+    void GoingToJob(int &timeSpentAtLocation, int &travelTimeToHome);
+    void ChanceOfGoingOutside(int &timeSpentAtLocation, int &maxTimeOut, int &travelTimeToHome,
+                                                            int &timeLeft, int &lastPlaceLoc);
+    int CalculateTimeSpentAtLocation(int &timeSpentAtLocation, int &maxTimeOut, int &timeLeft);
+    
+    void NoPlaceToGoOut(int &timeSpentAtLocation, int &travelTimeToHome);
+    void FoundPlaceToGoOut(int &timeSpentAtLocation, int &travelTimeToHome, int &lastPlaceLoc, Building* lastPlace_tmp);
+    
+    void CurfewNotEqualsFullDay(int &travelTimeToHome, int &lastPlaceLoc, int &day);
+    
+    void DealingWithDayCarriedOver();
     
     void computeTransportSpecifics(char transportType,
                                         int transportRate,
@@ -145,6 +164,8 @@ public:
                                         int & end_y,  int & transportRate );
     
     std::vector <std::pair<int, School*> > getSchoolTimes(Family *f);
+    
+    Building* findAvaliableBuilding(int x, int y, char typeOfVisitor, int radius, int startTime, int endTime, int numberOfVisitors, int transportRate);
     
     
 private:
