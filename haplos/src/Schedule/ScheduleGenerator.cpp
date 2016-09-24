@@ -312,17 +312,17 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
             employedAdult.generateSchedule();
             
             ////**std::cout<<"Generating Employeed Adult Schedule"<<std::endl;
-            generateEmployeedAdultSchedule(p1,
-                                           currentFamily,
-                                           childModification,
-                                           youngChildModification,
-                                           radiusLimit[4],
-                                           transportProbablities,
-                                           transportRadiusLimits,
-                                           transportRates,
-                                           primaryVisitorTypeProb,
-                                           secondaryVisitorTypeProb,
-                                           specialLocationFlag);
+//            generateEmployeedAdultSchedule(p1,
+//                                           currentFamily,
+//                                           childModification,
+//                                           youngChildModification,
+//                                           radiusLimit[4],
+//                                           transportProbablities,
+//                                           transportRadiusLimits,
+//                                           transportRates,
+//                                           primaryVisitorTypeProb,
+//                                           secondaryVisitorTypeProb,
+//                                           specialLocationFlag);
             break;
         }
         case 4:
@@ -1791,14 +1791,14 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
                     }else{
                         int activity=0; //Activity Type
                         
-                        //Determine which Distribution to use
+                        // Determine which Distribution to use
                         if(dailyTotalTimeAtJob<=0 ||
                            !kidsAtSchool ||
                            (youngChildModification && totalTimeSpentAway<maxTimeAway-2) ){
-                            //No work Left to do at job
+                            // No work Left to do at job
                             activity = no_work_left_distribution(generator);
                         }else{
-                            //Work still to do at job
+                            // Work still to do at job
                             activity = distribution(generator);
                         }
                         
@@ -2142,6 +2142,9 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
             }
             totalTimeSpentAway+=travelTime;
             dayTime+=travelTime;
+            // This is actually the forcing of the person to be at home for the rest of the day and then some 
+            // in the morning (6AM in this case). This is trying to make sure you don't have 
+            // adults with children waking up at 3AM and going places with the kids since that is not typical.
             if(dayTime<fullDay+30) {
                 int timeSpentAtLocation = fullDay-dayTime+30;
                 //**std::cout<<"\t\tTime Spent At Location: "<<timeSpentAtLocation<<std::endl;
