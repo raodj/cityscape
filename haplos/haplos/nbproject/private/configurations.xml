@@ -58,6 +58,8 @@
           <in>SchoolAgedChildSchedule.h</in>
           <in>TimeSlot.cpp</in>
           <in>TimeSlot.h</in>
+          <in>UnEmployedAdultSchedule.cpp</in>
+          <in>UnEmployedAdultSchedule.h</in>
           <in>YoungChildSchedule.cpp</in>
           <in>YoungChildSchedule.h</in>
           <in>generateEmployedAdultSchedule.cpp</in>
@@ -111,6 +113,8 @@
         <gdb_interceptlist>
           <gdbinterceptoptions gdb_all="false" gdb_unhandled="true" gdb_unexpected="true"/>
         </gdb_interceptlist>
+        <gdb_signals>
+        </gdb_signals>
         <gdb_options>
           <DebugOptions>
           </DebugOptions>
