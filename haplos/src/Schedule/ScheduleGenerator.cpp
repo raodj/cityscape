@@ -38,6 +38,7 @@
 #include "YoungChildSchedule.h"
 #include "SchoolAgedChildSchedule.h"
 #include "generateEmployedAdultSchedule.h"
+#include "UnEmployedAdultSchedule.h"
 #include <stdio.h>
 #include <vector>
 #include <map>
@@ -326,16 +327,30 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
             break;
         }
         case 4:
-            ////**std::cout<<"Generating UnEmployeed Schedule"<<std::endl;
-            generateUnemployeedAdultSchedule(p1,
+        {
+            UnEmployedAdultSchedule UnEmployedAdult(p1
                                              currentFamily,
                                              (childModification>-1?true:false),
                                              radiusLimit[5],
                                              transportProbablities,
                                              transportRadiusLimits,
                                              transportRates,
-                                             primaryVisitorTypeProb);
+                                             primaryVisitorTypeProb,
+                                             allBuildings,densityData,generator);
+            
+            UnEmployedAdult.GenerateSchedule();
+            
+            ////**std::cout<<"Generating UnEmployeed Schedule"<<std::endl;
+//            generateUnemployeedAdultSchedule(p1,
+//                                             currentFamily,
+//                                             (childModification>-1?true:false),
+//                                             radiusLimit[5],
+//                                             transportProbablities,
+//                                             transportRadiusLimits,
+//                                             transportRates,
+//                                             primaryVisitorTypeProb);
             break;
+        }
         default:
             std::cout<<"ERROR: Unknown Schedule Type"<<std::endl;
             break;

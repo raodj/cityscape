@@ -29,6 +29,8 @@
           <in>SchoolAgedChildSchedule.cpp</in>
           <in>SchoolAgedChildSchedule.h</in>
           <in>TimeSlot.cpp</in>
+          <in>UnEmployedAdultSchedule.cpp</in>
+          <in>UnEmployedAdultSchedule.h</in>
           <in>YoungChildSchedule.cpp</in>
           <in>YoungChildSchedule.h</in>
           <in>generateEmployedAdultSchedule.cpp</in>
@@ -201,6 +203,16 @@
       <item path="src/Schedule/TimeSlot.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
         </ccTool>
+      </item>
+      <item path="src/Schedule/UnEmployedAdultSchedule.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/Schedule/UnEmployedAdultSchedule.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
       </item>
       <item path="src/Schedule/YoungChildSchedule.cpp"
             ex="false"
