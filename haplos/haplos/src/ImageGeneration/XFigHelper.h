@@ -58,10 +58,17 @@
 // The XFIG default scale 1 inch == 1200 xfig units
 #define XFIG_SCALE 1200
 
+// The XFIG default pixel to fig units conversion
+#define PIXEL_TO_XFIG_SCALE 15
+
 // Text Justification
 #define LEFT_JUSTIFIED   0
 #define CENTER_JUSTIFIED 1
 #define RIGHT_JUSTIFIED  2
+
+// Fill style constants
+#define SOLID_FILL 20
+#define NO_FILL    -1
 
 /** A convenience class to generate plain-text XFig entries for
     various components of an image.
@@ -87,20 +94,26 @@ public:
         this process experiences errors then this method returns \c
         false.
 
-	\param[in] genCustomColors If this flag is set to \c true then
-	this method adds an user-defined color table to the generated
-	XFig file. The user-defined color table guarantees a set of
-	visibly different colors for use in applications.
+        \return This method returns \c true if the file was opened and
+        the header was successfully written.  On errors this method
+        returns \c false.
+        
+        \param[in] width The width scale to be used for the figure.
+        This value is typically 1200.
 
+        \param[in] height THe height scale to be used for the figure.
+        This value is typically just 2.
+        
 	\param[in] appendFlag If this parameter is set to \c true,
 	then this method assumes that the supplied file name already
 	has XFig data in it and rest of the information needs to be
 	just appended to the file. Consequently, this method does not
 	generate any headers in this case.
-	
-        \return This method returns \c true if the file was opened and
-        the header was successfully written.  On errors this method
-        returns \c false.
+
+	\param[in] genCustomColors If this flag is set to true then
+	this method adds an user-defined color table to the generated
+	XFig file. The user-defined color table guarantees a set of
+	visibly different colors for use in applications.        
     */
     bool setOutput(const std::string &fileName,
                    const int width = 100,
@@ -138,12 +151,15 @@ public:
 
         \param[in] y2 The y-coordinate of the second point.
 
-        \param[in] colorCode An optional color code to specify color
+        \param[in] lineColor An optional color code to specify color
         of the line.
+
+        \param[in] level The level/layer in the figure where line is
+        to be generated.
     */
     void drawLine(const int x1, const int y1,
                   const int x2, const int y2,
-                  const int colorCode = 0, const int level = 50);
+                  const int lineColor = BLACK, const int level = 50);
 
     /** Dump code for displaying a text
 
@@ -180,7 +196,7 @@ public:
                  const int colorCode = BLACK,		 
                  const int fontSize  = 12,		 
 		 const int fontCode  = 14,
-                 const int layer     = 50);
+                 const int level     = 50);
 
     /** Dump code for displaying a rectangle.
 
@@ -196,8 +212,24 @@ public:
         \param[in] width The width of the rectangle in XFig units.
 
         \param[in] height The height of the rectangle in XFig units.
+
+        \param[in] lineColor The color code (0 to 32) for the color of
+        the line/border for the rectangle.
+
+        \param[in] fillColor The color code (0 to 32) for the color
+        with which the rectangle is to be filled.
+
+        \param[in] fillStyle Value (-1 to 20) to indicate if the
+        rectangle should actually be filled.
+
+        \param[in] level The logical layer/level at which the
+        rectangle is to be generated.
+
+        \param[in] thickness The thickness of line/border for the
+        rectangle.
     */
-    void drawRect(int x, int y, int width, int height, int colorCode = 0,
+    void drawRect(int x, int y, int width, int height, int lineColor = BLACK,
+                  int fillColor = BLACK, int fillStyle = NO_FILL,
 		  int level = 50, int thickness = 1);
 
     /** A convenience method to add custom colors and color codes to a
@@ -221,27 +253,152 @@ public:
 	color. The value must be in the range 0 to 255 (inclusive).
     */
     void addColor(int colorCode, int red, int green, int blue);
-    
+
+    /** Start a polygon and add points via call to addVertex method.
+
+        This method can be used to create a closed polygon consisting
+        of a series of line segments.  Each line segment is specified
+        by adjacent pairs of vertices.
+
+        \param[in] vertexCount The number of vertices to be added to
+        the polygon via call to the addVertex method.
+
+        \param[in] lineColor The color code for the polygon's
+        border/line.
+
+        \param[in] fillColor The color for filling-in the polygon.
+
+        \param[in] level The level at which the polygon is to be
+        generated.
+
+        \param[in] fillStyle The fill style for filling-in the
+        polygon.
+
+        \see addVertex
+    */
     void startPolygon(const int vertexCount, const int lineColor = BLACK,
                       const int fillColor = RED, const int level = 50,
                       const int fillStyle = 20);
 
+    /** Start a poly-line, that is a line with multiple vertices.
+
+        This method can be used to create a poly-line with multiple
+        line segments. Each line segment is specified by adjacent
+        pairs of vertices.
+
+        \param[in] vertexCount The number of vertices to be added to
+        the polygon via call to the addVertex method.
+
+        \param[in] lineColor The color code for the polygon's
+        border/line.
+
+        \param[in] level The level at which the polygon is to be
+        generated.
+
+        \see addVertex
+    */    
     void startPolyLine(const int vertexCount, const int lineColor = BLACK,
 		       const int level = 50);
 
+    /** Add a vertex to current polygon or poly-line.
+
+        This method must be used to add the next vertex in a polygon
+        or poly-line.  Note that vertices must be added in correct
+        order for the polygon/poly-line to be rendered correctly.
+        Needless to add a suitable call to startPolygon or
+        startPolyLine must have been already called.
+
+        \param[in] x The x-coordinate of the vertex.
+
+        \param[in] y The y-coordinate of the vertex.
+    */
     void addVertex(const int x, const int y);
+
+    /** Indicate end of polygon generation.
+
+        THis method is the dual of startPolygon method.  This method
+        must be invoked to let the generator know that all the
+        vertices in a polygon have been added.  This method
+        essentially ensures that the promised number of vertices were
+        successfully added.
+    */
     void endPolygon();
+
+    /** Indicate end of poly-line generation.
+
+        THis method is the dual of startPolyLine method.  This method
+        must be invoked to let the generator know that all the
+        vertices in a poly-line have been added.  This method
+        essentially ensures that the promised number of vertices were
+        successfully added.
+    */
     void endPolyLine();
 
+    /** Dump code for displaying a image in the figure.
+
+        This method can be used to embed an image in the generated
+        XFig file.
+
+        \param[in] fileName Path to the image file to be embedded into
+        the figure.
+        
+        \param[in] x The top-left x-coordinate for the image (in
+        XFig units).
+
+        \param[in] y The top-left y-coordinate for the image (in
+        XFig units).        
+
+        \param[in] width The width of the image in XFig units.
+
+        \param[in] height The height of the image in XFig units.
+
+        \param[in] layer The logical layer/level at which the
+        rectangle is to be generated.
+    */
     void addImage(const std::string& fileName, const int x, const int y,
                   const int width, const int height, const int layer = 60);
 
+    /** Dump code for displaying a oval in the figure.
+
+        This method can be used to generate a hollow or filled oval
+        with different x and y radii.
+
+        \param[in] x The center x-coordinate for the oval (in
+        XFig units).
+
+        \param[in] y The center y-coordinate for the oval (in XFig
+        units).
+
+        \param[in] xRad The x-radius for the oval in XFig units.
+
+        \param[in] yRad The y-radius for the oval in XFig units.        
+
+        \param[in] lineColor The color code (0 to 32) for the color of
+        the line/border for the rectangle.
+
+        \param[in] fillColor The color code (0 to 32) for the color
+        with which the rectangle is to be filled.
+
+        \param[in] fillStyle Value (-1 to 20) to indicate if the
+        rectangle should actually be filled.
+
+        \param[in] level The logical layer/level at which the
+        rectangle is to be generated.
+    */
     void drawOval(const int x, const int y,
                   const int xRad, const int yRad,
 		  const int lineColor = BLACK,
 		  const int fillColor = RED, const int level = 50,
 		  const int fillStyle = 20);
-    
+
+    /** Add a comment to annotate the next entity drawn.
+
+        This method is used to add a simple comment to provide
+        metadata or annotation about the next entity to be drawn.
+
+        \param[in] comment The comment string to be included in the
+        figure.
+    */
     void addComment(const std::string& comment);
     
 protected:
@@ -249,13 +406,20 @@ protected:
         
         This is a helper method that must be used to dump a standard
         XFig header to the supplied output file.
+        
+        \param[in] width The width scale to be used for the figure.
+        This value is typically 1200.
 
+        \param[in] height The height scale to be used for the figure.
+        This value is typically just 2.
+        
 	\param[in] genCustomColors If this flag is set to \c true then
 	this method adds an user-defined color table to generated
 	XFig. The user-defined color table guarantees a set of visibly
 	different colors for use in applications.
     */
-    void dumpHeader(const bool genCustomColors, const int width = 100, const int height = 100);
+    void dumpHeader(const bool genCustomColors, const int width = 1200,
+                    const int height = 2);
 
     /** Helper method generate color table.
 

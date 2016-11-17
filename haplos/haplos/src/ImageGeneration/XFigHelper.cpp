@@ -118,10 +118,11 @@ XFigHelper::addColor(int colorCode, int red, int green, int blue) {
 }
 
 void
-XFigHelper::drawRect(int x, int y, int width, int height, int colorCode,
+XFigHelper::drawRect(int x, int y, int width, int height, int lineColor,
+                     int fillColor, int fillStyle,
 		     int level, int thickness) {
-    os << "2 2 0 " << thickness << " " << colorCode << " " << colorCode
-       << " " << level << " -1 20 0.000 0 0 -1 0 0 5\n"
+    os << "2 2 0 " << thickness << " " << lineColor << " " << fillColor
+       << " " << level << " -1 " << fillStyle << " 0.000 0 0 -1 0 0 5\n"
        << "\t" << x           << " " << y
        << " "  << (x + width) << " " << y
        << " "  << (x + width) << " " << (y + height)
