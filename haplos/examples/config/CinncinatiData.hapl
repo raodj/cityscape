@@ -3,14 +3,29 @@
 #####Population####
 #Data File Paths (http://sedac.ciesin.columbia.edu/data/set/usgrid-summary-file3-2000-msa/)
 Density_File=examples/data/Cinncinati_2000_PopData.asc
-Density_File_Total_Population=1979202
-Max_Population_In_Area=1200
-Population_Seed=-1
-#Temporarly Putting this Here Until the Image Time Line File is Done
+Timeline_File=examples/timeline/MidWorld.tl
+Output_Directory=output/
+Building_Import=-1
+Population_Import=-1
+#Building_Import=output/buildingExport.hpb
+#Population_Import=output/populationExport.hpe
+
+#Output File Parameters and Header Information
+Custom_Output_Files=infectious,immune,exposed
 Lower_Left_Longitude=-86.000000
 Lower_Left_Laditude=38.000000
 Cellsize_Width=0.0020833333333
 Cellsize_Height=0.0020833333333
+
+###General Settings###
+Length_Of_Simulation=28800;
+
+###Population Configuration###
+#General Configuration
+Density_File_Total_Population=1979202
+Max_Population_In_Area=1200
+Population_Seed=-1
+#Temporarly Putting this Here Until the Image Time Line File is Done
 
 #Configuration for Cinncinati Data
 Total_Population=1979202
