@@ -93,7 +93,7 @@ class Building {
         /**Get max visitor capacity of Building
          \return max visitor capacity of Building
          */
-        int getMaxVisitorCapacity();
+        int getMaxVisitorCapacity() const { return visitorCapacity; }
     
         /**Get max visitor capacity of Building
          \return max visitor capacity of Building
@@ -146,7 +146,7 @@ class Building {
         /**Return the Char representing the type of building
          \return the Char repreenting the type of building
          */
-        char getType() const;
+        char getType() const { return type; }
     
         int getTotalNumberOfPeople();
 
