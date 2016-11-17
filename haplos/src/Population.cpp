@@ -333,7 +333,7 @@ int *Population::determineAge(bool forceAdult, int *returnArray){
 }
 
 int Population::determineScheduleType(int ageGroup){
-    double adultScheduleProbablities[2];
+    double adultScheduleProbablities[2] = {0, 0};
     switch(ageGroup){
         case 0:
             //Young Child Schedule

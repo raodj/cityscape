@@ -91,7 +91,8 @@ std::vector<std::vector<Location> > SedacReader::readFile(std::string fileName, 
 			densityData.at(i).resize(cols);
 		}
 
-        std::cout << "Data Allocated" << std::endl;
+                std::cout << "Data Allocated (rows: " << rows
+                          << ", cols: " << cols << ")" << std::endl;
 		int currentRow=0;
     
 		//Get all the Data

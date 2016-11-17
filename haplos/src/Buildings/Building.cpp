@@ -136,10 +136,6 @@ void Building::setCurrentCapacity(int c){
     currentCapacity=c;
 }
 
-int Building::getMaxVisitorCapacity(){
-    return visitorCapacity;
-}
-
 void Building::setMaxVisitorCapacity(int v){
     visitorCapacity = v;
 }
@@ -210,9 +206,6 @@ int* Building::getLocation(){
 	return location;
 }
 
-char Building::getType() const{
-    return type;
-}
 std::string Building::toString(){
     std::string returnString="ID: "+std::to_string(this->idNumber)+
                              "\n Type: "+std::string(1, this->type)+
