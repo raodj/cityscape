@@ -12,6 +12,10 @@
  */
 
 #include "UnEmployedAdultSchedule.h"
+#include <random>
+#include <vector>
+#include <map>
+#include <algorithm>
 
 UnEmployedAdultSchedule::UnEmployedAdultSchedule() {
 }
@@ -55,10 +59,7 @@ UnEmployedAdultSchedule::UnEmployedAdultSchedule(Person *p,
     if(childModification){
         schoolTimes=getSchoolTimes(f);
     }
-    int travelTime;
-    int *homeLoc = home->getLocation();
-    int travelTimeToSchool = 0;
-    int travelTimeToHome  = 0;
+   
     
     this->transportProbablities = transportProbablities;
     this->transportRadiusLimits = transportRadiusLimits;
@@ -76,7 +77,7 @@ void UnEmployedAdultSchedule::AssignInitialSchoolTimings(std::pair<int, School*>
 }
 
 void UnEmployedAdultSchedule::CalculateTravelTimeToHomenSchool(std::pair<int, School*> & nextSchoolTime,
-                                            int & lastPlaceLoc) {
+                                            int * lastPlaceLoc) {
     
         travelTimeToHome = calculateTravelTime(lastPlaceLoc[0],
                                                 lastPlaceLoc[1],
@@ -105,7 +106,7 @@ void UnEmployedAdultSchedule::ChildNeedsToBePickedUpFromSchool(std::pair<int, Sc
         computeTransportSpecifics(transportType, transportRate, travelTime, travelTimeToSchool,
                             travelTimeToSchool, transportProbablities, transportRadiusLimits,
                             transportRates, currentSchedule, lastPlace,
-                            nextSchoolTime.second, int visitorType, trueTime+dayTime);
+                            nextSchoolTime.second,  visitorType, trueTime+dayTime);
     }
     // Update the last location           
     lastPlace=nextSchoolTime.second;
@@ -241,11 +242,11 @@ void UnEmployedAdultSchedule::NoPlaceToGo(int &timeSpentAtLocation) {
     }
 }
 
-void UnEmployedAdultSchedule::FoundPlaceToGo(Building & lastPlace_tmp, int &timeSpentAtLocation,
-                                        int & lastPlaceLoc) {
+void UnEmployedAdultSchedule::FoundPlaceToGo(Building * lastPlace_tmp, int &timeSpentAtLocation,
+                                        int * lastPlaceLoc) {
     //Found Location
     if(lastPlace != lastPlace_tmp || visitorType!='V') {
-        int *lastPlace_tmp_loc = lastPlace_tmp.getLocation();
+        int *lastPlace_tmp_loc = lastPlace_tmp->getLocation();
         int travelTimeToNewLocation = calculateTravelTime(lastPlaceLoc[0],
                                                 lastPlaceLoc[1],lastPlace_tmp_loc[0],
                                                 lastPlace_tmp_loc[1], 1);
@@ -278,7 +279,7 @@ void UnEmployedAdultSchedule::FoundPlaceToGo(Building & lastPlace_tmp, int &time
 }
 
 void UnEmployedAdultSchedule::SpendTimeOutside(std::pair<int, School*> & nextSchoolTime, int &timeSpentAtLocation,
-                                        int & lastPlaceLoc) {
+                                        int * lastPlaceLoc) {
     
     timeSpentAtLocation=1;
     CalcTimeSpentAtLocation(nextSchoolTime, timeSpentAtLocation);
@@ -300,7 +301,7 @@ void UnEmployedAdultSchedule::SpendTimeOutside(std::pair<int, School*> & nextSch
     } // End Of Null Check Else
 }
 
-void UnEmployedAdultSchedule::NoChildToPickUp(std::pair<int, School*> & nextSchoolTime, int & lastPlaceLoc) {
+void UnEmployedAdultSchedule::NoChildToPickUp(std::pair<int, School*> & nextSchoolTime, int *lastPlaceLoc) {
     
     // Check if adult has been out too long.
     if(totalTimeSpentAway+travelTimeToHome+1>=maxTimeAway || dayTime+travelTimeToHome+1>=crewfew) {
@@ -336,7 +337,7 @@ void UnEmployedAdultSchedule::ScheduleBeforeCurfewTime(std::pair<int, School*> &
         // Get the location of the last place 
         int *lastPlaceLoc =lastPlace->getLocation();
         // Calculate the travel Time to Home and School
-        CalculateTravelTimeToHomenSchool(lastPlaceLoc, nextSchoolTime);
+        CalculateTravelTimeToHomenSchool(nextSchoolTime, lastPlaceLoc);
         
         travelTime = 0;
         
@@ -352,7 +353,7 @@ void UnEmployedAdultSchedule::ScheduleBeforeCurfewTime(std::pair<int, School*> &
 void UnEmployedAdultSchedule::CurfewNotEqualsFullDay() {
     //**std::cout<<"\tHandeling Crewfew"<<std::endl;
     if(lastPlace != home){
-        computeTransportSpecifics(transportType, transportRate, travelTime, int travelTimeToHome,
+        computeTransportSpecifics(transportType, transportRate, travelTime, travelTimeToHome,
                             travelTimeToHome, transportProbablities, transportRadiusLimits,
                             transportRates, currentSchedule, lastPlace,
                             home, visitorType, trueTime+dayTime);
