@@ -238,7 +238,7 @@ void Policy::modifySchedule(Family *f, Person *p, ScheduleGenerator *scheduleGen
                                                       configuration->getTransportRate(),
                                                       primaryVisitorTypeProb,
                                                       ((oldSchedule->getScheduleType() == 4)? NULL : secondaryVisitorTypeProb),
-                                                      false);
+                                                      false, generator);
             //std::cout<<"---- ChildCare"<<std::endl;
             //std::cout<<childCareAdult->getSchedule()->toString()<<std::endl;
             childCareAdult->getSchedule()->setCurrentTimeStep(currentTime);
@@ -253,7 +253,7 @@ void Policy::modifySchedule(Family *f, Person *p, ScheduleGenerator *scheduleGen
                                                       configuration->getTransportRate(),
                                                       NULL,
                                                       NULL,
-                                                      false);
+                                                      false, generator);
             //std::cout<<"---- Child Schedule "<<std::endl;
             //std::cout<<p->getSchedule()->toString()<<std::endl;
 
@@ -272,7 +272,7 @@ void Policy::modifySchedule(Family *f, Person *p, ScheduleGenerator *scheduleGen
                                                       configuration->getTransportRate(),
                                                       primaryVisitorTypeProb,
                                                       ((oldSchedule->getScheduleType() == 4)? NULL : secondaryVisitorTypeProb),
-                                                      false);
+                                                      false, generator);
             //std::cout<<"---- Other"<<std::endl;
             //std::cout<<p->getSchedule()->toString()<<std::endl;
 

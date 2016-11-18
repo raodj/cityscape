@@ -93,7 +93,7 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                transportRate,
                                adultWorkVisitorProbablities,
                                adultNoworkVisitorProbablites,
-                               true);
+                               true, generator);
         std::unordered_map< int , Person> *people =currentFamily->getAllPersons();
         for(auto p = people->begin(); p != people->end(); p++){
             Person *p1 = &(p->second);
@@ -145,6 +145,7 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                                transportRate,
                                                adultWorkVisitorProbablities,
                                                adultNoworkVisitorProbablites,
+                                               false,
                                                generator);
                         break;
                     case 4:
@@ -156,6 +157,7 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                                transportRate,
                                                adultUnemployeedVisitorProbablities,
                                                NULL,
+                                               false, // need to verify this val
                                                generator);
                         break;
                     default:
@@ -328,7 +330,7 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
         }
         case 4:
         {
-            UnEmployedAdultSchedule UnEmployedAdult(p1
+            UnEmployedAdultSchedule UnEmployedAdult(p1,
                                              currentFamily,
                                              (childModification>-1?true:false),
                                              radiusLimit[5],

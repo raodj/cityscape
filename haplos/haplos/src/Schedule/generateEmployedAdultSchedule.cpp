@@ -16,6 +16,7 @@
 #include <random>
 #include <vector>
 #include <map>
+#include <algorithm>
 generateEmployedAdultSchedule::generateEmployedAdultSchedule() {
 }
 
@@ -40,7 +41,7 @@ generateEmployedAdultSchedule::generateEmployedAdultSchedule(Person *p,
     // We get the home, lastPlace, jobLocation and dayCareLocation.
     home =f->getHome();
     lastPlace = home;
-    jobLocation=static_cast<Business* >allBuildings->at(currentSchedule->getJobLocation());
+    jobLocation=static_cast<Building*>(allBuildings->at(currentSchedule->getJobLocation()));
     dayCareLocation = f->getDaycare();
     
     //double workProb=0.90;
@@ -107,8 +108,8 @@ generateEmployedAdultSchedule::generateEmployedAdultSchedule(Person *p,
     
 }
 
-generateEmployedAdultSchedule::~generateEmployedAdultSchedule() {
-}
+//generateEmployedAdultSchedule::~generateEmployedAdultSchedule() {
+//}
 
 
 
@@ -126,10 +127,10 @@ void generateEmployedAdultSchedule::determineTimeToSpendAtJob() {
         }
 }
 
-void generateEmployedAdultSchedule::determineTravelTimeToHome(int &lastPlaceLoc,
+void generateEmployedAdultSchedule::determineTravelTimeToHome(int *lastPlaceLoc,
         int &travelTimeToHome) {
     
-    lastPlaceLoc =lastPlace.getLocation();
+    lastPlaceLoc = lastPlace->getLocation();
         
     travelTimeToHome = calculateTravelTime(lastPlaceLoc[0],
                                                    lastPlaceLoc[1],
@@ -140,7 +141,7 @@ void generateEmployedAdultSchedule::determineTravelTimeToHome(int &lastPlaceLoc,
 }
 
 void generateEmployedAdultSchedule::calculateAllTravelTimes(int &travelTimeToHome,int &travelTimeToSchool,
-        int &travelTimeSchoolFromJob, int &travelTimeToDayCare,int &travelTimeToJob,int &lastPlaceLoc) {
+        int &travelTimeSchoolFromJob, int &travelTimeToDayCare,int &travelTimeToJob,int *lastPlaceLoc) {
     
     travelTimeToSchool = 0;
     travelTimeSchoolFromJob = 0;
@@ -190,12 +191,12 @@ void generateEmployedAdultSchedule::calculateMaxTime(int &maxTimeOut, int &trave
     }
 }
 
-void generateEmployedAdultSchedule::ChildNeedsToGoToSchool(int &day,int &lastPlaceLoc) {
+void generateEmployedAdultSchedule::ChildNeedsToGoToSchool(int &day,int *lastPlaceLoc) {
     // Get From School
     //**std::cout<<"\tGet Kid from School"<<std::endl;
     if(lastPlace != nextSchoolTime.second || visitorType!='V'){
         
-        void computeTransportSpecifics(transportType, transportRate, travelTime, 
+        computeTransportSpecifics(transportType, transportRate, travelTime, 
 					travelTimeToSchool,
                             		travelTimeToSchool, 
 					transportProbablities, 
@@ -396,7 +397,7 @@ void generateEmployedAdultSchedule::GoingHome(int &timeSpentAtLocation, int &tra
 
     if (lastPlace!=home){
         // Caculate transport specifics to go home
-        computeTransportSpecifics(transportType, transportRate, travelTime, int travelTimeToHome,
+        computeTransportSpecifics(transportType, transportRate, travelTime, travelTimeToHome,
                             maxTimeAway-totalTimeSpentAway-travelTimeToHome-1, transportProbablities, transportRadiusLimits,
                             transportRates, currentSchedule, lastPlace,
                             home, visitorType, trueTime+dayTime);
@@ -488,6 +489,7 @@ int generateEmployedAdultSchedule::CalculateTimeSpentAtLocation(int &timeSpentAt
         //**std::cout<<"\t\tTime Left: "<<timeLeft<<std::endl;
         timeSpentAtLocation = ((int)rand() %(maxTimeOut>timeLeft && timeLeft>1? timeLeft-1 : maxTimeOut-1))+1;
     }
+    return timeSpentAtLocation;
 }
 
 void generateEmployedAdultSchedule::NoPlaceToGoOut(int &timeSpentAtLocation, int &travelTimeToHome) {
@@ -512,7 +514,7 @@ void generateEmployedAdultSchedule::NoPlaceToGoOut(int &timeSpentAtLocation, int
     visitorType='H';
 }
 
-void generateEmployedAdultSchedule::FoundPlaceToGoOut(int &timeSpentAtLocation, int &travelTimeToHome, int &lastPlaceLoc, Building* lastPlace_tmp) {
+void generateEmployedAdultSchedule::FoundPlaceToGoOut(int &timeSpentAtLocation, int &travelTimeToHome, int *lastPlaceLoc, Building* lastPlace_tmp) {
     //**std::cout<<"\t\t\tLocation Found"<<std::endl;
     if(lastPlace != lastPlace_tmp || visitorType!='V') {
         
@@ -547,7 +549,7 @@ void generateEmployedAdultSchedule::FoundPlaceToGoOut(int &timeSpentAtLocation, 
 }
 
 void generateEmployedAdultSchedule::ChanceOfGoingOutside(int &timeSpentAtLocation, int &maxTimeOut, int &travelTimeToHome,
-   int &timeLeft, int &lastPlaceLoc) {
+   int &timeLeft, int *lastPlaceLoc) {
     //ChanceOfGoingOut                                                         
     timeSpentAtLocation = CalculateTimeSpentAtLocation(timeSpentAtLocation, maxTimeOut, timeLeft);
 
@@ -568,7 +570,7 @@ void generateEmployedAdultSchedule::ChanceOfGoingOutside(int &timeSpentAtLocatio
                                 
 }
 
-void generateEmployedAdultSchedule::selectActivity(int &activity, int &travelTimeToHome, int &timeLeft, int &maxTimeOut, int &lastPlaceLoc) {
+void generateEmployedAdultSchedule::selectActivity(int &activity, int &travelTimeToHome, int &timeLeft, int &maxTimeOut, int *lastPlaceLoc) {
     
     int timeSpentAtLocation = 0;
     switch(activity) {
@@ -590,7 +592,7 @@ void generateEmployedAdultSchedule::selectActivity(int &activity, int &travelTim
     }
 }
 
-int generateEmployedAdultSchedule::determineDistribution() {
+int generateEmployedAdultSchedule::determineDistribution(int &travelTimeToHome, int &maxTimeOut) {
     int activity=0;
                         
     // Determine which Distribution to use
@@ -607,14 +609,14 @@ int generateEmployedAdultSchedule::determineDistribution() {
     return activity;
 }
 
-void generateEmployedAdultSchedule::determineActivity(int &travelTimeToHome, int &timeLeft, int &maxTimeOut, int &lastPlaceLoc) {
+void generateEmployedAdultSchedule::determineActivity(int &travelTimeToHome, int &timeLeft, int &maxTimeOut, int *lastPlaceLoc) {
     
-    int activity = determineDistribution();
+    int activity = determineDistribution(travelTimeToHome, maxTimeOut);
     
     selectActivity(activity, travelTimeToHome, timeLeft, maxTimeOut, lastPlaceLoc);
 }
 
-void generateEmployedAdultSchedule::TimeLeftToDoStuff(int &travelTimeToHome, int &maxTimeOut, int &lastPlaceLoc) {
+void generateEmployedAdultSchedule::TimeLeftToDoStuff(int &travelTimeToHome, int &maxTimeOut, int *lastPlaceLoc) {
     
     int timeLeft=(youngChildModification ? crewfew-dayTime-travelTimeToHome-travelTimeToDayCare+1 :
                                   crewfew-dayTime-travelTimeToHome);
@@ -656,7 +658,7 @@ void generateEmployedAdultSchedule::TimeLeftToDoStuff(int &travelTimeToHome, int
     
 }
 
-void generateEmployedAdultSchedule::ChildDoesntNeedToGoToSchool(int &travelTimeToHome, int &maxTimeOut, int &lastPlaceLoc) {
+void generateEmployedAdultSchedule::ChildDoesntNeedToGoToSchool(int &travelTimeToHome, int &maxTimeOut, int *lastPlaceLoc) {
     //Child does not need to go to school right now
     if(totalTimeSpentAway+travelTimeToHome+1>=maxTimeOut) {
         //Been out too Long Need to Get Sleep
@@ -666,12 +668,12 @@ void generateEmployedAdultSchedule::ChildDoesntNeedToGoToSchool(int &travelTimeT
     }
 }
 
-void generateEmployedAdultSchedule::CurfewNotEqualsFullDay(int &travelTimeToHome, int &lastPlaceLoc, int &day) {
+void generateEmployedAdultSchedule::CurfewNotEqualsFullDay(int &travelTimeToHome, int *lastPlaceLoc, int &day) {
     
     if(youngChildModification && kidsAtDaycare){
         //Pick Young Child off at Daycare                
         if(lastPlace!=f->getDaycare() || visitorType!='V') {
-            computeTransportSpecifics(transportType, transportRate, travelTime, int travelTimeToDayCare,
+            computeTransportSpecifics(transportType, transportRate, travelTime, travelTimeToDayCare,
                         travelTimeToDayCare, transportProbablities, transportRadiusLimits,
                         transportRates, currentSchedule, lastPlace,
                         f->getDaycare(), visitorType, trueTime+dayTime);
@@ -745,7 +747,7 @@ void generateEmployedAdultSchedule::DealingWithDayCarriedOver() {
 }
 
 void generateEmployedAdultSchedule::scheduleBeforeCurfewTime(int &travelTimeToHome,int &travelTimeToSchool,
-        int &travelTimeSchoolFromJob, int &travelTimeToDayCare,int &travelTimeToJob,int &maxTimeOut, int &lastPlaceLoc, int &day) {
+        int &travelTimeSchoolFromJob, int &travelTimeToDayCare,int &travelTimeToJob,int &maxTimeOut, int *lastPlaceLoc, int &day) {
     // while there is still time left before curfew, the foll. activities repeat
     while(dayTime<crewfew-travelTimeToHome-1){
         
@@ -754,7 +756,7 @@ void generateEmployedAdultSchedule::scheduleBeforeCurfewTime(int &travelTimeToHo
         
         // Calculates all necessary travel Times for the schedule.       
         calculateAllTravelTimes(travelTimeToHome,travelTimeToSchool,
-        travelTimeSchoolFromJob, travelTimeToDayCare, travelTimeToJob, maxTimeOut);
+        travelTimeSchoolFromJob, travelTimeToDayCare, travelTimeToJob, lastPlaceLoc);
         
         // Check if child needs to go to school
         // The check conditions explained:
@@ -809,7 +811,7 @@ void generateEmployedAdultSchedule::generateSchedule() {
         travelTimeToDayCare =0;
         travelTimeToJob =0;
         transportRate =1;
-        int *lastPlaceLoc;
+        int *lastPlaceLoc = NULL;
         int travelTimeToHome;
         
         //Pre curfew variables.
@@ -826,12 +828,12 @@ void generateEmployedAdultSchedule::generateSchedule() {
         determineTimeToSpendAtJob();
         
         // Determine travel time to Home
-        determineTravelTimeToHome(*lastPlaceLoc, travelTimeToHome);
+        determineTravelTimeToHome(lastPlaceLoc, travelTimeToHome);
         
         // While there is time before the curfew time
         scheduleBeforeCurfewTime(travelTimeToHome,travelTimeToSchool,
                                 travelTimeSchoolFromJob, travelTimeToDayCare,
-                                travelTimeToJob,maxTimeOut, *lastPlaceLoc, day);
+                                travelTimeToJob,maxTimeOut, lastPlaceLoc, day);
 
         
                 
@@ -872,7 +874,7 @@ std::vector <std::pair<int, School*> > generateEmployedAdultSchedule::getSchoolT
 }
 
 int generateEmployedAdultSchedule::calculateTravelTime(int & start_x, int & start_y,
-                               int & end_x, int & end_y,  int & transportRate ){
+                               int end_x, int end_y,  int  transportRate ){
     if(std::abs(start_x-end_x)>std::abs(start_y-end_y)){
         return std::ceil(std::abs(start_x-end_x)/(double)transportRate);
     }else{
@@ -1078,7 +1080,7 @@ int generateEmployedAdultSchedule::addMoveTo(Schedule *s, Building *start, Build
  * @param visitorType The purpose of visit at a location.
  * @param endTime The HAPLOS time which is nothing but trueTime + dayTime
  */
-void ScheduleGenerator::computeTransportSpecifics(char transportType, int transportRate, int travelTime, int travelTimeToAPlace,
+void generateEmployedAdultSchedule::computeTransportSpecifics(char transportType, int transportRate, int travelTime, int travelTimeToAPlace,
                             int timeLimit, double *transportProbablities, int *transportRadiusLimits,
                             int *transportRates, Schedule *currentSchedule, Building *startLoc,
                             Building *destination, int visitorType, int endTime) {
