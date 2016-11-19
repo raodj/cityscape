@@ -146,7 +146,7 @@ AC_DEFUN([AC_CHECK_GCC_VERSION],
     if test $majorVer -lt 4; then
        good="no"
     elif test $majorVer -eq 4; then
-	 if test $minorVer -lt 9; then
+	 if test $minorVer -lt 8; then
  	     good="no"
 	 fi
 	     # Add checks for buggy gcc 4.0.1+ versions here
