@@ -109,7 +109,9 @@
    these commands.
    
    \code{.unparsed}
-   $ src/bldgen --osm-xml tests/miami.osm --fig-file tests/miami.fig --cache cache
+   $ cd tests
+   $ ../src/bldgen --osm-xml miami.osm --fig-file miami.fig --cache ../cache
+   $ fig2dev -L png miami.fig miami.png
    \endcode
 
    The above command should create an xfig file `tests/miami.fig`. You
