@@ -97,6 +97,21 @@
    $ make
    $ make doxygen-doc
    \endcode
+
+   In some cases the system configuration and module setup on servers
+   can be different. You would have to consult your system
+   adminstrator to determine location of software modules, versions,
+   and appropriately use them to configure your build system (this is
+   the standard procedure, nothing special here).  For example, on
+   redhawk.hpc.miamioh.edu, the following operations are required:
+
+   \code{.unparsed}
+   $ module load gcc-4.9.2 boost-1_62-gnu autoconf-2.69
+   $ autoreconf -i -v
+   $ ./configure --with-boost=/software/boost/1_62_0/gnu-4.9.2 DX_DOXYGEN=/software/doxygen/1.8.12/bin/doxygen
+   $ make
+   $ make doxygen-doc
+   \endcode
    
    \subsection run Running the software
 
