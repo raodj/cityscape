@@ -508,7 +508,7 @@ AS_IF([[test $DX_FLAG_ps -eq 1 -o $DX_FLAG_pdf -eq 1]],
 ## ------------------------------------------------- ##
 
 DX_V_LATEX = \$(_DX_v_LATEX_\$(V))
-_DX_v_LATEX_ = \$(_DX_v_LATEX_\$(AM_DEFAULT_VERBOSITY))
+# _DX_v_LATEX_ = \$(_DX_v_LATEX_\$(AM_DEFAULT_VERBOSITY))
 _DX_v_LATEX_0 = @echo \"  LATEX \" \$][@;
 
 DX_CLEAN_LATEX = \$(DX_DOCDIR)/latex]dnl
@@ -532,7 +532,7 @@ ${DX_SNIPPET_ps}\
 ${DX_SNIPPET_pdf}\
 ${DX_SNIPPET_latex}\
 DX_V_DXGEN = \$(_DX_v_DXGEN_\$(V))
-_DX_v_DXGEN_ = \$(_DX_v_DXGEN_\$(AM_DEFAULT_VERBOSITY))
+# _DX_v_DXGEN_ = \$(_DX_v_DXGEN_\$(AM_DEFAULT_VERBOSITY))
 _DX_v_DXGEN_0 = @echo \"  DXGEN \" \$<;
 
 .PHONY: doxygen-run doxygen-doc \$(DX_PS_GOAL) \$(DX_PDF_GOAL)
