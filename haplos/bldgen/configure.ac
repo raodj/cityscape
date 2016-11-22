@@ -46,6 +46,7 @@ AC_INIT([bldgen],[0.1.0],[raodm@muohio.edu])
 AM_INIT_AUTOMAKE([-Wall -Werror subdir-objects])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIR([m4])
 AC_REQUIRE_CPP
 
 # The macros above automatically fill in some CXXFLAGS so we'll undo it.
@@ -83,7 +84,7 @@ AC_DEFUN([AC_PROG_ICC],
 
      if test -z "$icc"; then
          AC_MSG_CHECKING([for icc])
-         icc=`mpicxx --version | grep -iw "icc"`
+         icc=`$CXX --version | grep -iw "icc"`
 	 if test -n "$icc"; then
 	     icc="yes"
 	 else
@@ -213,7 +214,7 @@ AC_PROG_GCC
 AC_PROG_RANLIB
 
 # Checks for suitable archiver to be used
-AM_PROG_AR
+# AM_PROG_AR
 
 # Check and set some default compiler flags for the build
 AC_CHECK_ARGS([-Minform=warn], [INFORM_WARN="-Minform=warn"], [INFORM_WARN=""])
@@ -266,7 +267,12 @@ AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
-AC_CHECK_FUNCS([bzero floor gethostbyname gethostname gethrtime gettimeofday memset mkdir modf pow rint socket sqrt strcasecmp strchr strdup strstr strtol])
+# AC_CHECK_FUNCS([bzero floor gethostbyname gethostname gethrtime gettimeofday memset mkdir modf pow rint socket sqrt strcasecmp strchr strdup strstr strtol])
+
+# Check for boost macros
+AX_BOOST_BASE([1.54],, [AC_MSG_ERROR([bldgen needs Boost. But boost was not found in your system])])
+AX_BOOST_ASIO
+
 
 # Setup doxygen support
 DX_DOXYGEN_FEATURE(ON)
