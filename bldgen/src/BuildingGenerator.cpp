@@ -36,6 +36,7 @@
 //
 //-----------------------------------------------------------
 
+#include "Boost.h"
 #include "BuildingGenerator.h"
 #include "ImageGenerator.h"
 

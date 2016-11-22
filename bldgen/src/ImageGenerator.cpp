@@ -36,6 +36,7 @@
 //
 //-----------------------------------------------------------
 
+#include "Boost.h"
 #include "ImageGenerator.h"
 #include "OsmXFigHelper.h"
 

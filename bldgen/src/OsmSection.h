@@ -36,15 +36,9 @@
 //
 //-----------------------------------------------------------
 
-// Note that the property tree headers are included here so that the
-// header can be compiled as a "pre-compiled header" to make overall
-// compilation (particularly during development) go much faster (~3x
-// faster with a good SSD).
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/algorithm/string.hpp>
+// Note: This file requires including "Boost.h" in .cpp files.  This
+// enables correct use of precompiled headers to keep compiles fast.
 
-// Additional headers here to make compile faster.
 #include <iostream>
 #include <string>
 
