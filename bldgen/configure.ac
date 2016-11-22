@@ -270,7 +270,7 @@ AC_FUNC_STRTOD
 # AC_CHECK_FUNCS([bzero floor gethostbyname gethostname gethrtime gettimeofday memset mkdir modf pow rint socket sqrt strcasecmp strchr strdup strstr strtol])
 
 # Check for boost macros
-AX_BOOST_BASE([1.54],, [AC_MSG_ERROR([bldgen needs Boost. But boost was not found in your system])])
+AX_BOOST_BASE([1.53],, [AC_MSG_ERROR([bldgen needs Boost. But boost was not found in your system])])
 AX_BOOST_ASIO
 
 
