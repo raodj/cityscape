@@ -36,6 +36,7 @@
 //
 //-----------------------------------------------------------
 
+#include "Boost.h"
 #include "OsmSection.h"
 
 // Using boost property tree

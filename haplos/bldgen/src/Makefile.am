@@ -25,20 +25,22 @@
 include $(top_srcdir)/Makefile.common.am
 
 AM_CPPFLAGS+= -Wno-unused-local-typedefs
-AM_CPPFLAGS+= 
+AM_CPPFLAGS+= $(BOOST_CPPFLAGS)
 
 # first build pre-compiled header
-BUILT_SOURCES = OsmSection.h.gch
-CLEANFILES = OsmSection.h.gch
+BUILT_SOURCES = Boost.h.gch
+CLEANFILES = Boost.h.gch
 
-OsmSection.h.gch: OsmSection.h
-	$(CXXCOMPILE) $(AM_CPPFLAGS) -fPIC -DPIC OsmSection.h
+Boost.h.gch: Boost.h
+	$(CXXCOMPILE) -MT $@ -MD -MP -MF ./$(DEPDIR)/Boost.h.Po -c -o $@ $<
+	
+# $(CXXCOMPILE) $(AM_CPPFLAGS) OsmSection.h
 
 # Now use standard macros for building searums
 bin_PROGRAMS = bldgen
 
-bldgen_LDADD = -lboost_system -lpthread
-bldgen_LDFLAGS = 
+bldgen_LDADD = $(BOOST_ASIO_LIB)
+bldgen_LDFLAGS = $(BOOST_LDFLAGS)
 
 bldgen_SOURCES = \
 	Utils.h\

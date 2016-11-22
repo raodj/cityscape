@@ -1,5 +1,5 @@
-#ifndef MAIN_CPP
-#define MAIN_CPP
+#ifndef BOOST_H
+#define BOOST_H
 
 //------------------------------------------------------------
 //
@@ -36,16 +36,20 @@
 //
 //-----------------------------------------------------------
 
-#include "Boost.h"
-#include "BuildingGenerator.h"
+/** \file Boost.h
 
-int main(int argc, char *argv[]) {
-    // Create a building generator.
-    BuildingGenerator bg;
-    // Have it do all the processing.
-    bg.process(argc, argv);
-    return 0;
-}
+	\brief All the boost headers are placed in this header for use
+	with precompiled header functionality.
+	
+	Note that the property tree headers are included here so that the
+	header can be compiled as a "pre-compiled header" to make overall
+	compilation (particularly during development) go much faster (~3x
+	faster with a good SSD).
+*/
 
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/asio.hpp>
 
 #endif
