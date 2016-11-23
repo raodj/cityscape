@@ -93,7 +93,7 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                transportRate,
                                adultWorkVisitorProbablities,
                                adultNoworkVisitorProbablites,
-                               true, generator);
+                               true);
         std::unordered_map< int , Person> *people =currentFamily->getAllPersons();
         for(auto p = people->begin(); p != people->end(); p++){
             Person *p1 = &(p->second);
@@ -110,8 +110,7 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                                transportRate,
                                                NULL,
                                                NULL,
-                                               true,
-                                               generator);
+                                               true);
                         break;
                     case 1:
                         generatePersonSchedule(currentFamily,
@@ -122,8 +121,7 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                                transportRate,
                                                NULL,
                                                NULL,
-                                               true,
-                                               generator);
+                                               true);
                         break;
                     case 2:
                         generatePersonSchedule(currentFamily,
@@ -134,7 +132,7 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                                transportRate,
                                                olderSchoolChildSchoolDayVisitorProbablities,
                                                olderSchoolChildWeekendVisitorProbablities,
-                                               true,generator);
+                                               true);
                         break;
                     case 3:
                         generatePersonSchedule(currentFamily,
@@ -145,8 +143,7 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                                transportRate,
                                                adultWorkVisitorProbablities,
                                                adultNoworkVisitorProbablites,
-                                               false,
-                                               generator);
+                                               false);
                         break;
                     case 4:
                         generatePersonSchedule(currentFamily,
@@ -157,8 +154,7 @@ void ScheduleGenerator::generateSchedules(Population &pop, int *radiusLimit, dou
                                                transportRate,
                                                adultUnemployeedVisitorProbablities,
                                                NULL,
-                                               false, // need to verify this val
-                                               generator);
+                                               false);
                         break;
                     default:
                         //**std::cout<<"ERROR: Unknown Schedule Type"<<std::endl;
@@ -204,8 +200,7 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
                                                int *transportRates,
                                                double *primaryVisitorTypeProb,
                                                double *secondaryVisitorTypeProb,
-                                               bool specialLocationFlag,
-                                        std::default_random_engine generator){
+                                               bool specialLocationFlag){
     //std::cout<<"Generating Schedule"<<std::endl;
     Schedule *currentSchedule = p1->getSchedule();
     int childModification = -1;
@@ -310,7 +305,7 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
                                            primaryVisitorTypeProb,
                                            secondaryVisitorTypeProb,
                                            specialLocationFlag, 
-                                           allBuildings,densityData,generator);
+                                           allBuildings,densityData);
             
             employedAdult.generateSchedule();
             
@@ -338,7 +333,7 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
                                              transportRadiusLimits,
                                              transportRates,
                                              primaryVisitorTypeProb,
-                                             allBuildings,densityData,generator);
+                                             allBuildings,densityData);
             
             UnEmployedAdult.GenerateSchedule();
             

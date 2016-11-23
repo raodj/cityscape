@@ -27,14 +27,10 @@
           <in>Schedule.cpp</in>
           <in>ScheduleGenerator.cpp</in>
           <in>SchoolAgedChildSchedule.cpp</in>
-          <in>SchoolAgedChildSchedule.h</in>
           <in>TimeSlot.cpp</in>
           <in>UnEmployedAdultSchedule.cpp</in>
-          <in>UnEmployedAdultSchedule.h</in>
           <in>YoungChildSchedule.cpp</in>
-          <in>YoungChildSchedule.h</in>
           <in>generateEmployedAdultSchedule.cpp</in>
-          <in>generateEmployedAdultSchedule.h</in>
           <in>generateYoungSchoolAgedChildSchedule.cpp</in>
         </df>
         <in>Family.cpp</in>
@@ -81,6 +77,7 @@
           <ccTool>
             <standard>8</standard>
             <incDir>
+              <pElem>src</pElem>
               <pElem>.</pElem>
             </incDir>
             <preprocessorList>
@@ -193,12 +190,9 @@
       <item path="src/Schedule/SchoolAgedChildSchedule.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="src/Schedule/SchoolAgedChildSchedule.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="8">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/Schedule/TimeSlot.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
@@ -207,29 +201,23 @@
       <item path="src/Schedule/UnEmployedAdultSchedule.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="src/Schedule/UnEmployedAdultSchedule.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="8">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/Schedule/YoungChildSchedule.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="src/Schedule/YoungChildSchedule.h" ex="false" tool="3" flavor2="0">
+            flavor2="8">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/Schedule/generateEmployedAdultSchedule.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="src/Schedule/generateEmployedAdultSchedule.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="8">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/Schedule/generateYoungSchoolAgedChildSchedule.cpp"
             ex="false"
