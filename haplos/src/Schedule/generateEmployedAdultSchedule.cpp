@@ -129,13 +129,13 @@ void generateEmployedAdultSchedule::determineTimeToSpendAtJob() {
 void generateEmployedAdultSchedule::determineTravelTimeToHome(int* &lastPlaceLoc,
         int &travelTimeToHome) {
     
-    *lastPlaceLoc = lastPlace->getLocation();
+    lastPlaceLoc = lastPlace->getLocation();
    
-    travelTimeToHome = calculateTravelTime(**lastPlaceLoc,
-                                                   *lastPlaceLoc[1],
-                                                   homeLoc[0],
-                                                   homeLoc[1],
-                                                   1);
+    travelTimeToHome = calculateTravelTime(*lastPlaceLoc,
+                                           lastPlaceLoc[1],
+                                           homeLoc[0],
+                                           homeLoc[1],
+                                           1);
     
 }
 
@@ -826,7 +826,7 @@ void generateEmployedAdultSchedule::generateSchedule() {
         determineTimeToSpendAtJob();
         
         // Determine travel time to Home
-        determineTravelTimeToHome(&lastPlaceLoc, travelTimeToHome);
+        determineTravelTimeToHome(lastPlaceLoc, travelTimeToHome);
         // var used for debuggin
         //std::cout << temp_debug[0] << "\t " << temp_debug[1] << std::endl;
         // While there is time before the curfew time
