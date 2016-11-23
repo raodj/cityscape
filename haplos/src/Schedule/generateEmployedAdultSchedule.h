@@ -100,7 +100,7 @@ public:
     void generateSchedule();
     
     void determineTimeToSpendAtJob();
-    void determineTravelTimeToHome(int *lastPlace, int &travelTimeToHome);
+    void determineTravelTimeToHome(int* &lastPlace, int &travelTimeToHome);
     void scheduleBeforeCurfewTime(int &travelTimeToHome,int &travelTimeToSchool,
         int &travelTimeSchoolFromJob, int &travelTimeToDayCare,int &travelTimeToJob,int &maxTimeOut, int *lastPlaceLoc, int &day);
     
