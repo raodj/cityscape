@@ -127,7 +127,7 @@ void generateEmployedAdultSchedule::determineTimeToSpendAtJob() {
         }
 }
 
-void generateEmployedAdultSchedule::determineTravelTimeToHome(int *lastPlaceLoc,
+void generateEmployedAdultSchedule::determineTravelTimeToHome(int* &lastPlaceLoc,
         int &travelTimeToHome) {
     
     lastPlaceLoc = lastPlace->getLocation();
