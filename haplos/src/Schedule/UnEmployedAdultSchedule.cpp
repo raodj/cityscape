@@ -25,8 +25,7 @@ UnEmployedAdultSchedule::UnEmployedAdultSchedule(Person *p,
                             double *transportProbablities, int *transportRadiusLimits,
                             int *transportRates, double *visitorTypeProbablities,
                             std::unordered_map<int, Building*> *allBuildingsTemp,
-                            std::vector< std::vector < Location > > *densityData,
-                            std::default_random_engine generator) {
+                            std::vector< std::vector < Location > > *densityData) {
     
     currentSchedule = p->getSchedule();
 
@@ -77,7 +76,7 @@ void UnEmployedAdultSchedule::AssignInitialSchoolTimings(std::pair<int, School*>
 }
 
 void UnEmployedAdultSchedule::CalculateTravelTimeToHomenSchool(std::pair<int, School*> & nextSchoolTime,
-                                            int * lastPlaceLoc) {
+                                            int lastPlaceLoc[]) {
     
         travelTimeToHome = calculateTravelTime(lastPlaceLoc[0],
                                                 lastPlaceLoc[1],
@@ -243,7 +242,7 @@ void UnEmployedAdultSchedule::NoPlaceToGo(int &timeSpentAtLocation) {
 }
 
 void UnEmployedAdultSchedule::FoundPlaceToGo(Building * lastPlace_tmp, int &timeSpentAtLocation,
-                                        int * lastPlaceLoc) {
+                                        int lastPlaceLoc[]) {
     //Found Location
     if(lastPlace != lastPlace_tmp || visitorType!='V') {
         int *lastPlace_tmp_loc = lastPlace_tmp->getLocation();
@@ -279,7 +278,7 @@ void UnEmployedAdultSchedule::FoundPlaceToGo(Building * lastPlace_tmp, int &time
 }
 
 void UnEmployedAdultSchedule::SpendTimeOutside(std::pair<int, School*> & nextSchoolTime, int &timeSpentAtLocation,
-                                        int * lastPlaceLoc) {
+                                        int lastPlaceLoc[]) {
     
     timeSpentAtLocation=1;
     CalcTimeSpentAtLocation(nextSchoolTime, timeSpentAtLocation);
@@ -301,7 +300,7 @@ void UnEmployedAdultSchedule::SpendTimeOutside(std::pair<int, School*> & nextSch
     } // End Of Null Check Else
 }
 
-void UnEmployedAdultSchedule::NoChildToPickUp(std::pair<int, School*> & nextSchoolTime, int *lastPlaceLoc) {
+void UnEmployedAdultSchedule::NoChildToPickUp(std::pair<int, School*> & nextSchoolTime, int lastPlaceLoc[]) {
     
     // Check if adult has been out too long.
     if(totalTimeSpentAway+travelTimeToHome+1>=maxTimeAway || dayTime+travelTimeToHome+1>=crewfew) {

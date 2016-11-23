@@ -28,8 +28,7 @@ generateEmployedAdultSchedule::generateEmployedAdultSchedule(Person *p,
                             double *visitorTypeProbablities_work,
                             double *visitorTypeProbablities_noWork,
                             bool goToWork, std::unordered_map<int, Building*> *allBuildingsTemp,
-                            std::vector< std::vector < Location > > *densityData,
-                            std::default_random_engine generator) {
+                            std::vector< std::vector < Location > > *densityData) {
     
     this->f = f;
     this->schoolChildModification = schoolChildModification;
@@ -130,10 +129,10 @@ void generateEmployedAdultSchedule::determineTimeToSpendAtJob() {
 void generateEmployedAdultSchedule::determineTravelTimeToHome(int* &lastPlaceLoc,
         int &travelTimeToHome) {
     
-    lastPlaceLoc = lastPlace->getLocation();
-        
-    travelTimeToHome = calculateTravelTime(lastPlaceLoc[0],
-                                                   lastPlaceLoc[1],
+    *lastPlaceLoc = lastPlace->getLocation();
+   
+    travelTimeToHome = calculateTravelTime(**lastPlaceLoc,
+                                                   *lastPlaceLoc[1],
                                                    homeLoc[0],
                                                    homeLoc[1],
                                                    1);
@@ -190,7 +189,6 @@ void generateEmployedAdultSchedule::calculateMaxTime(int &maxTimeOut, int &trave
         maxTimeOut=0;
     }
 }
-
 void generateEmployedAdultSchedule::ChildNeedsToGoToSchool(int &day,int *lastPlaceLoc) {
     // Get From School
     //**std::cout<<"\tGet Kid from School"<<std::endl;
@@ -828,8 +826,9 @@ void generateEmployedAdultSchedule::generateSchedule() {
         determineTimeToSpendAtJob();
         
         // Determine travel time to Home
-        determineTravelTimeToHome(lastPlaceLoc, travelTimeToHome);
-        
+        determineTravelTimeToHome(&lastPlaceLoc, travelTimeToHome);
+        // var used for debuggin
+        //std::cout << temp_debug[0] << "\t " << temp_debug[1] << std::endl;
         // While there is time before the curfew time
         scheduleBeforeCurfewTime(travelTimeToHome,travelTimeToSchool,
                                 travelTimeSchoolFromJob, travelTimeToDayCare,
@@ -873,7 +872,7 @@ std::vector <std::pair<int, School*> > generateEmployedAdultSchedule::getSchoolT
     return schoolTimes;
 }
 
-int generateEmployedAdultSchedule::calculateTravelTime(int & start_x, int & start_y,
+int generateEmployedAdultSchedule::calculateTravelTime(int  start_x, int start_y,
                                int end_x, int end_y,  int  transportRate ){
     if(std::abs(start_x-end_x)>std::abs(start_y-end_y)){
         return std::ceil(std::abs(start_x-end_x)/(double)transportRate);
