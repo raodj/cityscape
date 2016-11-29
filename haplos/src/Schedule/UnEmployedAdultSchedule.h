@@ -79,23 +79,23 @@ public:
     void ScheduleBeforeCurfewTime(std::pair<int, School*> & nextSchoolTime, int & day, size_t & currentPlaceInSchoolTimes);
     
     void CalculateTravelTimeToHomenSchool(std::pair<int, School*> & nextSchoolTime,
-                                            int lastPlaceLoc[]);
+                                            int* &lastPlaceLoc);
     void ChildNeedsToBePickedUpFromSchool(std::pair<int, School*> & nextSchoolTime,
                                             int & day, size_t & currentPlaceInSchoolTimes);
     
-    void NoChildToPickUp(std::pair<int, School*> & nextSchoolTime, int lastPlaceLoc[]);
+    void NoChildToPickUp(std::pair<int, School*> & nextSchoolTime, int* &lastPlaceLoc);
     
     void BeenOutTooLong(std::pair<int, School*> & nextSchoolTime);
     
     void SpendTimeAtHome(std::pair<int, School*> & nextSchoolTime, int & timeSpentAtLocation);
     void SpendTimeOutside(std::pair<int, School*> & nextSchoolTime, int &timeSpentAtLocation,
-                                        int lastPlaceLoc[]);
+                                        int* &lastPlaceLoc);
     
     void CalcTimeSpentAtLocation(std::pair<int, School*> & nextSchoolTime, int & timeSpentAtLocation);
     
     void NoPlaceToGo(int &timeSpentAtLocation);
     void FoundPlaceToGo(Building * lastPlace_tmp, int &timeSpentAtLocation,
-                                        int lastPlaceLoc[]);
+                                        int* &lastPlaceLoc);
     
     void CurfewNotEqualsFullDay();
     void DealingWithDayCarriedOver(std::pair<int, School*> & nextSchoolTime);

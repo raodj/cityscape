@@ -1707,6 +1707,7 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
                     //Force Job if time is running out and kids are at school or
                     if((dailyTotalTimeAtJob>(timeLeft/2) && timeLeft>2 && kidsAtSchool) ||
                        (dailyTotalTimeAtJob>0 && (schoolChildModification>-1 || youngChildModification) && kidsAtSchool)){
+                        
                         if(youngChildModification && !kidsAtDaycare){
                             //**std::cout<<"\t\tDropping Kid At Daycare: " <<trueTime+dayTime<<std::endl;
                             travelTime=0;
@@ -1929,6 +1930,7 @@ void ScheduleGenerator::generateEmployeedAdultSchedule(Person *p, Family *f, int
                                 //**std::cout<<"dailyTotalTimeAtJob: "<<dailyTotalTimeAtJob<<std::endl;
                                 //**std::cout<<"MaxTimeAlway: "<<maxTimeAway-totalTimeSpentAway-travelTimeToHome-1<<std::endl;
                                 int maxTimeCanBeSpentAtJob = (dailyTotalTimeAtJob>(maxTimeAway-totalTimeSpentAway-travelTimeToHome-1)? maxTimeAway-totalTimeSpentAway-travelTimeToHome-1 : dailyTotalTimeAtJob);
+                                
                                 if(dayTime+maxTimeCanBeSpentAtJob+trueTime>nextSchoolTime.first-1
                                    && nextSchoolTime.second!=nullptr){
                                     //Need to take break to pick up child from school
