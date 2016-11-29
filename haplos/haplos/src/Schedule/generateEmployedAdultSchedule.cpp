@@ -131,7 +131,7 @@ void generateEmployedAdultSchedule::determineTravelTimeToHome(int* &lastPlaceLoc
     
     lastPlaceLoc = lastPlace->getLocation();
    
-    travelTimeToHome = calculateTravelTime(*lastPlaceLoc,
+    travelTimeToHome = calculateTravelTime(lastPlaceLoc[0],
                                            lastPlaceLoc[1],
                                            homeLoc[0],
                                            homeLoc[1],
@@ -140,7 +140,7 @@ void generateEmployedAdultSchedule::determineTravelTimeToHome(int* &lastPlaceLoc
 }
 
 void generateEmployedAdultSchedule::calculateAllTravelTimes(int &travelTimeToHome,int &travelTimeToSchool,
-        int &travelTimeSchoolFromJob, int &travelTimeToDayCare,int &travelTimeToJob,int *lastPlaceLoc) {
+        int &travelTimeSchoolFromJob, int &travelTimeToDayCare,int &travelTimeToJob,int* &lastPlaceLoc) {
     
     travelTimeToSchool = 0;
     travelTimeSchoolFromJob = 0;
@@ -173,8 +173,7 @@ void generateEmployedAdultSchedule::calculateAllTravelTimes(int &travelTimeToHom
 }
 
 void generateEmployedAdultSchedule::calculateMaxTime(int &maxTimeOut, int &travelTimeToHome) {
-    maxTimeOut = 0;
-    travelTime = 0;
+    
         
     // The time left for the curfew is lesser than the time that can be spent away
     if(crewfew != fullDay && ( crewfew-dayTime-travelTimeToHome )< (maxTimeAway-totalTimeSpentAway-travelTimeToHome)){
@@ -189,7 +188,7 @@ void generateEmployedAdultSchedule::calculateMaxTime(int &maxTimeOut, int &trave
         maxTimeOut=0;
     }
 }
-void generateEmployedAdultSchedule::ChildNeedsToGoToSchool(int &day,int *lastPlaceLoc) {
+void generateEmployedAdultSchedule::ChildNeedsToGoToSchool(int &day,int* &lastPlaceLoc) {
     // Get From School
     //**std::cout<<"\tGet Kid from School"<<std::endl;
     if(lastPlace != nextSchoolTime.second || visitorType!='V'){
@@ -343,12 +342,7 @@ void generateEmployedAdultSchedule::goBackToJobLoc(int &timeSpentAtJob) {
 
     lastPlace=jobLocation;
                         
-    visitorType='E';
-    totalTimeSpentAtHome=0;
-    totalTimeSpentAway+=timeSpentAtJob+travelTime;
-    totalTimeSpentAtJob-=timeSpentAtJob;
-    dailyTotalTimeAtJob-=timeSpentAtJob;
-    dayTime+=timeSpentAtJob+travelTime; 
+     
 }
 
 void generateEmployedAdultSchedule::GoingHome(int &timeSpentAtLocation, int &travelTimeToHome, int &timeLeft, int &maxTimeOut) {
@@ -512,7 +506,7 @@ void generateEmployedAdultSchedule::NoPlaceToGoOut(int &timeSpentAtLocation, int
     visitorType='H';
 }
 
-void generateEmployedAdultSchedule::FoundPlaceToGoOut(int &timeSpentAtLocation, int &travelTimeToHome, int *lastPlaceLoc, Building* lastPlace_tmp) {
+void generateEmployedAdultSchedule::FoundPlaceToGoOut(int &timeSpentAtLocation, int &travelTimeToHome, int* &lastPlaceLoc, Building* lastPlace_tmp) {
     //**std::cout<<"\t\t\tLocation Found"<<std::endl;
     if(lastPlace != lastPlace_tmp || visitorType!='V') {
         
@@ -547,7 +541,7 @@ void generateEmployedAdultSchedule::FoundPlaceToGoOut(int &timeSpentAtLocation, 
 }
 
 void generateEmployedAdultSchedule::ChanceOfGoingOutside(int &timeSpentAtLocation, int &maxTimeOut, int &travelTimeToHome,
-   int &timeLeft, int *lastPlaceLoc) {
+   int &timeLeft, int* &lastPlaceLoc) {
     //ChanceOfGoingOut                                                         
     timeSpentAtLocation = CalculateTimeSpentAtLocation(timeSpentAtLocation, maxTimeOut, timeLeft);
 
@@ -568,7 +562,7 @@ void generateEmployedAdultSchedule::ChanceOfGoingOutside(int &timeSpentAtLocatio
                                 
 }
 
-void generateEmployedAdultSchedule::selectActivity(int &activity, int &travelTimeToHome, int &timeLeft, int &maxTimeOut, int *lastPlaceLoc) {
+void generateEmployedAdultSchedule::selectActivity(int &activity, int &travelTimeToHome, int &timeLeft, int &maxTimeOut, int* &lastPlaceLoc) {
     
     int timeSpentAtLocation = 0;
     switch(activity) {
@@ -588,6 +582,8 @@ void generateEmployedAdultSchedule::selectActivity(int &activity, int &travelTim
             break;
         }
     }
+    // update dayTime value
+    dayTime += timeSpentAtLocation + travelTime;
 }
 
 int generateEmployedAdultSchedule::determineDistribution(int &travelTimeToHome, int &maxTimeOut) {
@@ -607,14 +603,14 @@ int generateEmployedAdultSchedule::determineDistribution(int &travelTimeToHome, 
     return activity;
 }
 
-void generateEmployedAdultSchedule::determineActivity(int &travelTimeToHome, int &timeLeft, int &maxTimeOut, int *lastPlaceLoc) {
+void generateEmployedAdultSchedule::determineActivity(int &travelTimeToHome, int &timeLeft, int &maxTimeOut, int* &lastPlaceLoc) {
     
     int activity = determineDistribution(travelTimeToHome, maxTimeOut);
     
     selectActivity(activity, travelTimeToHome, timeLeft, maxTimeOut, lastPlaceLoc);
 }
 
-void generateEmployedAdultSchedule::TimeLeftToDoStuff(int &travelTimeToHome, int &maxTimeOut, int *lastPlaceLoc) {
+void generateEmployedAdultSchedule::TimeLeftToDoStuff(int &travelTimeToHome, int &maxTimeOut, int* &lastPlaceLoc) {
     
     int timeLeft=(youngChildModification ? crewfew-dayTime-travelTimeToHome-travelTimeToDayCare+1 :
                                   crewfew-dayTime-travelTimeToHome);
@@ -649,14 +645,22 @@ void generateEmployedAdultSchedule::TimeLeftToDoStuff(int &travelTimeToHome, int
         
         if(lastPlace != jobLocation || visitorType!='E')
             goBackToJobLoc(timeSpentAtJob);
-        else
-            determineActivity(travelTimeToHome, timeLeft, maxTimeOut, lastPlaceLoc);
+        
+        visitorType='E';
+        totalTimeSpentAtHome=0;
+        totalTimeSpentAway+=timeSpentAtJob+travelTime;
+        totalTimeSpentAtJob-=timeSpentAtJob;
+        dailyTotalTimeAtJob-=timeSpentAtJob;
+        dayTime+=timeSpentAtJob+travelTime;
     }
+        else
+           determineActivity(travelTimeToHome, timeLeft, maxTimeOut, lastPlaceLoc);
+               
     
     
 }
 
-void generateEmployedAdultSchedule::ChildDoesntNeedToGoToSchool(int &travelTimeToHome, int &maxTimeOut, int *lastPlaceLoc) {
+void generateEmployedAdultSchedule::ChildDoesntNeedToGoToSchool(int &travelTimeToHome, int &maxTimeOut, int* &lastPlaceLoc) {
     //Child does not need to go to school right now
     if(totalTimeSpentAway+travelTimeToHome+1>=maxTimeOut) {
         //Been out too Long Need to Get Sleep
@@ -666,7 +670,7 @@ void generateEmployedAdultSchedule::ChildDoesntNeedToGoToSchool(int &travelTimeT
     }
 }
 
-void generateEmployedAdultSchedule::CurfewNotEqualsFullDay(int &travelTimeToHome, int *lastPlaceLoc, int &day) {
+void generateEmployedAdultSchedule::CurfewNotEqualsFullDay(int &travelTimeToHome, int* &lastPlaceLoc, int &day) {
     
     if(youngChildModification && kidsAtDaycare){
         //Pick Young Child off at Daycare                
@@ -745,16 +749,17 @@ void generateEmployedAdultSchedule::DealingWithDayCarriedOver() {
 }
 
 void generateEmployedAdultSchedule::scheduleBeforeCurfewTime(int &travelTimeToHome,int &travelTimeToSchool,
-        int &travelTimeSchoolFromJob, int &travelTimeToDayCare,int &travelTimeToJob,int &maxTimeOut, int *lastPlaceLoc, int &day) {
+    int &travelTimeSchoolFromJob, int &travelTimeToDayCare,int &travelTimeToJob,int &maxTimeOut, int* &lastPlaceLoc, int &day) {
     // while there is still time left before curfew, the foll. activities repeat
     while(dayTime<crewfew-travelTimeToHome-1){
-        
+        maxTimeOut = 0;
+        travelTime = 0;
         // Calculates max time out that can be spent.
         calculateMaxTime(maxTimeOut, travelTimeToHome);
         
         // Calculates all necessary travel Times for the schedule.       
         calculateAllTravelTimes(travelTimeToHome,travelTimeToSchool,
-        travelTimeSchoolFromJob, travelTimeToDayCare, travelTimeToJob, lastPlaceLoc);
+                    travelTimeSchoolFromJob, travelTimeToDayCare, travelTimeToJob, lastPlaceLoc);
         
         // Check if child needs to go to school
         // The check conditions explained:
@@ -809,8 +814,9 @@ void generateEmployedAdultSchedule::generateSchedule() {
         travelTimeToDayCare =0;
         travelTimeToJob =0;
         transportRate =1;
+        
         int *lastPlaceLoc = NULL;
-        int travelTimeToHome;
+        int travelTimeToHome = 0;
         
         //Pre curfew variables.
         int maxTimeOut = 0;
@@ -822,6 +828,7 @@ void generateEmployedAdultSchedule::generateSchedule() {
             nextSchoolTime.first+=trueTime;
         }
         
+        dailyTotalTimeAtJob = 0;
         // Calculates the amount of time to be spent at work at this day
         determineTimeToSpendAtJob();
         
@@ -876,9 +883,9 @@ int generateEmployedAdultSchedule::calculateTravelTime(int  start_x, int start_y
                                int end_x, int end_y,  int  transportRate ){
     if(std::abs(start_x-end_x)>std::abs(start_y-end_y)){
         return std::ceil(std::abs(start_x-end_x)/(double)transportRate);
-    }else{
+    } // else{
         return std::ceil(std::abs(start_y-end_y)/(double)transportRate);
-    }
+    // }
 }
 
 

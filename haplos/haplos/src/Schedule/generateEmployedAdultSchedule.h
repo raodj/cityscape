@@ -99,39 +99,39 @@ public:
     void generateSchedule();
     
     void determineTimeToSpendAtJob();
-    void determineTravelTimeToHome(int* &lastPlace, int &travelTimeToHome);
+    void determineTravelTimeToHome(int* &lastPlaceLoc, int &travelTimeToHome);
     void scheduleBeforeCurfewTime(int &travelTimeToHome,int &travelTimeToSchool,
-        int &travelTimeSchoolFromJob, int &travelTimeToDayCare,int &travelTimeToJob,int &maxTimeOut, int lastPlaceLoc[], int &day);
+        int &travelTimeSchoolFromJob, int &travelTimeToDayCare,int &travelTimeToJob,int &maxTimeOut, int* &lastPlaceLoc, int &day);
     
     void calculateAllTravelTimes(int &travelTimeToHome,int &travelTimeToSchool,
-        int &travelTimeSchoolFromJob, int &travelTimeToDayCare,int &travelTimeToJob,int lastPlaceLoc[]);
+        int &travelTimeSchoolFromJob, int &travelTimeToDayCare,int &travelTimeToJob,int* &lastPlaceLoc);
     
     void calculateMaxTime(int &maxTimeOut, int &travelTimeToHome);
     
-    void ChildNeedsToGoToSchool(int &day,int lastPlaceLoc[]);
-    void ChildDoesntNeedToGoToSchool(int &travelTimeToHome, int &maxTimeOut, int lastPlaceLoc[]);
+    void ChildNeedsToGoToSchool(int &day,int* &lastPlaceLoc);
+    void ChildDoesntNeedToGoToSchool(int &travelTimeToHome, int &maxTimeOut, int* &lastPlaceLoc);
     
     
     void NeedToSleep(int &travelTimeToHome);
-    void TimeLeftToDoStuff(int &travelTimeToHome, int &maxTimeOut, int lastPlaceLoc[]);
+    void TimeLeftToDoStuff(int &travelTimeToHome, int &maxTimeOut, int* &lastPlaceLoc);
 
     void PickUpChildFromDayCare();
     void DroppingKidAtDayCare(int &timeLeft, int &travelTimeToHome);
     void goBackToJobLoc(int &timeSpentAtJob);
-    void determineActivity(int &travelTimeToHome, int &timeLeft, int &maxTimeOut, int lastPlaceLoc[]);
+    void determineActivity(int &travelTimeToHome, int &timeLeft, int &maxTimeOut, int* &lastPlaceLoc);
     int determineDistribution(int &travelTimeToHome, int &maxTimeOut);
-    void selectActivity(int &activity, int &travelTimeToHome, int &timeLeft, int &maxTimeOut, int lastPlaceLoc[]);
+    void selectActivity(int &activity, int &travelTimeToHome, int &timeLeft, int &maxTimeOut, int* &lastPlaceLoc);
     
     void GoingHome(int &timeSpentAtLocation, int &travelTimeToHome, int &timeLeft, int &maxTimeOut);
     void GoingToJob(int &timeSpentAtLocation, int &travelTimeToHome);
     void ChanceOfGoingOutside(int &timeSpentAtLocation, int &maxTimeOut, int &travelTimeToHome,
-                                                            int &timeLeft, int lastPlaceLoc[]);
+                                                            int &timeLeft, int* &lastPlaceLoc);
     int CalculateTimeSpentAtLocation(int &timeSpentAtLocation, int &maxTimeOut, int &timeLeft);
     
     void NoPlaceToGoOut(int &timeSpentAtLocation, int &travelTimeToHome);
-    void FoundPlaceToGoOut(int &timeSpentAtLocation, int &travelTimeToHome, int lastPlaceLoc[], Building* lastPlace_tmp);
+    void FoundPlaceToGoOut(int &timeSpentAtLocation, int &travelTimeToHome, int* &lastPlaceLoc, Building* lastPlace_tmp);
     
-    void CurfewNotEqualsFullDay(int &travelTimeToHome, int lastPlaceLoc[], int &day);
+    void CurfewNotEqualsFullDay(int &travelTimeToHome, int* &lastPlaceLoc, int &day);
     
     void DealingWithDayCarriedOver();
     
