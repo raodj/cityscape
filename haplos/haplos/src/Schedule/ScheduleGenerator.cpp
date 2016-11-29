@@ -305,7 +305,8 @@ void ScheduleGenerator::generatePersonSchedule(Family *currentFamily,
                                            primaryVisitorTypeProb,
                                            secondaryVisitorTypeProb,
                                            specialLocationFlag, 
-                                           allBuildings,densityData);
+                                           allBuildings,densityData,
+                                           generator);
             
             employedAdult.generateSchedule();
             
