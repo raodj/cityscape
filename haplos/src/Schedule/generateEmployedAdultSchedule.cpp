@@ -28,7 +28,9 @@ generateEmployedAdultSchedule::generateEmployedAdultSchedule(Person *p,
                             double *visitorTypeProbablities_work,
                             double *visitorTypeProbablities_noWork,
                             bool goToWork, std::unordered_map<int, Building*> *allBuildingsTemp,
-                            std::vector< std::vector < Location > > *densityData) {
+                            std::vector< std::vector < Location > > *densityData,
+                            std::default_random_engine gen) {
+    generator = gen;
     
     this->f = f;
     this->schoolChildModification = schoolChildModification;

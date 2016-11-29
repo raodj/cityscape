@@ -91,7 +91,8 @@ public:
                                     double *visitorTypeProbablities_noWork,
                                     bool goToWork, 
                                     std::unordered_map<int, Building*> *allBuildingsTemp,
-                                    std::vector< std::vector < Location > > *densityData);
+                                    std::vector< std::vector < Location > > *densityData,
+                                    std::default_random_engine gen);
 
     
    // virtual ~generateEmployedAdultSchedule();
