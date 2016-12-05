@@ -38,6 +38,8 @@ UnEmployedAdultSchedule::UnEmployedAdultSchedule(Person *p,
     outProb=visitorTypeProbablities[1];
     homeProb=visitorTypeProbablities[2];
     
+    distribution = {homeProb,workProb,outProb};
+    
     this->childModification = childModification;
     
     //Generate a schedule for everyone else

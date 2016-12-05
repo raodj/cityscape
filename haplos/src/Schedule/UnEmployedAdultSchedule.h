@@ -31,7 +31,7 @@ public:
     std::unordered_map<int, Building*> *allBuildings;
     
     
-    std::discrete_distribution<int> distribution{homeProb,workProb,outProb};
+    std::discrete_distribution<int> distribution;
     
     //Generate a schedule for everyone else
     int dayTime;  //Time for current day (Midnight = 0, 11:59=144

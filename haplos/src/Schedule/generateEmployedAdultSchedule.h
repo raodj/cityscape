@@ -36,8 +36,8 @@ public:
     double outProb_nowork;
     double homeProb_nowork;
     
-    std::discrete_distribution<int> distribution{homeProb_work,workProb_work,outProb_work};
-    std::discrete_distribution<int> no_work_left_distribution{homeProb_nowork,workProb_nowork,outProb_nowork};
+    std::discrete_distribution<int> distribution;
+    std::discrete_distribution<int> no_work_left_distribution;
     
     std::default_random_engine generator;
     
