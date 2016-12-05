@@ -66,7 +66,8 @@ generateEmployedAdultSchedule::generateEmployedAdultSchedule(Person *p,
     outProb_nowork = visitorTypeProbablities_noWork[1];
     homeProb_nowork = visitorTypeProbablities_noWork[2];
     
-    
+    distribution = {homeProb_work,workProb_work,outProb_work};
+    no_work_left_distribution = {homeProb_nowork,workProb_nowork,outProb_nowork};
 
     
     //Generate a schedule for everyone else
@@ -105,7 +106,7 @@ generateEmployedAdultSchedule::generateEmployedAdultSchedule(Person *p,
 
     visitorType='H';
     travelTime = 0;
-    
+   
     
 }
 

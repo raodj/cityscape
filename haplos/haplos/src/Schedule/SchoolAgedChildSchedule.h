@@ -34,7 +34,7 @@ public:
     enum ChildState { ATHOME, ATSCHOOL, OUTSIDE };
     ChildState state;
     
-    std::discrete_distribution<int> distribution{homeProb,workProb,outProb};
+    std::discrete_distribution<int> distribution;
     std::default_random_engine generator;
     
     std::vector< std::vector < Location > > *densityData;

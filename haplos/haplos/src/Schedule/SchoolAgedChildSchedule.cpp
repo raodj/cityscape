@@ -81,6 +81,10 @@ SchoolAgedChildSchedule::SchoolAgedChildSchedule(Person *p, Family *f, int radiu
     travelTime = 0;
     travelTimeToHome = 0;
     travelTimeToSchool = 0;
+    
+    distribution = {homeProb,workProb,outProb};
+    
+    
         
 }
 
