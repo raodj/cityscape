@@ -258,9 +258,7 @@ void BuildingGenerator::generateBuildings(double businessSizeProbablities[6], do
         allBuildings->insert({daycareBuildings->at(i).getID(), &(daycareBuildings->at(i))});
         densityData->at(daycareBuildings->at(i).getLocation()[0]).at(daycareBuildings->at(i).getLocation()[1]).addBuilding(&(daycareBuildings->at(i)));
     }
-    std::cout<<"\tNumber Generated: "<<totalDaycares<<std::endl;
-    
-    std::cout<<"Generating Businesses"<<std::endl;
+    std::cout<<"\tNumber Generated: "<<totalDaycares<<std::endl;    
     //Create Businesses
     while(numberOfEmployeedAdults>totalBuinessPopulation){
         int capacity = -1;
