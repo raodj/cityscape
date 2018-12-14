@@ -42,8 +42,8 @@
 Configuration::Configuration() {
     printWays     = false;
     zoomLevel     = 15;
-    drawWays      = true;
-    drawBuildings = true;
+    drawWays      = false;
+    drawBuildings = false;
 }
 
 Configuration::~Configuration() {
@@ -62,7 +62,7 @@ Configuration::process(int& argc, char *argv[]) {
          &xfigPath, ArgParser::STRING},
         {"--zoom-level", "-zl", "Zoom level (8 to 18) for output figure",
          &zoomLevel, ArgParser::INTEGER},
-        {"--draw-ways", "", "Draw the ways in OSM XML for verification",
+        {"--draw-ways", "-dw", "Draw the ways in OSM XML for verification",
          &drawWays, ArgParser::BOOLEAN},
         {"--draw-buildings", "-db", "Draw the buildings for verification",
          &drawBuildings, ArgParser::BOOLEAN},
