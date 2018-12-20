@@ -35,17 +35,19 @@ AC_PREREQ([2.69])
 AC_INIT([modelgen], [0.1.0], [raodm@miamiOH.edu])
 AM_INIT_AUTOMAKE([-Wall -Werror subdir-objects])
 
+# Setup default programming language
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_CXXCPP
+AC_LANG([C++])
+
+# Setup location of configure flag.
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 AC_REQUIRE_CPP
-# Checks for programs.
-AC_PROG_CXX
-AC_PROG_CC
-
-# Checks for libraries.
 
 # Checks for header files.
-AC_CHECK_HEADERS([math.h])
+AC_CHECK_HEADERS([cmath iostream])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL
@@ -53,9 +55,7 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 
 # Checks for library functions.
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
-AC_CHECK_FUNCS([memmove memset sqrt])
+AC_CHECK_FUNCS([sqrt atan2])
 
 AC_CONFIG_FILES([Makefile])
 

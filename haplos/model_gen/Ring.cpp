@@ -426,4 +426,52 @@ Ring::isNear(const double xCoord, const double yCoord,
     return (minPerpDist <= maxDist);
 }
 
+// Static method return a rectangular ring around 2 points.
+Ring
+Ring::createRectRing(const Point& node1, const Point& node2,
+                     const double dist, const double population,
+                     const long ringID, const long shapeID,
+                     const std::vector<Ring::Info>& infoList) {
+    // Anonymous helper method to rotate a point by 90-degrees. This
+    // method is not accurate, particularly for vertical lines because
+    // of lat/lon differences -- however, for small distances it is
+    // sufficiently approximate.
+    auto rotated = [](const Point& p1, const Point& p2, const double sign) {
+        return Point(p1.first  + (p1.second - p2.second) * sign,
+                     p1.second + (p1.first  - p2.first)  * sign);
+    };
+    
+    // Find points that are given distance away from node1 and
+    // node2. These are the two distance points we will be using to
+    // compute coordinates for the rectangle.
+    Point ext1, ext2;
+    getPoint(node1.second, node1.first, node2.second, node2.first, -dist,
+             ext1.second, ext1.first);
+    getPoint(node2.second, node2.first, node1.second, node1.first, -dist,
+             ext2.second, ext2.first);
+    // Now, compute rotated points based on ext1, node1 and ext2, node2
+    const std::vector<Point> rect = { rotated(ext1, node1, 1),
+                                      rotated(ext1, node1, -1),
+                                      rotated(ext2, node2, 1),
+                                      rotated(ext2, node2, -1) };
+    // Now convert the points to flat x and y coordinates so that we
+    // can use the Ring's constructor to construct and return the
+    // rectangular ring.
+    const std::vector<double> xCoords = {rect[0].first, rect[1].first,
+                                         rect[2].first, rect[3].first,
+                                         rect[0].first};
+    const std::vector<double> yCoords = {rect[0].second, rect[1].second,
+                                         rect[2].second, rect[3].second,
+                                         rect[0].second};
+    // Create a rectangular ring.
+    Ring rectRing(ringID, shapeID, CLOSED_RING, 5,
+                  &xCoords[0], &yCoords[0], infoList);
+    rectRing.population = population;
+    // Insanity checks
+    ASSERT(rectRing.contains(node1.first, node1.second));
+    ASSERT(rectRing.contains(node2.first, node2.second));
+    // Return the newly created cring
+    return rectRing;
+}
+
 #endif

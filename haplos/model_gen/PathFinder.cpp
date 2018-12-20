@@ -35,6 +35,7 @@
 #include "PathSegment.h"
 #include "PathFinder.h"
 #include "Utilities.h"
+#include "ShapeFile.h"
 
 int
 PathFinder::run(int argc, char *argv[]) {
@@ -59,18 +60,217 @@ PathFinder::run(int argc, char *argv[]) {
     const Building endBld = buildingMap.at(cmdLineArgs.endBldID);    
     // Setup the beginning and destination path segmenets for further
     // processing.
-    PathSegment begSeg{begBld.wayID, -1, begBld.id, 0};
-    PathSegment endSeg{endBld.wayID, -1, endBld.id, 0};
+    PathSegment begSeg{begBld.wayID, StartNodeID, begBld.id,    0,
+            segIdCounter++, -1};
+    PathSegment endSeg{endBld.wayID, EndNodeID,   endBld.id, 1000,
+            segIdCounter++, -1};
     // Print the resulting path segement between the two
-    std::cout << getPathOnSameWay(begSeg, endSeg) << std::endl;
+    Path path = findBestPath(begSeg, endSeg);
+    // Draw the path as xfig
+    generateFig(path);
+    std::cout << path;
+    // Print some stats about the path
+    std::cout << "Exploring: " << exploring.size() << ", explored paths: "
+              << exploredPaths.size() << ", explored nodes: "
+              << exploredNodes.size() << std::endl;
     // Everything went well
     return 0;
 }
 
+Path
+PathFinder::findBestPath(const PathSegment& src, const PathSegment& dest) {
+    // Add the source and destination to the paths being explored.
+    exploring.push(src);
+    exploring.push(dest);
+    // Keep exploring nodes until we reach the destination segement.
+    while (!exploring.empty()) {
+        // Explore the next nearest node
+        PathSegment next = exploring.top();
+        exploring.pop();  // Remove the node being explored.
+        // Add node to the set of already explored entries
+        ASSERT(exploredPaths.find(next.segID) == exploredPaths.end());
+        exploredPaths[next.segID] = next;
+        ASSERT(exploredNodes.find(next.nodeID) == exploredNodes.end());
+        exploredNodes.insert(next.nodeID);
+        // If this path is the destination then we found the best
+        // path. Return best path back.
+        if (next.nodeID == EndNodeID) {
+            // Yay! found a good path
+            return rebuildPath(next);
+        }
+        // Add adjacent nodes to the next node to explore
+        addAdjacentNodes(next, dest);
+    }
+    // When control drops here, we have explored nodes and did not
+    // find a path.
+    return {};
+}
+
+// Rebuild the path to destination using information in exploredPaths
+Path
+PathFinder::rebuildPath(const PathSegment& dest) const {
+    Path path;  // The path to be build (in reverse initially)
+    path.push_back(dest);
+    // Keep adding parent until we get to the source node
+    long parentSegID = dest.parentSegID;
+    while (parentSegID != InvalidNodeID) {
+        // Get and add parent node to the path
+        ASSERT(exploredPaths.find(parentSegID) != exploredPaths.end());
+        const PathSegment& parent = exploredPaths.at(parentSegID);
+        path.push_back(parent);
+        // Move onto the parent's parent node (if any)
+        parentSegID = parent.parentSegID;
+    }
+    // Now we need reverse the path to get segements in correct order
+    std::reverse(path.begin(), path.end());
+    return path;
+}
+
+// Check and add a given node to a list of adjacent segments.
+bool
+PathFinder::checkAddNode(const PathSegment& parent, const long nodeID,
+                         const long wayID) {
+    // Check if the node has already been explored.  If so, there is
+    // no further opreation to be done.
+    if (exploredNodes.find(nodeID) != exploredNodes.end()) {
+        return false;  // node already explored.
+    }
+    // Create a temporary segement based on parent.
+    PathSegment seg{wayID, nodeID, -1, 0, 0, parent.segID};
+    const double dist = parent.distance + getDistance(parent, seg);
+    // Check to see if the node is currently in the exploring set.  If
+    // so, we will need to update it if the new distance is better.
+    if (exploring.contains(nodeID)) {
+        // Get the current entry for this node.
+        seg = exploring.at(nodeID);
+        // Check and update if we have a better path
+        if (dist < seg.distance) {
+            // Yes we have a shorter path. Update path segement.
+            seg.update(parent.segID, wayID, dist);
+        }
+    } else {
+        // Add a new path segement entry s this
+        seg.segID = segIdCounter++;
+        // Update distance information in the new segement
+        seg.distance = dist;
+    }
+    // Add/update the segment information in the heap.
+    exploring.push(seg);
+    return true;
+}
+
+// Find adjacent nodes to be explored near given path segment
+void
+PathFinder::addAdjacentNodes(const PathSegment& seg, const PathSegment& dest,
+                             const bool addIntersectingWays) {
+    // We are working with a node.  We should have a way
+    // associated with this node so we can find adjacent nodes.
+    ASSERT( seg.wayID != -1 );
+    ASSERT( wayMap.find(seg.wayID) != wayMap.end() );
+    const Way& way = wayMap.at(seg.wayID);
+
+    // There are two cases -- common one is we are working is when we
+    // have a valid node ID.
+    if (seg.buildingID == -1) {
+        // Find the index of this node on this way
+        const int nodeIdx = findNode(way, seg.nodeID);
+        ASSERT( nodeIdx != -1 );
+        // Check and add previous node if relevant and if the street
+        // is not a one-way.
+        if (!way.isOneWay && (nodeIdx > 0)) {
+            checkAddNode(seg, way.nodeList[nodeIdx - 1], way.id);
+        }
+        // Add next node on the way if one is present.
+        if (nodeIdx < (int) way.nodeList.size() - 1) {
+            checkAddNode(seg, way.nodeList[nodeIdx + 1], way.id);
+        }
+        // Finally, handle intersection nodes where multiple ways
+        // meet, if requested (recursive calls don't go into this
+        // if-statement.
+        if (addIntersectingWays) {
+            ASSERT(seg.nodeID < (long) nodesWaysList.size());
+            for (long wayID : nodesWaysList[seg.nodeID]) {
+                if (wayID == seg.wayID) {
+                    continue;  // Ignore the way we are already on
+                }
+                
+                // Get the way to check to ensure it is not a dead end
+                // so that we don't waste time on exploring dead-ends.
+                ASSERT( wayMap.find(wayID) != wayMap.end() );
+                const Way& way = wayMap.at(wayID);
+                if (way.isDeadEnd && (wayID != dest.wayID)) {
+                    // This way is a dead end and the destination is
+                    // not on this way. So don't explore it.
+                    continue;
+                }
+                
+                // Create a temporary segement on the
+                const PathSegment interSeg{wayID, seg.nodeID, -1,
+                        seg.distance, seg.segID, seg.segID};
+                // Add adjacent nodes on the intersecting way, if
+                // applicable (but don't furtherexplore ways)
+                addAdjacentNodes(interSeg, dest, false);
+            }
+        }
+    } else {
+        ASSERT( seg.buildingID != -1 );
+        // Find nearest node to this building and use that as the
+        // next node for exploration.
+        const Point srcPt  = getLatLon(seg);
+        int nearNode       = findNearestNode(way, srcPt.second, srcPt.first);
+        ASSERT(nearNode != -1);
+        if (way.isOneWay) {
+            nearNode++;  // For 1-way we want to start with next node
+                         // in the direction of traffic flow.
+        }
+        const long nodeID  = way.nodeList.at(nearNode);
+        ASSERT(nodeID < (long) nodeList.size());
+        ASSERT(exploredNodes.find(nodeID) == exploredNodes.end());
+        PathSegment newSeg{seg.wayID, nodeID, -1, 0, segIdCounter++, seg.segID};
+        newSeg.distance = seg.distance + getDistance(seg, newSeg);
+        exploring.push(newSeg);
+    }
+    // Check and add destination path if it is on this way.
+    if (seg.wayID == dest.wayID) {
+        ASSERT(dest.buildingID != -1);
+        const Point destPt        = getLatLon(dest), srcPt = getLatLon(seg);
+        const int nearestSrcNode  = (seg.buildingID == -1) ?
+            findNode(way, seg.nodeID) :
+            findNearestNode(way, srcPt.second, srcPt.first);
+        const int nearestDestNode = findNearestNode(way, destPt.second,
+                                                    destPt.first);
+        // Decide if the destination is to be updated if the node is
+        // adjacent.  The checks can be collapsed into a boolean
+        // expression, but left the way they are to improve
+        // understanding the logic here.
+        bool updateDest = false;
+        if (way.isOneWay && (nearestSrcNode == nearestDestNode)) {
+            updateDest = true;  // one-way check pass
+        } else if (!way.isOneWay &&
+                   (std::abs(nearestSrcNode - nearestDestNode) <= 1)) {
+            updateDest = true;  // two-way check pass
+        }
+        // Check and update destination node.
+        if (updateDest) {
+            // This is the nearest node. Update distance to
+            // destination.
+            ASSERT(exploring.contains(dest.nodeID));
+            PathSegment expDest = exploring.at(dest.nodeID);
+            const double dist   = seg.distance + getDistance(seg, expDest);
+            if (dist < expDest.distance) {
+                // Found a shorter route to destination!
+                expDest.update(seg.segID, seg.wayID, dist);
+                exploring.update(expDest);
+            }
+        }
+    }
+}
+
+// Return lat/lon of node or building's entrance
 Point
 PathFinder::getLatLon(const PathSegment& path) const {
     // Return value from the node as the reference.
-    if (path.nodeID != -1) {
+    if (path.buildingID == -1) {
         const Node& node = nodeList.at(path.nodeID);
         return Point(node.longitude, node.latitude);
     }
@@ -80,9 +280,9 @@ PathFinder::getLatLon(const PathSegment& path) const {
     return Point(building.wayLon, building.wayLat);
 }
 
-PathSegment
-PathFinder::getPathOnSameWay(const PathSegment& src,
-                             const PathSegment& dest) const {
+// Simplification to find path where src and dest are on the same way
+Path
+PathFinder::getPathOnSameWay(const PathSegment& src, const PathSegment& dest) {
     // This method is designed to work with 2 segements on the same
     // way.  So ensure that pre-condition is met.
     ASSERT (src.wayID == dest.wayID);    
@@ -90,48 +290,87 @@ PathFinder::getPathOnSameWay(const PathSegment& src,
     const Way& way = wayMap.at(src.wayID);
     // Get the points associated with the starting and ending.
     const Point srcPt = getLatLon(src), destPt = getLatLon(dest);
-    
-    PathSegment ret = dest;  // segement to return.
-    ret.distance    = getDistance(srcPt.second,  srcPt.first,
-                                  destPt.second, destPt.first);
-    // Handle the simpler bi-directional way case first. We are
-    // already done
-    if (!way.isOneWay) {
-        return ret;
-    }
-
-    // Here we handle the more complex case of one-directional ways.
-    // But, first get the way we are working with
-    ASSERT( way.isOneWay );
-    // Find the nearest point on the way for the source and
-    // destination to decide if a path between the two is even
-    // possible (due to the directionality fo the way).
-    const int nearestNode1 = (src.nodeID != -1) ? src.nodeID :
+    // Find the nearest nodes on the way for the source and
+    // destination to determine the path between the two (assuming,
+    // the path is even possible due to the directionality of the
+    // way).
+    const int nearestNode1 = (src.nodeID != -1) ? findNode(way, src.nodeID) :
         findNearestNode(way, srcPt.second, srcPt.first);
-    const int nearestNode2 = (dest.nodeID != -1) ? dest.nodeID :
+    const long nearestNode2 = (dest.nodeID != -1) ? findNode(way, dest.nodeID) :
         findNearestNode(way, destPt.second, destPt.first);
-    // The possible path depends on the nodes in the way.  There are
-    // three possible cases that are handled below:
-    if (nearestNode1 > nearestNode2) {
-        // Nodes are in opposite directions on a 1-way road.  So for
-        // this path set large distance to show no path possible
-        ret.distance = 1000;
-    } else if (nearestNode1 == nearestNode2) {
-        // The nearest nodes on the way are the same. So we need a
-        // finer distance metric to be able to decide.
-        const Node& near   = nodeList.at(nearestNode1);
-        const int dist2src = getDistance(near.latitude, near.longitude,
-                                           srcPt.second, srcPt.first);
-        const int dist2dest  = getDistance(near.latitude, near.longitude,
-                                           srcPt.second, srcPt.first);
-        if (dist2src < dist2dest) {
-            // The nodes are in opposite directions on a 1-way
-            // street. So no direct path possib.e
-            ret.distance = 1000;
+    ASSERT( nearestNode1 != -1 );
+    ASSERT( nearestNode2 != -1 );
+    // Handle the edge case in a one-directional way case first.
+    if (way.isOneWay) {
+        // Here we check the case of one-directional ways to see if
+        // the path is even viable.  There are three possible cases:
+        if (nearestNode1 > nearestNode2) {
+            // Nodes are in opposite directions on a 1-way road.  So
+            // a path is not really possible.
+            return {};
+        } else if (nearestNode1 == nearestNode2) {
+            // The nearest nodes on the way are the same. So we need a
+            // finer distance metric to be able to decide.
+            const Node& near    = nodeList.at(nearestNode1);
+            const int dist2src  = ::getDistance(near.latitude, near.longitude,
+                                                srcPt.second, srcPt.first);
+            const int dist2dest = ::getDistance(near.latitude, near.longitude,
+                                                destPt.second, destPt.first);
+            if (dist2src > dist2dest) {
+                // The nodes are in opposite directions on a 1-way
+                // street. So no direct path possibe
+                return {};
+            }
         }
     }
+    // A path from src to dest is possible. So build the path
+    Path path   = {src};
+    const int startIdx = (src.nodeID  == -1) ? nearestNode1 + 1 : nearestNode1;
+    const int endIdx   = (dest.nodeID == -1) ? nearestNode2 + 1 : nearestNode2;
+    for (int idx = startIdx; (idx < endIdx); idx++) {
+        const long segID  = segIdCounter++;
+        const long nodeID = way.nodeList[idx];        
+        PathSegment seg{way.id, nodeID, -1, 0, segID, path.back().segID};
+        seg.distance = getDistance(path.back(), seg);
+        path.push_back(seg);
+    }
+    PathSegment seg{dest.wayID, dest.nodeID, dest.buildingID, 0,
+            segIdCounter++, path.back().segID};
+    seg.distance    = getDistance(path.back(), seg);
+    path.push_back(seg);
     // Return the path segement with distance setup
-    return ret;
+    return path;
+}
+
+void
+PathFinder::generateFig(const Path& path) const {
+    if (cmdLineArgs.xfigFilePath.empty()) {
+        return;  // Nothing else to be done.
+    }
+    // The list of vertex coordinates to be drawn
+    std::vector<double> xCoords, yCoords;
+    std::vector<Ring::Info> vertInfo;
+    // Add each path segment to the shape file
+    for (size_t i = 0; (i < path.size()); i++) {
+        // Get the segement to be processed
+        const PathSegment& seg = path[i];
+        // Get the lat, lon for the path segement
+        const Point lonLat = getLatLon(seg);
+        xCoords.push_back(lonLat.first);   // Make list of x and y
+        yCoords.push_back(lonLat.second);  // coordinates
+        // Create an informational string for the node
+        std::ostringstream os;
+        os << seg;
+        vertInfo.push_back(Ring::Info{0, std::to_string(i), os.str()});
+    }
+    // Create a ring with the coordinates and the information we have
+    // built
+    Ring route(0, 0, Ring::ARC_RING, xCoords.size(), &xCoords[0],
+               &yCoords[0], vertInfo);
+    // Add route to a shape file to make drawing easier
+    ShapeFile shpFile;
+    shpFile.addRing(route);
+    shpFile.genXFig(cmdLineArgs.xfigFilePath, cmdLineArgs.figScale, false, {});
 }
 
 int
@@ -144,6 +383,10 @@ PathFinder::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.startBldID, ArgParser::LONG},
         {"--end-bld", "The ID of the destination building",
          &cmdLineArgs.endBldID, ArgParser::LONG},
+        {"--xfig", "Optional output XFig file",
+         &cmdLineArgs.xfigFilePath, ArgParser::STRING},        
+        {"--scale", "The size of the output map",
+         &cmdLineArgs.figScale, ArgParser::INTEGER},
         {"", "", NULL, ArgParser::INVALID}
     };
     // Process the command-line arguments.
@@ -173,8 +416,6 @@ PathFinder::loadModel(const std::string& modelFilePath) {
         std::cerr << "Error opening model file " << modelFilePath << std::endl;
         return 1;
     }
-    // Read boolean as "true"/"false" and not 1/0
-    model >> std::boolalpha;
     // Process line-by-line from the model text file to load model
     // data into memory.
     std::string line;
@@ -184,6 +425,9 @@ PathFinder::loadModel(const std::string& modelFilePath) {
         }
         // Wrap string in a stream to ease extractions in if-else below
         std::istringstream is(line);
+        // Read boolean as "true"/"false" and not 1/0
+        is >> std::boolalpha;
+        // Create objects based on type of input
         if (line.substr(0, 4) == "node") {
             Node node;
             node.read(is);
@@ -212,6 +456,7 @@ PathFinder::loadModel(const std::string& modelFilePath) {
     return 0;
 }
 
+// Build look-up map to find the ways that intersect at a given node
 void
 PathFinder::computeNodesWaysList() {
     for (const auto& entry : wayMap) {
@@ -222,6 +467,23 @@ PathFinder::computeNodesWaysList() {
     }
 }
 
+// Return index of node with the same ID
+int
+PathFinder::findNode(const Way& way, const long nodeID) const {
+    // We want to iterate only to last-but-one node due to logic in
+    // the for-loop below.
+    const int NumPoints = way.nodeList.size();
+    // Iterate over pairs of nodes and return index of node.
+    for (int i = 0; (i < NumPoints); i++) {
+        if (way.nodeList[i] == nodeID) {
+            return i;  // found the node
+        }
+    }
+    // Node not found on this way.
+    return -1;
+}
+
+// Find the node that is closest to a gien lat/lon
 int
 PathFinder::findNearestNode(const Way& way, const double latitude,
                             const double longitude) const {
@@ -241,6 +503,28 @@ PathFinder::findNearestNode(const Way& way, const double latitude,
     }
     // No valid pair of nodes were found
     return -1;
+}
+
+// Return distance (in miles) between 2 path segements.
+double
+PathFinder::getDistance(const PathSegment& ps1, const PathSegment& ps2) const {
+    // Get the latitude and longitude associated with the path segements
+    const Point pt1 = getLatLon(ps1);
+    const Point pt2 = getLatLon(ps2);
+    // Return the distance between the two
+    return ::getDistance(pt1.second, pt1.first, pt2.second, pt2.first);
+}
+
+// Print a path -- an array of PathSegement objects
+std::ostream& operator<<(std::ostream& os, const Path& path) {
+    if (path.empty()) {
+        os << "Empty path\n";
+    } else {
+        for (const PathSegment ps : path) {
+            os << ps << std::endl;
+        }
+    }
+    return os;
 }
 
 int main(int argc, char *argv[]) {
