@@ -36,6 +36,7 @@
 #include <iomanip>
 #include <stdexcept>
 #include <algorithm>
+#include <sstream>
 #include "Utilities.h"
 #include "ModelGenerator.h"
 
@@ -71,7 +72,7 @@ ModelGenerator::run(int argc, char *argv[]) {
     extractNodes();
     extractWays();
     // Create homes on the test way
-    loadBuildingIDsToIgnore();
+    loadModelAdjustments();
     createBuildings();
     createHomesOnEmptyWays();
 
@@ -180,8 +181,8 @@ ModelGenerator::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.osmFilePath, ArgParser::STRING},
         {"--pop-ring", "ID of population ring to draw buildings",
          &cmdLineArgs.drawPopRingID, ArgParser::INTEGER},
-        {"--bld-ignore", "Path to file with IDs of buildings to ignore",
-         &cmdLineArgs.bldIgnoreFilePath, ArgParser::STRING},
+        {"--adjust-model", "Path to file with adjustments to generated model",
+         &cmdLineArgs.adjustmentsFilePath, ArgParser::STRING},
         {"--out-model", "Path to file to write generated model",
          &cmdLineArgs.outModelFilePath, ArgParser::STRING},        
         {"", "", NULL, ArgParser::INVALID}
@@ -822,15 +823,15 @@ ModelGenerator::getTotalSqFootage(const int popRingID, int& bldCount) const {
 }
 
 void
-ModelGenerator::loadBuildingIDsToIgnore() {
-    if (cmdLineArgs.bldIgnoreFilePath.empty()) {
+ModelGenerator::loadModelAdjustments() {
+    if (cmdLineArgs.adjustmentsFilePath.empty()) {
         return;  // Ignore file not specified. Nothign to do.
     }
     // Check to ensure the specified ignroe file is valid.
-    std::ifstream ignoreFile(cmdLineArgs.bldIgnoreFilePath);
+    std::ifstream ignoreFile(cmdLineArgs.adjustmentsFilePath);
     if (!ignoreFile.good()) {
         throw std::runtime_error("Error reading " +
-                                 cmdLineArgs.bldIgnoreFilePath);
+                                 cmdLineArgs.adjustmentsFilePath);
     }
     // Process line-by-line from the line. Lines starting with '#' or
     // blank lines are comments and are ignored.
@@ -840,22 +841,55 @@ ModelGenerator::loadBuildingIDsToIgnore() {
         if (line.empty() || (line[0] == '#')) {
             continue;  // blank or comment line
         }
-        // If the line as a ":" then it is a range of numbers and not
-        // just one. So handle that situation correctly.
-        const size_t colonPos = line.find(':');
-        if (colonPos == std::string::npos) {
-            // This is a line with exactly 1 buliding ID. 
-            bldIgnoreIDs.insert(std::stol(line));
-        } else {
-            // This line has a range of building IDs in it. Add
-            // individual IDs to the set of buildings to be ignored.
-            const int startID = std::stol(line.substr(0, colonPos));
-            const int endID   = std::stol(line.substr(colonPos + 1));
-            // Add each buliding ID in the range to our ignore set
-            ASSERT( startID <= endID);
-            for (long id = startID; (id <= endID); id++) {
-                bldIgnoreIDs.insert(id);
+        // Read the first word of the line which should be the type of
+        // information on that line
+        const size_t spcPos   = line.find(' ');
+        const std::string cmd = line.substr(0, spcPos);
+        // Remove 1st word from line for convenient processing below.
+        line                  = trim(line.substr(spcPos + 1));
+        if (cmd == "ignore") {
+            // Adjustment to ignore buildings when distributing
+            // population.  If the line as a ":" then it is a range of
+            // numbers and not just one. So handle that situation
+            // correctly.
+            const size_t colonPos = line.find(':');
+            if (colonPos == std::string::npos) {
+                // This is a line with exactly 1 buliding ID. 
+                bldIgnoreIDs.insert(std::stol(line));
+            } else {
+                // This line has a range of building IDs in it. Add
+                // individual IDs to the set of buildings to be ignored.
+                const int startID = std::stol(line.substr(0, colonPos));
+                const int endID   = std::stol(line.substr(colonPos + 1));
+                // Add each buliding ID in the range to our ignore set
+                ASSERT( startID <= endID);
+                for (long id = startID; (id <= endID); id++) {
+                    bldIgnoreIDs.insert(id);
+                }
             }
+        } else if (cmd == "remap") {
+            // This is option to remap population from one ring to
+            // another in the form "512 513".  Read the source and
+            // destination ring indexes using an string stream.
+            std::istringstream is(line);
+            int srcRingIdx, destRingIdx;
+            is >> srcRingIdx >> destRingIdx;
+            // Check to ensure source and destination ring indexes
+            // look correct.
+            if ((srcRingIdx  < 0)  || (srcRingIdx  >= (int) popRings.size()) ||
+                (destRingIdx < -1) || (destRingIdx >= (int) popRings.size())) {
+                throw std::runtime_error("Invalid source/destination ring "
+                                         "indexes on line " + line);
+            }
+            // Now move population from source to destination ring if
+            // destination ring is not -1.
+            if (destRingIdx != -1) {
+                const double pop = popRings[destRingIdx].getPopulation() +
+                    popRings[srcRingIdx].getPopulation();
+                popRings[destRingIdx].setPopulation(pop);
+            }
+            // Clear out population in the source ring.
+            popRings[srcRingIdx].setPopulation(0);
         }
     }
     // Finally print some informational message

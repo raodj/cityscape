@@ -543,6 +543,13 @@ public:
         \return The population for this ring.
      */
     double getPopulation() const { return population; }
+
+
+    /** Set the population value for this ring.
+
+        \param[in] pop The population value to be set for this ring.
+    */
+    void setPopulation(const double pop) { population = pop; }
     
 protected:
     /** Set the subtraction flag to indicate this ring is an \b
