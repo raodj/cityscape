@@ -199,18 +199,25 @@ protected:
     */
     long getTotalSqFootage(const int popRingID, int& bldCount) const;
 
-    /** Internal helper method to load IDs of buildings to be ignored
-        from a given text file (specified via --bld-ignore
-        command-line argument)
+    /** Internal helper method to adjustments to generated model
+        (specified via --adjust-model command-line argument).
+        
+        Ajustments include loading IDs of buildings to be ignored and
+        remapping of poulation from one ring to another.
 
-        This method is used to load IDs of building to be ignored when
+        Some of the buildings in the data are to be ignored when
         generating buildings to distribute human population.  These
         building IDs are to be ignored because they are not tagged
         correctly in OSM and they significantly throw off area
         calculations.  This method poulates the set bldIgnoreIDs based
-        on the data from commandLineArgs.bldIgnoreFilePath.
+        on the data from the text files.
+
+        This method also populates the popRemap hash map with index of
+        population rings whose population is to be remapped to a given
+        destination ring.  This is done to account for minor
+        differences between open street map and LandScan data.
     */
-    void loadBuildingIDsToIgnore();
+    void loadModelAdjustments();
 
     /** Convenience method to cross-reference a way to a population
         area.  This method essentially adds entries to the
@@ -657,12 +664,16 @@ private:
         int drawPopRingID = -1;
 
         /** Path to an optional text file with information on
-            buildings to be ignored when generating homes to
-            distribute human population.  These building IDs are to be
-            ignored because they are not tagged correctly in OSM and
-            they significantly throw off area calculations.
+            adjustments to the generated model.  This includes
+            buildings to be ignored and remapping of population to
+            different grids.
+
+            en generating homes to distribute human population.
+            These building IDs are to be ignored because they are not
+            tagged correctly in OSM and they significantly throw off
+            area calculations.
         */
-        std::string bldIgnoreFilePath;
+        std::string adjustmentsFilePath;
 
         /** Path to an optional model output file where the generated
             model is written for further use/processing. This value is

@@ -1,0 +1,89 @@
+# This file contains building IDs to be ignored because they are not
+# tagged correctly in OSM and they significantly throw off area
+# calculations.
+
+# Cargill Inc., 12201 South Torrence Avenue
+ignore 211334470
+ignore 211334468
+
+# Warehouse/Factory buildings
+ignore 211335004
+ignore 211335141
+
+# Great Lakes Carbon Corp, 2821 East 114th Street
+
+# There are many buildings with contiguous building IDs which are
+# represented as a range of values separated by colon (:)
+ignore 211334503:211334524
+ignore 211334526:211334537
+
+# Warehouse bulidings next to Calumet River (S Doty Ave)
+ignore 211064756
+ignore 211064755
+ignore 211064745
+
+# OHare Airport -- "Gate Gourmet Flight Kitchen #1"
+ignore 163500411
+
+# Storage buliding (in South Deering)
+ignore 384028449
+
+# Walmart Supercenter -- 5965 South Doty Avenue
+ignore 244980699
+
+# Golf buildings -- Harborside International Golf Center
+ignore 211064954
+ignore 211064955
+ignore 211064958
+ignore 211064963
+ignore 211064966
+ignore 211064969
+ignore 211064970
+ignore 211064974
+
+#---------------------------------------------------------------------
+# Building assignments worked nicely overall. However, for some regions
+# the square footage was either overestimated or
+# underestimated. Overestimation occurred in regions with low population
+# but with large industrial complexes that significantly increased the
+# square footage. For human population assignments, these industrial
+# building complexes were manually tagged to be ignored.
+# 
+# Underestimation occurred in a few regions due to minor differences
+# between LandScan boundaries (that are approximate to 0.5 miles) versus
+# the more precise locations in Open Street Map. That is, the regions
+# did not have any buildings. Specifically, for the following regions
+# the populations were reassigned to their adjacent neighbors with homes
+# to accommodate the human population. The adjacent neighbors were
+# manually determined by inspecting the neighborhood via Open Street
+# Map.
+# 
+# S.No	PopID	Pop	Re-ID	Notes
+# 199	279	610	225	O'Hare airport. Misalignment. Move down  by 1
+# 26	106	445	-1	O'Hare (moved up-right but falls off edge)
+# 225	305	408	??	Misalignment. Move up-left
+# 192	272	385	-1	O'Hare. Move down-left but falls off edge
+# 994	1074	369	1073	Misalignment. Edge of lake. Move left
+# 162	242	315	-1	O'Hare Misalignment. Ignore as it is edge of map
+# 193	273	238	-1	O'Hare: 1 diagonal down-left by falls off edge
+# 73	153	179	-1	O'Hare: horizontal left by 1 or 2 but off edge
+# 868	948	139	947	Lake edge misalign. Move horizontal by 1 left
+# 534	614	13	554	Misalign (highway). Move vertically down by 1
+# 968   768     37      983     Edge of wetland, move vertically down by 1
+
+# Regions whose population is remapped to adjacent ones
+remap 199 225
+remap 994 993
+remap 868 867
+remap 534 554
+remap 968 983
+remap 710 687
+remap 865 843
+
+# Regions at the edge of O'Hare whose population can be ignored.
+# remap 26  -1
+# remap  73 -1
+# remap 162 -1
+# remap 192 -1
+# remap 193 -1
+
