@@ -85,7 +85,11 @@ pathfinder_SOURCES = \
 	PathFinder.cpp \
 	IndexedPriorityQueue.h \
 	ShapeFile.h \
-	ShapeFile.cpp
+	ShapeFile.cpp \
+	OSMData.h \
+	OSMData.cpp \
+	PathFinderTester.h \
+	PathFinderTester.cpp
 
 pathfinder_LDADD = -lhdf5_hl -lgdal
 

@@ -37,46 +37,28 @@
 #include "Utilities.h"
 #include "ShapeFile.h"
 
-int
-PathFinder::run(int argc, char *argv[]) {
-    int error = 0;  // Error from various helper methods.
-    // First process the command-line args and ensure we have
-    // necessary arguments for performing various operations.
-    if ((error = processArgs(argc, argv)) != 0) {
-        return error;  // Error processing command-line args.
-    }
-    // Next load the community shape file
-    if ((error = loadModel(cmdLineArgs.modelFilePath)) != 0) {
-        return error;  // Error loading community shape file.
-    }
-    // Ensure starting and ending building ID's are valid.
-    if ((buildingMap.find(cmdLineArgs.startBldID) == buildingMap.end()) ||
-        (buildingMap.find(cmdLineArgs.endBldID)   == buildingMap.end())) {
-        std::cerr << "Starting or ending building not found in model.\n";
-        return 3;
-    }
+PathFinder::PathFinder(OSMData& osmData) : osmData(osmData) {
+    // Nothing else to be done for now.
+}
+
+Path
+PathFinder::findBestPath(long startBldId, long endBldId) {
     // Get the building information for quick reference.
-    const Building begBld = buildingMap.at(cmdLineArgs.startBldID);
-    const Building endBld = buildingMap.at(cmdLineArgs.endBldID);    
+    const Building begBld = osmData.buildingMap.at(startBldId);
+    const Building endBld = osmData.buildingMap.at(endBldId);    
     // Setup the beginning and destination path segmenets for further
     // processing.
     PathSegment begSeg{begBld.wayID, StartNodeID, begBld.id,    0,
             segIdCounter++, -1};
     PathSegment endSeg{endBld.wayID, EndNodeID,   endBld.id, 1000,
             segIdCounter++, -1};
-    // Print the resulting path segement between the two
+    // Get the helper method to find the path
     Path path = findBestPath(begSeg, endSeg);
-    // Draw the path as xfig
-    generateFig(path);
-    std::cout << path;
-    // Print some stats about the path
-    std::cout << "Exploring: " << exploring.size() << ", explored paths: "
-              << exploredPaths.size() << ", explored nodes: "
-              << exploredNodes.size() << std::endl;
-    // Everything went well
-    return 0;
+    // Return the generated path
+    return path;
 }
 
+// Find best path between two segements
 Path
 PathFinder::findBestPath(const PathSegment& src, const PathSegment& dest) {
     // Add the source and destination to the paths being explored.
@@ -166,8 +148,8 @@ PathFinder::addAdjacentNodes(const PathSegment& seg, const PathSegment& dest,
     // We are working with a node.  We should have a way
     // associated with this node so we can find adjacent nodes.
     ASSERT( seg.wayID != -1 );
-    ASSERT( wayMap.find(seg.wayID) != wayMap.end() );
-    const Way& way = wayMap.at(seg.wayID);
+    ASSERT( osmData.wayMap.find(seg.wayID) != osmData.wayMap.end() );
+    const Way& way = osmData.wayMap.at(seg.wayID);
 
     // There are two cases -- common one is we are working is when we
     // have a valid node ID.
@@ -188,16 +170,16 @@ PathFinder::addAdjacentNodes(const PathSegment& seg, const PathSegment& dest,
         // meet, if requested (recursive calls don't go into this
         // if-statement.
         if (addIntersectingWays) {
-            ASSERT(seg.nodeID < (long) nodesWaysList.size());
-            for (long wayID : nodesWaysList[seg.nodeID]) {
+            ASSERT(seg.nodeID < (long) osmData.nodesWaysList.size());
+            for (long wayID : osmData.nodesWaysList[seg.nodeID]) {
                 if (wayID == seg.wayID) {
                     continue;  // Ignore the way we are already on
                 }
                 
                 // Get the way to check to ensure it is not a dead end
                 // so that we don't waste time on exploring dead-ends.
-                ASSERT( wayMap.find(wayID) != wayMap.end() );
-                const Way& way = wayMap.at(wayID);
+                ASSERT( osmData.wayMap.find(wayID) != osmData.wayMap.end() );
+                const Way& way = osmData.wayMap.at(wayID);
                 if (way.isDeadEnd && (wayID != dest.wayID)) {
                     // This way is a dead end and the destination is
                     // not on this way. So don't explore it.
@@ -224,7 +206,7 @@ PathFinder::addAdjacentNodes(const PathSegment& seg, const PathSegment& dest,
                          // in the direction of traffic flow.
         }
         const long nodeID  = way.nodeList.at(nearNode);
-        ASSERT(nodeID < (long) nodeList.size());
+        ASSERT(nodeID < (long) osmData.nodeList.size());
         ASSERT(exploredNodes.find(nodeID) == exploredNodes.end());
         PathSegment newSeg{seg.wayID, nodeID, -1, 0, segIdCounter++, seg.segID};
         newSeg.distance = seg.distance + getDistance(seg, newSeg);
@@ -271,12 +253,12 @@ Point
 PathFinder::getLatLon(const PathSegment& path) const {
     // Return value from the node as the reference.
     if (path.buildingID == -1) {
-        const Node& node = nodeList.at(path.nodeID);
+        const Node& node = osmData.nodeList.at(path.nodeID);
         return Point(node.longitude, node.latitude);
     }
     // NodeID is -1. So we are working with a building in this situtation.
     ASSERT( path.buildingID != -1 );
-    const Building& building = buildingMap.at(path.buildingID);
+    const Building& building = osmData.buildingMap.at(path.buildingID);
     return Point(building.wayLon, building.wayLat);
 }
 
@@ -287,7 +269,7 @@ PathFinder::getPathOnSameWay(const PathSegment& src, const PathSegment& dest) {
     // way.  So ensure that pre-condition is met.
     ASSERT (src.wayID == dest.wayID);    
     // Get the way and points (longitude, latitude) used below.
-    const Way& way = wayMap.at(src.wayID);
+    const Way& way = osmData.wayMap.at(src.wayID);
     // Get the points associated with the starting and ending.
     const Point srcPt = getLatLon(src), destPt = getLatLon(dest);
     // Find the nearest nodes on the way for the source and
@@ -311,7 +293,7 @@ PathFinder::getPathOnSameWay(const PathSegment& src, const PathSegment& dest) {
         } else if (nearestNode1 == nearestNode2) {
             // The nearest nodes on the way are the same. So we need a
             // finer distance metric to be able to decide.
-            const Node& near    = nodeList.at(nearestNode1);
+            const Node& near    = osmData.nodeList.at(nearestNode1);
             const int dist2src  = ::getDistance(near.latitude, near.longitude,
                                                 srcPt.second, srcPt.first);
             const int dist2dest = ::getDistance(near.latitude, near.longitude,
@@ -343,8 +325,14 @@ PathFinder::getPathOnSameWay(const PathSegment& src, const PathSegment& dest) {
 }
 
 void
-PathFinder::generateFig(const Path& path) const {
-    if (cmdLineArgs.xfigFilePath.empty()) {
+PathFinder::generateFig(const Path& path, const std::string& xfigFilePath,
+                        const int figScale) const {
+    // Print some stats about the path
+    std::cout << "Exploring: " << exploring.size() << ", explored paths: "
+              << exploredPaths.size() << ", explored nodes: "
+              << exploredNodes.size() << std::endl;
+    // The file to which the xfig file is to be written
+    if (xfigFilePath.empty()) {
         return;  // Nothing else to be done.
     }
     // The list of vertex coordinates to be drawn
@@ -358,10 +346,13 @@ PathFinder::generateFig(const Path& path) const {
         const Point lonLat = getLatLon(seg);
         xCoords.push_back(lonLat.first);   // Make list of x and y
         yCoords.push_back(lonLat.second);  // coordinates
-        // Create an informational string for the node
-        std::ostringstream os;
-        os << seg;
-        vertInfo.push_back(Ring::Info{0, std::to_string(i), os.str()});
+        // Create an informational string for the node -- currrently
+        // it causes some issue when the fig file is viewed. So it is
+        // commented out.
+        /* std::ostringstream os;
+           os << seg;
+           vertInfo.push_back(Ring::Info{0, std::to_string(i), os.str()});
+        */
     }
     // Create a ring with the coordinates and the information we have
     // built
@@ -370,101 +361,7 @@ PathFinder::generateFig(const Path& path) const {
     // Add route to a shape file to make drawing easier
     ShapeFile shpFile;
     shpFile.addRing(route);
-    shpFile.genXFig(cmdLineArgs.xfigFilePath, cmdLineArgs.figScale, false, {});
-}
-
-int
-PathFinder::processArgs(int argc, char *argv[]) {
-    // Make the arg_record to process command-line arguments.
-    ArgParser::ArgRecord arg_list[] = {
-        {"--model", "The input model file to be processed",
-         &cmdLineArgs.modelFilePath, ArgParser::STRING},
-        {"--start-bld", "The ID of the starting building",
-         &cmdLineArgs.startBldID, ArgParser::LONG},
-        {"--end-bld", "The ID of the destination building",
-         &cmdLineArgs.endBldID, ArgParser::LONG},
-        {"--xfig", "Optional output XFig file",
-         &cmdLineArgs.xfigFilePath, ArgParser::STRING},        
-        {"--scale", "The size of the output map",
-         &cmdLineArgs.figScale, ArgParser::INTEGER},
-        {"", "", NULL, ArgParser::INVALID}
-    };
-    // Process the command-line arguments.
-    ArgParser ap(arg_list);
-    ap.parseArguments(argc, argv, true);
-    // Ensure at least the shape file is specified.
-    if (cmdLineArgs.modelFilePath.empty()) {
-        std::cerr << "Specify a model file to be processed.\n"
-                  << ap << std::endl;
-        return 1;
-    }
-    // Ensure we have some starting and ending building IDs setup
-    if ((cmdLineArgs.startBldID == -1) || (cmdLineArgs.endBldID == -1)) {
-        std::cerr << "Specify starting and ending building IDs.\n"
-                  << ap << std::endl;
-        return 2;
-    }
-    // Things seem fine so far
-    return 0;
-}
-
-int
-PathFinder::loadModel(const std::string& modelFilePath) {
-    // Ensure model file is readable.
-    std::ifstream model(modelFilePath);
-    if (!model.good()) {
-        std::cerr << "Error opening model file " << modelFilePath << std::endl;
-        return 1;
-    }
-    // Process line-by-line from the model text file to load model
-    // data into memory.
-    std::string line;
-    while (std::getline(model, line)) {
-        if (line.empty() || line.front() == '#') {
-            continue;  // empty or comment line. Ignore.
-        }
-        // Wrap string in a stream to ease extractions in if-else below
-        std::istringstream is(line);
-        // Read boolean as "true"/"false" and not 1/0
-        is >> std::boolalpha;
-        // Create objects based on type of input
-        if (line.substr(0, 4) == "node") {
-            Node node;
-            node.read(is);
-            nodeList.push_back(node);     // Add node to list
-            nodesWaysList.push_back({});  // Add empty list for now
-        } else if (line.substr(0, 3) == "way") {
-            Way way;
-            way.read(is);
-            wayMap[way.id] = way;
-        } else if (line.substr(0, 3) == "bld") {
-            Building bld;
-            bld.read(is);
-            buildingMap[bld.id] = bld;
-        } else {
-            std::cerr << "Invalid line in model file: " << line << std::endl;
-            return 1;
-        }
-    }
-    // Update the cross reference between nodes and ways.
-    computeNodesWaysList();
-    // Print aggregate information for cross checking.
-    std::cout << "Loaded "     << nodeList.size() << " nodes, "
-              << wayMap.size() << " ways, and "   << buildingMap.size()
-              << " buildings.\n";
-    // Everything went well
-    return 0;
-}
-
-// Build look-up map to find the ways that intersect at a given node
-void
-PathFinder::computeNodesWaysList() {
-    for (const auto& entry : wayMap) {
-        const long wayID = entry.second.id;
-        for (const long nodeID : entry.second.nodeList) {
-            nodesWaysList.at(nodeID).push_back(wayID);
-        }
-    }
+    shpFile.genXFig(xfigFilePath, figScale, false, {});
 }
 
 // Return index of node with the same ID
@@ -493,8 +390,8 @@ PathFinder::findNearestNode(const Way& way, const double latitude,
     // Iterate over pairs of nodes and return index of node.
     for (int i = 0; (i < NumPoints); i++) {
         // Reference to 2 nodes for comparison.
-        const Node& n1 = nodeList.at(way.nodeList[i]);
-        const Node& n2 = nodeList.at(way.nodeList[i + 1]);
+        const Node& n1 = osmData.nodeList.at(way.nodeList[i]);
+        const Node& n2 = osmData.nodeList.at(way.nodeList[i + 1]);
         // Check if given point lies between these nodes.
         if (inBetween(n1.latitude,  n2.latitude,  latitude)  &&
             inBetween(n1.longitude, n2.longitude, longitude)) {
@@ -525,11 +422,6 @@ std::ostream& operator<<(std::ostream& os, const Path& path) {
         }
     }
     return os;
-}
-
-int main(int argc, char *argv[]) {
-    PathFinder pf;
-    return pf.run(argc, argv);
 }
 
 #endif
