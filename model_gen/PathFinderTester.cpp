@@ -48,6 +48,10 @@ PathFinderTester::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.xfigFilePath, ArgParser::STRING},        
         {"--scale", "The size of the output map",
          &cmdLineArgs.figScale, ArgParser::INTEGER},
+        {"--search-dist", "Minimum search distance (in miles) to find nodes",
+         &cmdLineArgs.minDist, ArgParser::DOUBLE},
+        {"--search-scale", "Extra distance/mile to search for path",
+         &cmdLineArgs.distScale, ArgParser::DOUBLE},        
         {"", "", NULL, ArgParser::INVALID}
     };
     // Process the command-line arguments.
@@ -91,7 +95,8 @@ PathFinderTester::run(int argc, char *argv[]) {
     }
     // Print the resulting path segement between the two
     PathFinder pf(osmData);
-    Path path = pf.findBestPath(cmdLineArgs.startBldID, cmdLineArgs.endBldID);
+    Path path = pf.findBestPath(cmdLineArgs.startBldID, cmdLineArgs.endBldID,
+                                cmdLineArgs.minDist, cmdLineArgs.distScale);
     // Draw the path as xfig
     std::cout << path;    
     pf.generateFig(path, cmdLineArgs.xfigFilePath, cmdLineArgs.figScale);

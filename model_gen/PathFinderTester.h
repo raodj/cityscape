@@ -85,6 +85,18 @@ protected:
             shapes and information are readable.
         */
         int figScale = 16384000;
+
+        /** The minimum distance around the source and destination
+            paths only within which the nodes are to be checked.
+            Nodes outside this range are not checked as an
+            optimization to improve performance.
+        */
+        double minDist = -1;
+
+        /** Additional distance to search in depending on the distance
+            between the source and destination.
+        */
+        double distScale = 0;
     } cmdLineArgs;
 
     /** A simple class that encapsulates the OSM data */
