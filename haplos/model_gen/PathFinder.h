@@ -77,8 +77,15 @@ public:
 
         \param[in] endBldId The ending ID of the building.  It is
         assumed that the building ID is valid.
+
+        \param[in] minDist The minimum distance (in miles) around the
+        source and destination to explore.
+
+        \param[in] scale The extra miles to expand the minDist based
+        on the distance between start and destination segments.
     */
-    Path findBestPath(long startBldId, long endBldId);
+    Path findBestPath(long startBldId, long endBldId,
+                      const double minDist = -1, const double scale = -1);
     
     /** Find the best path between the source and destination node.
 
@@ -88,9 +95,19 @@ public:
         \param[in] dest The destination path segement to which the
         path is to be computed.
 
+        \param[in] minDist The minimum distance (in miles) around the
+        source and destination to explore.  If this value is -1 then a
+        outer limit ring is not used as an optimization.
+
+        \param[in] scale The extra miles to expand the minDist based
+        on the distance between start and destination segments.  If
+        this value is -1 then a outer limit ring is not used as an
+        optimization.
+        
         \return The path fro the source to destination path 
     */
-    Path findBestPath(const PathSegment& src, const PathSegment& dest);    
+    Path findBestPath(const PathSegment& src, const PathSegment& dest,
+                      const double minDist = -1, const double scale = -1);
 
     /** Helper method to generate an xfig file with the path
         information.
@@ -107,6 +124,26 @@ public:
                      const int figScale = 16384000) const;
 
 protected:
+    /** Setup a boundary ring that defines the maximum outer limits up
+        to which the path finder should explore.  This ring serves an
+        optional optimization to ensure that the path finder converges
+        quickly.
+
+        \param[in] src The source path segment from where the path is
+        to be computed.
+
+        \param[in] dest The destination path segement to which the
+        path is to be computed.
+ 
+        \param[in] minDist The minimum distance (in miles) around the
+        source and destination to explore.
+
+        \param[in] scale The extra miles to expand the minDist based
+        on the distance between start and destination segments.
+    */
+    void setLimits(const PathSegment& src, const PathSegment& dest,
+                   const double minDist = 0.5, double scale = 0.25);
+    
     /** Helper method to reconstruct the path from a given destination
         node.
 
@@ -280,6 +317,15 @@ private:
         exploring heap.
     */
     std::unordered_set<long> exploredNodes;
+
+    /** A ring that defines a rectangular boundary around the source
+        and destination that is used to limit the scope of nodes
+        explored by this path finder.  This is an optimization to
+        ensure path finding converges quickly.  This ring is
+        initialized to an invalid value.  The ring is setup in the
+        setLimits method.
+    */
+    Ring outerLimits;
 };
 
 #endif

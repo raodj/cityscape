@@ -35,6 +35,14 @@
 #include "Ring.h"
 #include "Utilities.h"
 
+Ring::Ring() : ringID(-1), shapeID(-1), vertexCount(0),
+               kind(Ring::UNKNOWN_RING) {
+    // Nothing else to be done for now.
+    // Copy other instance variables.
+    subtractFlag = false;
+    population   = -1;
+}
+
 Ring::Ring(const long ringIdx, const long shapeIdx, const Ring::Kind type,
            const int vCount, const double *x, const double *y,
            const std::vector<Ring::Info>& infoList, const double scale)

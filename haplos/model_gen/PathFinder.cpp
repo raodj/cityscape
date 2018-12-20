@@ -42,7 +42,8 @@ PathFinder::PathFinder(OSMData& osmData) : osmData(osmData) {
 }
 
 Path
-PathFinder::findBestPath(long startBldId, long endBldId) {
+PathFinder::findBestPath(long startBldId, long endBldId,
+                         const double minDist, const double scale) {
     // Get the building information for quick reference.
     const Building begBld = osmData.buildingMap.at(startBldId);
     const Building endBld = osmData.buildingMap.at(endBldId);    
@@ -53,14 +54,19 @@ PathFinder::findBestPath(long startBldId, long endBldId) {
     PathSegment endSeg{endBld.wayID, EndNodeID,   endBld.id, 1000,
             segIdCounter++, -1};
     // Get the helper method to find the path
-    Path path = findBestPath(begSeg, endSeg);
+    Path path = findBestPath(begSeg, endSeg, minDist, scale);
     // Return the generated path
     return path;
 }
 
 // Find best path between two segements
 Path
-PathFinder::findBestPath(const PathSegment& src, const PathSegment& dest) {
+PathFinder::findBestPath(const PathSegment& src, const PathSegment& dest,
+                         const double minDist, const double scale) {
+    // Setup a limiting ring if specified by the user.
+    if (minDist != -1) {
+        setLimits(src, dest, minDist, scale);
+    }
     // Add the source and destination to the paths being explored.
     exploring.push(src);
     exploring.push(dest);
@@ -116,6 +122,13 @@ PathFinder::checkAddNode(const PathSegment& parent, const long nodeID,
     // no further opreation to be done.
     if (exploredNodes.find(nodeID) != exploredNodes.end()) {
         return false;  // node already explored.
+    }
+    // If the node is not inside our limits ring then ignore node
+    ASSERT((nodeID >= 0) && (nodeID < (long) osmData.nodeList.size()));
+    const Node& node = osmData.nodeList[nodeID];
+    if ((outerLimits.getKind() != Ring::UNKNOWN_RING) &&
+        !outerLimits.contains(node.longitude, node.latitude)) {
+        return false;  // not out of bounds
     }
     // Create a temporary segement based on parent.
     PathSegment seg{wayID, nodeID, -1, 0, 0, parent.segID};
@@ -422,6 +435,21 @@ std::ostream& operator<<(std::ostream& os, const Path& path) {
         }
     }
     return os;
+}
+
+void
+PathFinder::setLimits(const PathSegment& src, const PathSegment& dest,
+                      const double minDist, double scale) {
+    // Get the source and destination points
+    const Point srcPt   = getLatLon(src);
+    const Point destPt  = getLatLon(dest);
+    // Get the distance (in miles) from src to dest
+    const double dist   = ::getDistance(srcPt.second,  srcPt.first,
+                                        destPt.second, destPt.first);
+    // Compute the buffer distance
+    const double maxDist = minDist + (dist * scale);
+    // Have the ring build limits around the src & dest
+    outerLimits = Ring::createRectRing(srcPt, destPt, maxDist);
 }
 
 #endif

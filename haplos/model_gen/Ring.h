@@ -79,6 +79,13 @@ public:
         std::string name;  // name associated with the field
         std::string value; // Value stored as string for convenience.
     };
+
+    /** The default constructor.
+
+        This a convenience default constructor that creates an invalid
+        ring.
+    */
+    Ring();
     
     /** The primary constructor.
 
