@@ -166,6 +166,52 @@ public:
     Ring(const Point& topLeft, const Point& botRight,
          const double population, const long ringID = -1,
          const long shapeID = -1, const std::vector<Ring::Info>& infoList = {});
+
+    /** Very specialized method to create a rectangular ring.
+
+        This is a very specialized method used in this application --
+        given 2 points on a line (typically start and end points of a
+        trip), this method creates a rectangular ring that is "dist"
+        miles around the two points (parallel to the lines) as shown
+        in the figure below:
+
+        <pre>
+                  +----------------------+
+                  |                      |
+                  |  S==============>E   |
+                  |                      |
+                  +----------------------+
+       </pre>
+
+       \note This method is not very accurate in the buffer zone
+       created around the points, particularly for vertical lines (it
+       underestimates the buffer zone).  However, for small values
+       this method is acceptable.
+       
+       \param[in] start The first point on the line. Typically this is
+       the starting point of a trip.
+
+       \param[in] end The ending point on the line. Typically this is
+       the ending point of a trip.
+
+       \param[in] dist The distance in miles around the points that the
+       rectangle should encompass.  The default distance is 1 mile.
+
+       \param[in] population Optional population value for this ring.
+
+       \param[in] ringID An optional ID for this ring.
+
+       \param[in] shapeID An option ID for the shape associated with
+       this ring.
+
+       \param[in] infoList Optional information associated with this
+       ring.
+    */
+    static Ring createRectRing(const Point& start, const Point& end,
+                               const double dist = 1.0,
+                               const double population = 0,
+                               const long ringID = -1, const long shapeID = -1,
+                               const std::vector<Ring::Info>& infoList = {});
     
     /** Obtain the shape ID value for this Ring.
 

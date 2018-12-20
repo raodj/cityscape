@@ -96,7 +96,8 @@ PopulationRingGenerator::createRings(ShapeFile& shapes,
                     {0, "population", std::to_string(pop)},
                     {0, "area_numbe", ring.getInfo("area_numbe")},
                     {1, "community",  ring.getInfo("community")},
-                    {0, "popRingID",  std::to_string(ringID)}
+                    {0, "popRingID",  std::to_string(ringID)},
+                    {0, "index",      std::to_string(popRings.size())},
                 };
                 popRings.push_back(Ring(Point(currLon, currLat),
                                         Point(currLon + xPixelRes,

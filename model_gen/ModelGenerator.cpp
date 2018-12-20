@@ -243,7 +243,7 @@ ModelGenerator::generateFig() {
             // Draw detailed buildings for the given population ring.
             // For this first we create a custom shapeFile and then
             // dump the data.
-            // buildingShapes.addRing(popRings.at(cmdLineArgs.drawPopRingID));
+            buildingShapes.addRing(popRings.at(cmdLineArgs.drawPopRingID));
             // Add ways for this population ring as arcs
             for (int wayID : popAreaWayIDs.at(cmdLineArgs.drawPopRingID)) {
                 const Way& way = wayMap.at(wayID);
@@ -403,7 +403,7 @@ ModelGenerator::extractWays() {
             // child elements
             Way wayEntry;
             bool isBuilding = false, isHighway = false;
-            bool oneWay     = 0;
+            int  oneWay     = 0;
             std::string wayType;
             for (rapidxml::xml_node<> *child = node->first_node();
                  (child != nullptr); child = child->next_sibling()) {
@@ -501,14 +501,14 @@ ModelGenerator::extractWays() {
         for (const Way& wayRef : threadWayList) {
             // Get the way in the global map
             Way& way = wayMap.at(wayRef.id);
-            int intersections = 0;
+            int intersections = 0;  // nodes with degree > 1
             for (const long nodeID : way.nodeList) {
                 if (nodeMap.at(nodeID).refCount > 1) {
                     intersections++;
                 }
             }
-            // dead-ends have only one node with count > 1
-            way.isDeadEnd = (intersections > 1);
+            // dead-ends have only one node with degree > 1
+            way.isDeadEnd = (intersections < 2);
             if (way.isDeadEnd) {
                 deadEnds++;
             }

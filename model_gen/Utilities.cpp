@@ -62,6 +62,7 @@ getTimeStamp(const std::string& fileName) {
     return getSystemTime(&fileInfo.st_mtime);
 }
 
+// Return given time or current-system-time as a string
 std::string getSystemTime(const time_t *encodedTime) {
     // Get current system time.
     time_t timeToConv = time(NULL);
@@ -76,6 +77,7 @@ std::string getSystemTime(const time_t *encodedTime) {
     return buffer;
 }
 
+// Remove leading and trailing white spaces
 std::string
 trim(const std::string& str) {
     std::string::size_type pos1 = str.find_first_not_of("\r\n\t ");
@@ -88,7 +90,8 @@ trim(const std::string& str) {
                       pos2 - pos1 + 1);
 }
 
-
+// Convert latitude & longitude to x & y coordinates on a map
+// (mercator projection assumed) of given "size"
 void getXYValues(double latitude, double longitude,
                  int &x, int &y, const int size, const bool wrap) {
     // First normalize the latitude and a longitude and normalises the
@@ -113,10 +116,15 @@ void getXYValues(double latitude, double longitude,
     y = (int) (latitude  * size);
 }
 
+// Convert distance to longitude at a given latitude -- note due to
+// spherical surface of earth longitude values will be different at
+// different latitudes.
 double toLongitude(const double miles, const double latitude) {
     return miles / (cos(latitude * M_PI / 180.0) * MILES_PER_LAT);
 }
 
+// This is the converse of getXYValues method -- given x, y on map of
+// given "MapSize", it computes latitude, longitude values.
 void getLatLon(const int x, const int y, const int MapSize,
                double &lat, double& lon) { 
     lat = lon = 0;
@@ -129,7 +137,9 @@ void getLatLon(const int x, const int y, const int MapSize,
     lat = TO_DEGREES(atanl(sinhl(lat)));
 }
 
-
+// Get the distance between 2 points -- this method is good for short
+// distances (say less than 100 miles) but has some error (don't know
+// how much error) for large distances (say for 1000s of miles)
 double
 getDistance(double latitude1, double longitude1,
 	    double latitude2, double longitude2)  {
@@ -152,6 +162,7 @@ getDistance(double latitude1, double longitude1,
     return distance;        
 }
 
+// A simple method to detect if val3 is between val1 and val2
 bool inBetween(const double val1, const double val2,
                const double val3) {
     const double min = std::min(val1, val2);
@@ -186,6 +197,8 @@ bool findPerpendicularIntersection(const double entLat,   const double entLon,
     return false;
 }
 
+// Compute lat, lon of a point on a given line that is "dist" miles
+// away from node1 (towards node2).
 void getPoint(const double node1Lat, const double node1Lon,
               const double node2Lat, const double node2Lon,
               const double dist, double& pointLat, double& pointLon,
@@ -202,6 +215,5 @@ void getPoint(const double node1Lat, const double node1Lon,
         pointLon -= node1Lon;
     }
 }
-
 
 #endif

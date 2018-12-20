@@ -32,6 +32,7 @@
 //---------------------------------------------------------------------------
 
 #include "Way.h"
+#include "Utilities.h"
 
 void
 Way::write(std::ostream& os, const bool writeHeader,
@@ -44,8 +45,9 @@ Way::write(std::ostream& os, const bool writeHeader,
            << "nodeID"   << delim << "[nodeID...]\n";
     }
     // Write the information for this way
-    os << "way"     << delim << id       << delim << kind << maxSpeed << delim
-       << isDeadEnd << delim << isOneWay << delim << numBuildings;
+    os << "way"     << delim << id        << delim << kind     << delim
+       << maxSpeed  << delim << isDeadEnd << delim << isOneWay << delim
+       << numBuildings;
     // Write the nodeID's for this way
     for (const long nodeID : nodeList) {
         os << delim << nodeID;
@@ -69,6 +71,7 @@ Way::read(std::istream& is) {
     while (is >> nodeID) {
         nodeList.push_back(nodeID);
     }
+    ASSERT(!nodeList.empty());
 }
 
 #endif

@@ -31,7 +31,7 @@
 
 bin_PROGRAMS = modelgen pathfinder
 
-AM_CXXFLAGS = -g -Wall -std=c++14 -DDEVELOPER_ASSERTIONS -fopenmp
+AM_CXXFLAGS = -g -Wall -std=c++11 -DDEVELOPER_ASSERTIONS -fopenmp
 
 modelgen_LDFLAGS = 
 modelgen_LDADD = -lhdf5_hl -lgdal
@@ -82,6 +82,11 @@ pathfinder_SOURCES = \
 	PathSegment.h \
 	PathSegment.cpp \
 	PathFinder.h \
-	PathFinder.cpp
+	PathFinder.cpp \
+	IndexedPriorityQueue.h \
+	ShapeFile.h \
+	ShapeFile.cpp
+
+pathfinder_LDADD = -lhdf5_hl -lgdal
 
 # End of Makefile.am
