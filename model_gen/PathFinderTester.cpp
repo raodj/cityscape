@@ -31,6 +31,7 @@
 //
 //---------------------------------------------------------------------------
 
+#include <chrono>
 #include "PathFinder.h"
 #include "PathFinderTester.h"
 
@@ -51,7 +52,15 @@ PathFinderTester::processArgs(int argc, char *argv[]) {
         {"--search-dist", "Minimum search distance (in miles) to find nodes",
          &cmdLineArgs.minDist, ArgParser::DOUBLE},
         {"--search-scale", "Extra distance/mile to search for path",
-         &cmdLineArgs.distScale, ArgParser::DOUBLE},        
+         &cmdLineArgs.distScale, ArgParser::DOUBLE},
+        {"--best-time", "Return path based on fastest time",
+         &cmdLineArgs.useTime, ArgParser::BOOLEAN},
+        {"--rnd-test", "Run a given number of random tests",
+         &cmdLineArgs.rndTestCount, ArgParser::INTEGER},
+        {"--rnd-start", "Starting index for setting seed",
+         &cmdLineArgs.rndSeed, ArgParser::INTEGER},
+        {"--check-entry", "Check entry is correct for all buildings",
+         &cmdLineArgs.checkEntries, ArgParser::BOOLEAN},
         {"", "", NULL, ArgParser::INVALID}
     };
     // Process the command-line arguments.
@@ -63,8 +72,10 @@ PathFinderTester::processArgs(int argc, char *argv[]) {
                   << ap << std::endl;
         return 1;
     }
+
     // Ensure we have some starting and ending building IDs setup
-    if ((cmdLineArgs.startBldID == -1) || (cmdLineArgs.endBldID == -1)) {
+    if ((cmdLineArgs.rndTestCount < 0) &&
+        ((cmdLineArgs.startBldID == -1) || (cmdLineArgs.endBldID == -1))) {
         std::cerr << "Specify starting and ending building IDs.\n"
                   << ap << std::endl;
         return 2;
@@ -72,6 +83,83 @@ PathFinderTester::processArgs(int argc, char *argv[]) {
     // Things seem fine so far
     return 0;
 }
+
+void
+PathFinderTester::runRndTest(const long startBldID, const long endBldID) const {
+    std::cout << startBldID << " -- " << endBldID << " : ";
+    // Namespaces associated with standard time measurement classes below.
+    using namespace std::chrono;
+    // Record start time
+    const high_resolution_clock::time_point start =
+        high_resolution_clock::now();
+    PathFinder pf(osmData);
+    Path path = pf.findBestPath(startBldID, endBldID,
+                                cmdLineArgs.useTime,    cmdLineArgs.minDist,
+                                cmdLineArgs.distScale);
+    if ((path.size() <= 2) && (cmdLineArgs.minDist != -1)) {
+        // If path could not be found, then re-run without limiting search
+        std::cout << " retry : ";
+        PathFinder pf(osmData);        
+        path = pf.findBestPath(startBldID, endBldID, cmdLineArgs.useTime);
+    }
+    const high_resolution_clock::time_point end = high_resolution_clock::now();
+    // Compute elapsed time.
+    const duration<double> computeTime =
+        duration_cast<duration<double>>(end - start);
+    std::cout << (path.size() > 2 ? "Success" : "Failed")
+              << " ("     << path.size() << ", time: " << computeTime.count()
+              << " secs)" << std::endl;
+}
+
+std::vector<long>
+PathFinderTester::getBuildingIDs() const {
+    // The total number of buildings to choose from.
+    const int BldCount = osmData.buildingMap.size();
+    // Create a vector of building IDs to ease random selection
+    std::vector<long> bldIDs;
+    bldIDs.reserve(BldCount);  // reserve memory.
+    // Add the building IDs to the list of building
+    for (auto entry : osmData.buildingMap) {
+        bldIDs.push_back(entry.first);  // Add IDs
+    }
+    return bldIDs;
+}
+
+void
+PathFinderTester::runRndTests(int testCount) const {
+    // Get the building IDs that we are working with.
+    const std::vector<long> bldIDs = getBuildingIDs();
+    const int BldCount             = bldIDs.size();
+    // Run the given number of tests
+    for (int i = 0; (i < testCount); i++) {
+        // Randomly select the indexs of a pair of buildings
+        srand(i + cmdLineArgs.rndSeed);
+        const int srtBldIdx = rand() % BldCount;
+        const int endBldIdx = rand() % BldCount;
+        // Run the test on this pair
+        runRndTest(bldIDs[srtBldIdx], bldIDs[endBldIdx]);
+    }
+}
+
+void
+PathFinderTester::checkEntries() const {
+    // Get the building IDs that we are working with.
+    const std::vector<long> bldIDs = getBuildingIDs();
+    // Create a path finder object for testing
+    const PathFinder pf(osmData);
+    // Run the given number of tests
+    for (size_t i = cmdLineArgs.rndSeed; (i < bldIDs.size()); i++) {
+        // Get the building to be checked (for convenience)
+        const Building& bld = osmData.buildingMap.at(bldIDs[i]);
+        const Way&      way = osmData.wayMap.at(bld.wayID);
+        const int nodeIdx   = pf.findNearestNode(way, bld.wayLat, bld.wayLon);
+        if ((nodeIdx < 0) || (nodeIdx > (int) way.nodeList.size())) {
+            std::cout << "Invalid entry way for: ";
+            bld.write(std::cout);
+        }
+    }
+}
+
 
 int
 PathFinderTester::run(int argc, char *argv[]) {
@@ -85,21 +173,33 @@ PathFinderTester::run(int argc, char *argv[]) {
     if ((error = osmData.loadModel(cmdLineArgs.modelFilePath)) != 0) {
         return error;  // Error loading community shape file.
     }
-    // Ensure starting and ending building ID's are valid.
-    if ((osmData.buildingMap.find(cmdLineArgs.startBldID) ==
-         osmData.buildingMap.end()) ||
-        (osmData.buildingMap.find(cmdLineArgs.endBldID) ==
-         osmData.buildingMap.end())) {
-        std::cerr << "Starting or ending building not found in model.\n";
-        return 3;
+    // Perform entry checks if requested
+    if (cmdLineArgs.checkEntries) {
+        checkEntries();
     }
-    // Print the resulting path segement between the two
-    PathFinder pf(osmData);
-    Path path = pf.findBestPath(cmdLineArgs.startBldID, cmdLineArgs.endBldID,
-                                cmdLineArgs.minDist, cmdLineArgs.distScale);
-    // Draw the path as xfig
-    std::cout << path;    
-    pf.generateFig(path, cmdLineArgs.xfigFilePath, cmdLineArgs.figScale);
+    // Run random tests or one given test.
+    if (cmdLineArgs.rndTestCount == -1) {
+        // Ensure starting and ending building ID's are valid.
+        if ((osmData.buildingMap.find(cmdLineArgs.startBldID) ==
+             osmData.buildingMap.end()) ||
+            (osmData.buildingMap.find(cmdLineArgs.endBldID) ==
+             osmData.buildingMap.end())) {
+            std::cerr << "Starting or ending building not found in model.\n";
+            return 3;
+        }
+        // Print the resulting path segement between the two
+        PathFinder pf(osmData);
+        Path path = pf.findBestPath(cmdLineArgs.startBldID,
+                                    cmdLineArgs.endBldID,
+                                    cmdLineArgs.useTime, cmdLineArgs.minDist,
+                                    cmdLineArgs.distScale);
+        // Draw the path as xfig
+        std::cout << path;    
+        pf.generateFig(path, cmdLineArgs.xfigFilePath, cmdLineArgs.figScale);
+    } else {
+        // Run random tests
+        runRndTests(cmdLineArgs.rndTestCount);
+    }
     // Everything went well
     return 0;
 }

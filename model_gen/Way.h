@@ -77,7 +77,13 @@ public:
         only one direction -- the direction in which the nodeList has
         been specified.
     */
-    bool isOneWay  = false;
+    bool isOneWay = false;
+
+    /** Flag to indice if this way has a loop in it -- that is one or
+        more nodes are repeated.  This flag is useful to handle this
+        cyclic edge case when computing routes.
+    */
+    bool hasLoop = false;
 
     /** The number of buildings with entrances on this way */
     int numBuildings = 0;

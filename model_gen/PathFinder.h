@@ -67,7 +67,7 @@ public:
         building, ways, and nodes data loaded from a generated model
         text file.
     */
-    PathFinder(OSMData& osmData);
+    PathFinder(const OSMData& osmData);
 
     /** Find the best path between a given source and destination
         building.
@@ -78,13 +78,16 @@ public:
         \param[in] endBldId The ending ID of the building.  It is
         assumed that the building ID is valid.
 
+        \param[in] useTime If this flag is true, then distance is
+        computed based on time instead of distance.
+        
         \param[in] minDist The minimum distance (in miles) around the
         source and destination to explore.
 
         \param[in] scale The extra miles to expand the minDist based
         on the distance between start and destination segments.
     */
-    Path findBestPath(long startBldId, long endBldId,
+    Path findBestPath(long startBldId, long endBldId, bool useTime = false,
                       const double minDist = -1, const double scale = -1);
     
     /** Find the best path between the source and destination node.
@@ -94,6 +97,9 @@ public:
 
         \param[in] dest The destination path segement to which the
         path is to be computed.
+
+        \param[in] useTime If this flag is true, then distance is
+        computed based on time instead of distance.
 
         \param[in] minDist The minimum distance (in miles) around the
         source and destination to explore.  If this value is -1 then a
@@ -107,6 +113,7 @@ public:
         \return The path fro the source to destination path 
     */
     Path findBestPath(const PathSegment& src, const PathSegment& dest,
+                      bool useTime = false,
                       const double minDist = -1, const double scale = -1);
 
     /** Helper method to generate an xfig file with the path
@@ -122,6 +129,27 @@ public:
     */
     void generateFig(const Path& path, const std::string& figFilePath,
                      const int figScale = 16384000) const;
+
+    /** Helper method to find the nearest node in a given way that
+        contains the given coordinate.
+
+        This method checks pairs of consecutive nodes to see if they
+        can contain (but not necessarily on the line segment) the
+        specified point.  If so it returns the starting node.
+
+        \param[in] way The way on which the given point is to be
+        located.
+
+        \param[in] latitude The latitude of the point to be checked.
+
+        \param[in] longitude The longitude of the point to be checked.
+
+        \return If the way contains the point then this method returns
+        a valid index of the first node associated with the segment
+        containing the point.  Otherwise this method returns -1.
+    */
+    int findNearestNode(const Way& way, const double latitude,
+                        const double longitude) const;
 
 protected:
     /** Setup a boundary ring that defines the maximum outer limits up
@@ -156,27 +184,6 @@ protected:
         be reconstructed.
     */
     Path rebuildPath(const PathSegment& dest) const;
-
-    /** Helper method to find the nearest node in a given way that
-        contains the given coordinate.
-
-        This method checks pairs of consecutive nodes to see if they
-        can contain (but not necessarily on the line segment) the
-        specified point.  If so it returns the starting node.
-
-        \param[in] way The way on which the given point is to be
-        located.
-
-        \param[in] latitude The latitude of the point to be checked.
-
-        \param[in] longitude The longitude of the point to be checked.
-
-        \return If the way contains the point then this method returns
-        a valid index of the first node associated with the segment
-        containing the point.  Otherwise this method returns -1.
-    */
-    int findNearestNode(const Way& way, const double latitude,
-                        const double longitude) const;
 
     /** Helper method to find a node in a given way.
 
@@ -237,7 +244,7 @@ protected:
         \return The distance between ps1 and ps2 in miles.
      */
     double getDistance(const PathSegment& ps1, const PathSegment& ps2) const;
-
+    
     /** Adds adjacent, unexplored nodes to the heap of exploring path
         segements.
 
@@ -270,19 +277,38 @@ protected:
         \param[in] wayID The ID of the way on which the position of
         the node is being computed.
 
+        \param[in] nodeIndex The index of the node in way's list
+        corresponding to the given nodeID.
+        
+        \param[in] addLoops If the way is tagged to have loops, call
+        the checkAddLoopNodes method to add adjacent nodes to
+        correctly handle loops.
+        
         \return This method returns true if the node was added or
         updated.  Otherwise this method returns false (indicating the
         node has already been explored).
     */
-    bool checkAddNode(const PathSegment& parent, const long nodeID,
-                      const long wayID);    
+    bool checkAddNode(const PathSegment& parent, const Way& way,
+                      const int nodeIndex, const bool addLoops);
 
+    /** Check if a node is repeated in a way that has loops and add
+        adjacent nodes.
+
+        \param[in] curr The current path segment that is being added
+        to the set of nodes to be explored.
+
+        \param[in] nodeIndex The index of the node whose path is to be
+        explored.
+    */
+    void checkAddLoopNodes(const Way& way, const int nodeIndex,
+                           const PathSegment& curr);
+    
 private:
     /**
        The OSM data object that contains the building, ways, and nodes
        data loaded from a generated model text file.
     */
-    OSMData& osmData;
+    const OSMData& osmData;
 
     /** A counter to generate unique ID for each segement explored by
         this instance.
@@ -326,6 +352,13 @@ private:
         setLimits method.
     */
     Ring outerLimits;
+
+    /** A convenience method that is used to set if time should be
+        used as a metric instead of distance.  The flag is used in the
+        getDistance method in this class to return time instead of
+        distance.
+    */
+    bool distIsTime;
 };
 
 #endif
