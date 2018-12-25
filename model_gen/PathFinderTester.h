@@ -91,7 +91,7 @@ protected:
             Nodes outside this range are not checked as an
             optimization to improve performance.
         */
-        double minDist = 0.5;
+        double minDist = 0.25;
 
         /** Additional distance to search in depending on the distance
             between the source and destination.
@@ -119,6 +119,14 @@ protected:
             to.
         */
         bool checkEntries = false;
+
+        /** Print ways that are disconnected from all other ways. The
+            OSM data contains ways that are not connected to any other
+            ways.  This causes buildings/ways to be disconnected from
+            the rest.  If this flag is set, then disconnected ways are
+            detected and printed.
+        */
+        bool printNoWays = false;
     } cmdLineArgs;
 
     /** A simple class that encapsulates the OSM data */
@@ -166,6 +174,20 @@ private:
         corresponding way.
     */
     void checkEntries() const;
+
+    /** Print ways that are disconnected from all other ways. The OSM
+        data contains ways that are not connected to any other ways.
+        This causes buildings/ways to be disconnected from the rest.
+        This method detects and prints such ways in the following
+        manner -- For each way in the model, check to see if // there
+        is it has least one node that was 2 way-IDs associated with
+        it. If not, it is a disconnected way.
+
+        \note This method cannot detect several interconnected paths
+        but as a whole they are actually disconnected.
+    */
+    void printDisconnectedWays();
+    
 };
 
 #endif

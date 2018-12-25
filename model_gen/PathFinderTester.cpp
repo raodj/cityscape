@@ -31,6 +31,7 @@
 //
 //---------------------------------------------------------------------------
 
+#include <set>
 #include <chrono>
 #include "PathFinder.h"
 #include "PathFinderTester.h"
@@ -61,6 +62,8 @@ PathFinderTester::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.rndSeed, ArgParser::INTEGER},
         {"--check-entry", "Check entry is correct for all buildings",
          &cmdLineArgs.checkEntries, ArgParser::BOOLEAN},
+        {"--check-noway", "Print ways with no connections to others",
+         &cmdLineArgs.printNoWays, ArgParser::BOOLEAN},
         {"", "", NULL, ArgParser::INVALID}
     };
     // Process the command-line arguments.
@@ -106,7 +109,7 @@ PathFinderTester::runRndTest(const long startBldID, const long endBldID) const {
     // Compute elapsed time.
     const duration<double> computeTime =
         duration_cast<duration<double>>(end - start);
-    std::cout << (path.size() > 2 ? "Success" : "Failed")
+    std::cout << (path.empty() ? "Failed" : "Success")
               << " ("     << path.size() << ", time: " << computeTime.count()
               << " secs)" << std::endl;
 }
@@ -160,6 +163,47 @@ PathFinderTester::checkEntries() const {
     }
 }
 
+void
+PathFinderTester::printDisconnectedWays() {
+    // Process each way in the model. For each way check to see if
+    // there is at least one node that was 2 way-IDs in it. If not, it
+    // is a disconnected way.
+    for (const auto wayEntry : osmData.wayMap) {
+        // Get the way we are working with.
+        const Way& way = wayEntry.second;
+        // For each node in the way check to see if it has two other
+        // ways associated with it.
+        bool connected = false;
+        for (const long nodeID : way.nodeList) {
+            // Get the list of ways associated with this node.
+            const std::vector<long> nodeWays = osmData.nodesWaysList.at(nodeID);
+            // Quick check for most common case where node is only on
+            // 1 way.
+            if (nodeWays.size() < 2) {
+                continue;  // no intersections here.
+            }
+            // Quicker check to see if this node could have 2 ways
+            // intersecting.
+            if ((nodeWays.size() == 2) && (nodeWays[0] != nodeWays[1])) {
+                connected = true;  // Found intersection/connections.
+                break;             // Short-circuit further checks.
+            }
+            // Create a set of unique ways to detect number of unique
+            // ways associated with this node.  
+            std::set<long> uniqWayIDs(nodeWays.begin(), nodeWays.end());
+            if (uniqWayIDs.size() > 1) {
+                connected = true;  // Found intersection/connections.
+                break;             // Short-circuit further checks.
+            }
+        }
+        // Check if this way is connected.
+        if (!connected) {
+            std::cout << "Way: " << way.id << " (kind: "
+                      << way.kind << ", nodes: " << way.nodeList.size()
+                      << ") is disconnected.\n";
+        }
+    }
+}
 
 int
 PathFinderTester::run(int argc, char *argv[]) {
@@ -176,6 +220,10 @@ PathFinderTester::run(int argc, char *argv[]) {
     // Perform entry checks if requested
     if (cmdLineArgs.checkEntries) {
         checkEntries();
+    }
+    // Print disconnected ways if requested
+    if (cmdLineArgs.printNoWays) {
+        printDisconnectedWays();
     }
     // Run random tests or one given test.
     if (cmdLineArgs.rndTestCount == -1) {
