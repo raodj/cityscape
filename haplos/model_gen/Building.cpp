@@ -98,7 +98,7 @@ Building::write(std::ostream& os, const bool writeHeader,
                 const std::string& delim) const {
     // Write optional header if requested
     if (writeHeader) {
-        os << "# BldID"   << delim << "levels" << delim << "population" << delim
+        os << "# Bld ID"  << delim << "levels" << delim << "population" << delim
            << "attributes"<< delim << "isHome" << delim << "sqFoot"     << delim
            << "topLon"    << delim << "topLat" << delim << "botLon"     << delim
            << "botLat"    << delim << "wayID"  << delim << "wayLat"     << delim

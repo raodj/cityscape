@@ -37,12 +37,13 @@
 #include "Utilities.h"
 #include "ShapeFile.h"
 
-PathFinder::PathFinder(OSMData& osmData) : osmData(osmData) {
+PathFinder::PathFinder(const OSMData& osmData) :
+    osmData(osmData), distIsTime(false) {
     // Nothing else to be done for now.
 }
 
 Path
-PathFinder::findBestPath(long startBldId, long endBldId,
+PathFinder::findBestPath(long startBldId, long endBldId, bool useTime,
                          const double minDist, const double scale) {
     // Get the building information for quick reference.
     const Building begBld = osmData.buildingMap.at(startBldId);
@@ -54,7 +55,7 @@ PathFinder::findBestPath(long startBldId, long endBldId,
     PathSegment endSeg{endBld.wayID, EndNodeID,   endBld.id, 1000,
             segIdCounter++, -1};
     // Get the helper method to find the path
-    Path path = findBestPath(begSeg, endSeg, minDist, scale);
+    Path path = findBestPath(begSeg, endSeg, useTime, minDist, scale);
     // Return the generated path
     return path;
 }
@@ -62,11 +63,14 @@ PathFinder::findBestPath(long startBldId, long endBldId,
 // Find best path between two segements
 Path
 PathFinder::findBestPath(const PathSegment& src, const PathSegment& dest,
-                         const double minDist, const double scale) {
+                         bool useTime, const double minDist,
+                         const double scale) {
     // Setup a limiting ring if specified by the user.
-    if (minDist != -1) {
+    if ((minDist != -1) && (getDistance(src, dest) > 0.01)) {
         setLimits(src, dest, minDist, scale);
     }
+    // Setup flag to indicat eis distance or time is to be used
+    distIsTime = useTime;
     // Add the source and destination to the paths being explored.
     exploring.push(src);
     exploring.push(dest);
@@ -83,8 +87,13 @@ PathFinder::findBestPath(const PathSegment& src, const PathSegment& dest,
         // If this path is the destination then we found the best
         // path. Return best path back.
         if (next.nodeID == EndNodeID) {
-            // Yay! found a good path
-            return rebuildPath(next);
+            if (next.distance < 1000) {
+                // Yay! found a good path
+                return rebuildPath(next);
+            } else {
+                // A valid path was not found.
+                return {};
+            }
         }
         // Add adjacent nodes to the next node to explore
         addAdjacentNodes(next, dest);
@@ -116,10 +125,12 @@ PathFinder::rebuildPath(const PathSegment& dest) const {
 
 // Check and add a given node to a list of adjacent segments.
 bool
-PathFinder::checkAddNode(const PathSegment& parent, const long nodeID,
-                         const long wayID) {
+PathFinder::checkAddNode(const PathSegment& parent, const Way& way,
+                         const int nodeIndex, const bool addLoops) {
     // Check if the node has already been explored.  If so, there is
     // no further opreation to be done.
+    ASSERT((nodeIndex >= 0) && (nodeIndex < (int) way.nodeList.size()));
+    const long nodeID = way.nodeList[nodeIndex];
     if (exploredNodes.find(nodeID) != exploredNodes.end()) {
         return false;  // node already explored.
     }
@@ -131,7 +142,7 @@ PathFinder::checkAddNode(const PathSegment& parent, const long nodeID,
         return false;  // not out of bounds
     }
     // Create a temporary segement based on parent.
-    PathSegment seg{wayID, nodeID, -1, 0, 0, parent.segID};
+    PathSegment seg{way.id, nodeID, -1, 0, 0, parent.segID};
     const double dist = parent.distance + getDistance(parent, seg);
     // Check to see if the node is currently in the exploring set.  If
     // so, we will need to update it if the new distance is better.
@@ -141,7 +152,7 @@ PathFinder::checkAddNode(const PathSegment& parent, const long nodeID,
         // Check and update if we have a better path
         if (dist < seg.distance) {
             // Yes we have a shorter path. Update path segement.
-            seg.update(parent.segID, wayID, dist);
+            seg.update(parent.segID, way.id, dist);
         }
     } else {
         // Add a new path segement entry s this
@@ -151,7 +162,38 @@ PathFinder::checkAddNode(const PathSegment& parent, const long nodeID,
     }
     // Add/update the segment information in the heap.
     exploring.push(seg);
+    // Check and add adjacent nodes in case this node is repeated on
+    // ways with loops.
+    if (addLoops && way.hasLoop) {
+        checkAddLoopNodes(way, nodeIndex, seg);
+    }
     return true;
+}
+
+// Handle edge case where a way has loops and nodes could be repeated.
+void
+PathFinder::checkAddLoopNodes(const Way& way, const int nodeIndex,
+                              const PathSegment& curr) {
+    ASSERT(way.hasLoop);
+    ASSERT((nodeIndex >= 0) && (nodeIndex < (int) way.nodeList.size()));
+    // Get the nodeID we are checking.
+    const long nodeID = way.nodeList[nodeIndex];
+    ASSERT((nodeID >= 0) && (nodeID < (long) osmData.nodeList.size()));
+    // Find if the node at given index is repeated. If not nothing much to do
+    for (int repeatIndex = nodeIndex + 1;
+         (repeatIndex < (int) way.nodeList.size()); repeatIndex++) {
+        if (way.nodeList[repeatIndex] == nodeID) {
+            // Check and add previous node if relevant and if the street
+            // is not a one-way.
+            if (!way.isOneWay && (repeatIndex > nodeIndex + 1)) {
+                checkAddNode(curr, way, repeatIndex - 1, false);
+            }
+            // Add next node on the way if one is present.
+            if (repeatIndex < (int) way.nodeList.size() - 1) {
+                checkAddNode(curr, way, repeatIndex + 1, false);
+            }
+        }
+    }
 }
 
 // Find adjacent nodes to be explored near given path segment
@@ -163,7 +205,6 @@ PathFinder::addAdjacentNodes(const PathSegment& seg, const PathSegment& dest,
     ASSERT( seg.wayID != -1 );
     ASSERT( osmData.wayMap.find(seg.wayID) != osmData.wayMap.end() );
     const Way& way = osmData.wayMap.at(seg.wayID);
-
     // There are two cases -- common one is we are working is when we
     // have a valid node ID.
     if (seg.buildingID == -1) {
@@ -173,11 +214,11 @@ PathFinder::addAdjacentNodes(const PathSegment& seg, const PathSegment& dest,
         // Check and add previous node if relevant and if the street
         // is not a one-way.
         if (!way.isOneWay && (nodeIdx > 0)) {
-            checkAddNode(seg, way.nodeList[nodeIdx - 1], way.id);
+            checkAddNode(seg, way, nodeIdx - 1, true);
         }
         // Add next node on the way if one is present.
         if (nodeIdx < (int) way.nodeList.size() - 1) {
-            checkAddNode(seg, way.nodeList[nodeIdx + 1], way.id);
+            checkAddNode(seg, way, nodeIdx + 1, true);
         }
         // Finally, handle intersection nodes where multiple ways
         // meet, if requested (recursive calls don't go into this
@@ -203,7 +244,7 @@ PathFinder::addAdjacentNodes(const PathSegment& seg, const PathSegment& dest,
                 const PathSegment interSeg{wayID, seg.nodeID, -1,
                         seg.distance, seg.segID, seg.segID};
                 // Add adjacent nodes on the intersecting way, if
-                // applicable (but don't furtherexplore ways)
+                // applicable (but don't further explore ways)
                 addAdjacentNodes(interSeg, dest, false);
             }
         }
@@ -224,6 +265,11 @@ PathFinder::addAdjacentNodes(const PathSegment& seg, const PathSegment& dest,
         PathSegment newSeg{seg.wayID, nodeID, -1, 0, segIdCounter++, seg.segID};
         newSeg.distance = seg.distance + getDistance(seg, newSeg);
         exploring.push(newSeg);
+        // If this way has loops, then check and add any adjacent
+        // nodes, if the nodeID is the repeated one.
+        if (way.hasLoop) {
+            checkAddLoopNodes(way, nearNode, newSeg);
+        }
     }
     // Check and add destination path if it is on this way.
     if (seg.wayID == dest.wayID) {
@@ -308,9 +354,11 @@ PathFinder::getPathOnSameWay(const PathSegment& src, const PathSegment& dest) {
             // finer distance metric to be able to decide.
             const Node& near    = osmData.nodeList.at(nearestNode1);
             const int dist2src  = ::getDistance(near.latitude, near.longitude,
-                                                srcPt.second, srcPt.first);
+                                                srcPt.second, srcPt.first) /
+                (distIsTime ? way.maxSpeed : 1);
             const int dist2dest = ::getDistance(near.latitude, near.longitude,
-                                                destPt.second, destPt.first);
+                                                destPt.second, destPt.first) /
+                (distIsTime ? way.maxSpeed : 1);
             if (dist2src > dist2dest) {
                 // The nodes are in opposite directions on a 1-way
                 // street. So no direct path possibe
@@ -399,6 +447,7 @@ PathFinder::findNearestNode(const Way& way, const double latitude,
                             const double longitude) const {
     // We want to iterate only to last-but-one node due to logic in
     // the for-loop below.
+    ASSERT(way.nodeList.size() > 1);
     const int NumPoints = way.nodeList.size() - 1;
     // Iterate over pairs of nodes and return index of node.
     for (int i = 0; (i < NumPoints); i++) {
@@ -419,10 +468,13 @@ PathFinder::findNearestNode(const Way& way, const double latitude,
 double
 PathFinder::getDistance(const PathSegment& ps1, const PathSegment& ps2) const {
     // Get the latitude and longitude associated with the path segements
-    const Point pt1 = getLatLon(ps1);
-    const Point pt2 = getLatLon(ps2);
+    const Point pt1    = getLatLon(ps1);
+    const Point pt2    = getLatLon(ps2);
+    const double speed = (distIsTime ? osmData.wayMap.at(ps2.wayID).maxSpeed
+                          : 1);
+    ASSERT(speed > 0);
     // Return the distance between the two
-    return ::getDistance(pt1.second, pt1.first, pt2.second, pt2.first);
+    return ::getDistance(pt1.second, pt1.first, pt2.second, pt2.first) / speed;
 }
 
 // Print a path -- an array of PathSegement objects

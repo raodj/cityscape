@@ -37,6 +37,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <sstream>
+#include <unordered_set>
 #include "Utilities.h"
 #include "ModelGenerator.h"
 
@@ -405,6 +406,10 @@ ModelGenerator::extractWays() {
             Way wayEntry;
             bool isBuilding = false, isHighway = false;
             int  oneWay     = 0;
+            // The following two are used to detect loops (or repeated
+            // nodes) in the way.
+            bool hasLoop = false;
+            std::unordered_set<long> nodeSet;
             std::string wayType;
             for (rapidxml::xml_node<> *child = node->first_node();
                  (child != nullptr); child = child->next_sibling()) {
@@ -415,6 +420,12 @@ ModelGenerator::extractWays() {
                     long nodeID = std::stol(child->first_attribute()->value());
                     ASSERT(nodeMap.find(nodeID) != nodeMap.end());
                     wayEntry.nodeList.push_back(nodeID);
+                    // Check and set loop flag (needed only if we have
+                    // not yet found a loop in this way)
+                    if (!hasLoop) {
+                        hasLoop = (nodeSet.find(nodeID) != nodeSet.end());
+                        nodeSet.insert(nodeID);
+                    }
                 } else if (child->name() == TagElement) {
                     // This is a tag child element. Extract the key,
                     // value attribute to track if this is a building
@@ -467,10 +478,15 @@ ModelGenerator::extractWays() {
                 if (wayEntry.maxSpeed == -1) {
                     wayEntry.maxSpeed = estimateSpeedLimit(wayType);
                 }
-                // Cross reference the way with population rings
-                if (addWayToPopRings(wayEntry)) {
-                    // Add entry to the Ways hash map
-                    threadWayList.push_back(wayEntry);
+                // Setup loop flag
+                wayEntry.hasLoop = hasLoop;
+                // Finally add the way entry, if it is meaningful
+                if (wayEntry.maxSpeed > 0) {
+                    // Cross reference the way with population rings
+                    if (addWayToPopRings(wayEntry)) {
+                        // Add entry to the Ways hash map
+                        threadWayList.push_back(wayEntry);
+                    }
                 }
             }
         }
@@ -526,10 +542,11 @@ ModelGenerator::estimateSpeedLimit(const std::string& wayType) const {
     // The speed limits set for different types of ways in OSM, if a
     // max speed limit is not already specified.
     static const std::unordered_map<std::string, int> SpeedLimits = {
-        {"service", 25}, {"residential", 25}, {"primary", 65},
-        {"secondary", 55}, {"tertiary", 35}, {"motorway_link", 45},
+        {"service", 25}, {"residential", 25}, {"primary", 35},
+        {"secondary", 35}, {"tertiary", 25}, {"motorway_link", 45},
         {"motorway", 65}, {"trunk", 55}, {"primary_link", 45},
-        {"trunk_link", 45}, {"secondary_link", 25}, {"tertiary_link", 25}};
+        {"trunk_link", 45}, {"secondary_link", 25}, {"tertiary_link", 25},
+        {"unclassified", 10}};
     // Check if the wayType is one assigned
     const auto entry = SpeedLimits.find(wayType);
     if (entry != SpeedLimits.end()) {
@@ -650,7 +667,9 @@ ModelGenerator::createBuildings() {
                              threadBuildingList.end());
             // Update the number of buildings in each way.
             for (Building& bld : threadBuildingList) {
-                wayMap.at(bld.wayID).numBuildings++;
+                if (bld.isHome) {
+                    wayMap.at(bld.wayID).numBuildings++;
+                }
             }
         }
     }  // parallel
@@ -778,7 +797,10 @@ ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
     bld.isHome   = isHome;
     bld.wayID = findNearestIntersection(ring, popRingID, nodes,
                                         bld.wayLat, bld.wayLon);
-
+    if (bld.wayID == -1) {
+        // Could not find an entrace to a given building.
+        return invalidBld;
+    }
     // Add building to be drawn based on command-line args
     if (cmdLineArgs.drawPopRingID == popRingID) {
         // Entrance to draw in the figure.
@@ -1209,20 +1231,24 @@ ModelGenerator::generateHomes(Way& way, const double spacing,
             }
         } else {
             // We have space to fit a home. Find the point of the home
-            // along this way.  of the way
+            // along the current way.
             double homeLat, homeLon;
             getPoint(currNode.latitude, currNode.longitude, nextNode.latitude,
                      nextNode.longitude, spacing / 2, homeLat, homeLon);
-            // Create home on either side of this way using helper
-            // method.
-            generateHomes(currNode, nextNode, homeLat, homeLon, spacing,
-                          depth, sqFoot, way.id);
-            way.numBuildings += 2;
-            // Move the currNode to the next home location and
-            // decrease the space left.
-            getPoint(currNode.latitude, currNode.longitude,
-                     nextNode.latitude, nextNode.longitude, spacing,
+            if (inBetween(currNode.latitude, nextNode.latitude, homeLat)   &&
+                inBetween(currNode.longitude, nextNode.longitude, homeLon) &&
+                (getPopRing(homeLat, homeLon) != -1)) {
+                // Create home on either side of this way using
+                // helper method.
+                generateHomes(currNode, nextNode, homeLat, homeLon,
+                              spacing, depth, sqFoot, way.id);
+                way.numBuildings += 2;
+                // Move the currNode to the next home location and
+                // decrease the space left.
+                getPoint(currNode.latitude, currNode.longitude,
+                         nextNode.latitude, nextNode.longitude, spacing,
                      currNode.latitude, currNode.longitude);
+            }
             spaceLeft -= spacing;
         }
     } while ((spaceLeft >= spacing) || (nodeIdx < way.nodeList.size()));

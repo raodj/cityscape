@@ -91,12 +91,34 @@ protected:
             Nodes outside this range are not checked as an
             optimization to improve performance.
         */
-        double minDist = -1;
+        double minDist = 0.5;
 
         /** Additional distance to search in depending on the distance
             between the source and destination.
         */
-        double distScale = 0;
+        double distScale = 0.1;
+
+        /** Flag to indicate path should be optimized for time instead
+            of distance
+        */
+        bool useTime = false;
+
+        /** Command-line arguments to indicate if a given number of
+            randomly chosen pairs of buildings are to be used to
+            test path finding algorithm.
+        */
+        int rndTestCount = -1;
+
+        /** An initial base/offset for random number seed.  This is
+            used to skip over tests */
+        int rndSeed = 0;
+
+        /** Flag to indicate that entry ways for all buildings is to
+            be checked.  This check ensures that entry coordinate
+            yield a valid near-by index on the way they are mapped
+            to.
+        */
+        bool checkEntries = false;
     } cmdLineArgs;
 
     /** A simple class that encapsulates the OSM data */
@@ -120,6 +142,30 @@ private:
         error code.
     */
     int processArgs(int argc, char *argv[]);   
+
+    /** Run a given number of random tests.
+
+        \param[in] testCount The number of tests to be run.
+    */
+    void runRndTests(int testCount) const;
+
+    /** Convenience method to generate and print the path between two
+        given buildings.
+    */
+    void runRndTest(const long startBldID, const long endBldID) const;
+
+    /** Convenience method to return building IDs as a vector from the
+        hash map of buildings
+
+        \return A vector with the building IDs obtained from
+        osmData.buildingMap.
+    */
+    std::vector<long> getBuildingIDs() const;
+
+    /** Check entrys for each building correctly maps to a node on the
+        corresponding way.
+    */
+    void checkEntries() const;
 };
 
 #endif

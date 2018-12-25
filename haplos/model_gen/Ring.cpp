@@ -446,7 +446,7 @@ Ring::createRectRing(const Point& node1, const Point& node2,
     // sufficiently approximate.
     auto rotated = [](const Point& p1, const Point& p2, const double sign) {
         return Point(p1.first  + (p1.second - p2.second) * sign,
-                     p1.second + (p1.first  - p2.first)  * sign);
+                     p1.second - (p1.first  - p2.first)  * sign);
     };
     
     // Find points that are given distance away from node1 and

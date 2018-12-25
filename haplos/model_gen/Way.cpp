@@ -39,15 +39,16 @@ Way::write(std::ostream& os, const bool writeHeader,
            const std::string& delim) const {
     // Write optional header if requested
     if (writeHeader) {
-        os << "# WayID"  << delim << "kind"         << delim
-           << "maxSpeed" << delim << "isDeadEnd"    << delim
-           << "isOneWay" << delim << "numBuildings" << delim
-           << "nodeID"   << delim << "[nodeID...]\n";
+        os << "# WayID"      << delim << "kind"      << delim
+           << "maxSpeed"     << delim << "isDeadEnd" << delim
+           << "isOneWay"     << delim << "hasLoops"  << delim
+           << "numBuildings" << delim
+           << "nodeID"       << delim << "[nodeID...]\n";
     }
     // Write the information for this way
     os << "way"     << delim << id        << delim << kind     << delim
        << maxSpeed  << delim << isDeadEnd << delim << isOneWay << delim
-       << numBuildings;
+       << hasLoop   << delim << numBuildings;
     // Write the nodeID's for this way
     for (const long nodeID : nodeList) {
         os << delim << nodeID;
@@ -61,7 +62,7 @@ Way::read(std::istream& is) {
     std::string way;  // Dummy word to be discarted
     int kindId = 0;
     is >> way >> id >> kindId >> maxSpeed >> isDeadEnd >> isOneWay
-       >> numBuildings;
+       >> hasLoop   >> numBuildings;
     // Convert kindId from integer to enumeration
     kind = Way::Kind(kindId);
     // We assume that rest of the input stream has the ID of the nodes
