@@ -36,6 +36,7 @@
 #include <iomanip>
 #include <stdexcept>
 #include <algorithm>
+#include <numeric>
 #include <sstream>
 #include <unordered_set>
 #include "Utilities.h"
