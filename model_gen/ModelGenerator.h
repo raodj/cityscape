@@ -185,19 +185,22 @@ protected:
     int getPopRing(const double latitude, const double longitude) const;
     
     /** Helper method to get number of buildings and total square
-        footage of the buildings for a given population ring.
+        footage of the homes for a given population ring.
 
         \param[in] popRingID The ID of the population ring for which
         the number of buildings is to be computed.
 
+        \param[out] homeCount The count of number of buildings that
+        are homes.
+
         \param[out] bldCount The count of number of buildings found
         for the given population ring.
-
-        \return The sum of the square footage of the buildings (number
-        of levels is taken into account) for the given population
-        ring.
+        
+        \return The sum of the square footage of the homes (number of
+        levels is taken into account) for the given population ring.
     */
-    long getTotalSqFootage(const int popRingID, int& bldCount) const;
+    long getTotalSqFootage(const int popRingID, int& homeCount,
+                           int& bldCount) const;
 
     /** Internal helper method to adjustments to generated model
         (specified via --adjust-model command-line argument).
@@ -579,7 +582,31 @@ protected:
         square footage.
     */
     void distributePopulation();
-    
+
+    /** Write pertinent information about a population ring to a given
+        output stream.
+
+        This is a helper method that is used to write the information
+        associated with a population ring in a fixed format to a given
+        output stream.
+
+        \param[out] os The output stream to where the information
+        about this ring is to be written.
+
+        \param[in] idx The index of the population ring in \c popRings
+        vector, whose information is to be written.
+        
+        \param[in] writeHeader If this flag is true then a simple
+        comment with the order of the fields is written for future
+        reference.
+        
+        \param[in] delim An optional delimiter between each value
+        associated with this node.
+    */
+    void writePopRing(std::ostream& os, const int idx,
+                      const bool writeHeader = false,
+                      const std::string& delim = " ") const;
+
 private:
     /** The shape file containing rings loaded from community
         boundaries specified associated with the model.  For example,

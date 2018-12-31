@@ -39,7 +39,8 @@ Way::write(std::ostream& os, const bool writeHeader,
            const std::string& delim) const {
     // Write optional header if requested
     if (writeHeader) {
-        os << "# WayID"      << delim << "kind"      << delim
+        os << "# Way"        << delim << "ID"        << delim
+           << "kind"         << delim
            << "maxSpeed"     << delim << "isDeadEnd" << delim
            << "isOneWay"     << delim << "hasLoops"  << delim
            << "numBuildings" << delim

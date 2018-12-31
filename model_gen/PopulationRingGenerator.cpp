@@ -75,8 +75,10 @@ PopulationRingGenerator::createRings(ShapeFile& shapes,
     std::vector<float> grid(gridWidth);
     for (int currY = startY; (currY <= endY); currY++, currLat += yPixelRes) {
         // Read the line of GIS data for the current row
-        geoBand->RasterIO(GF_Read, 0, currY, gridWidth, 1, &grid[0],
-                          gridWidth, 1, GDT_Float32, 0, 0);
+        if (geoBand->RasterIO(GF_Read, 0, currY, gridWidth, 1, &grid[0],
+                              gridWidth, 1, GDT_Float32, 0, 0) == CE_Failure) {
+            throw std::runtime_error("GDAL RasterIO error");
+        }
         // Reset the current longitude for each iteration.
         double currLon = topLeftX + (startX * xPixelRes);
         for (int currX = startX; (currX <= endX); currX++,
