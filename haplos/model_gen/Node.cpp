@@ -38,8 +38,9 @@ Node::write(std::ostream& os, const bool writeHeader,
             const std::string& delim) const {
     // Write optional header if requested
     if (writeHeader == true) {
-        os << "# osmID "  << delim << "latitude"   << delim
-           << "longitude" << delim << "isEntrance" << delim << "refCount\n";
+        os << "# Node"     << delim << "osmID "    << delim
+           << "latitude"   << delim << "longitude" << delim
+           << "isEntrance" << delim << "refCount\n";
     }
     // Write the information for this node.
     os << "node"    << delim << osmId      << delim << latitude << delim
