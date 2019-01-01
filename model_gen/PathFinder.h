@@ -37,8 +37,8 @@
 #include <string>
 
 #include "IndexedPriorityQueue.h"
-#include "OSMData.h"
 #include "PathSegment.h"
+#include "OSMData.h"
 
 /** A path consists of a sequence of path segements.  This is a
     shortcut to refer to a vector of path segments.

@@ -31,6 +31,7 @@
 //
 //---------------------------------------------------------------------------
 
+#include <fstream>
 #include <sstream>
 #include "OSMData.h"
 #include "PathSegment.h"
@@ -68,6 +69,10 @@ OSMData::loadModel(const std::string& modelFilePath) {
             Building bld;
             bld.read(is);
             buildingMap[bld.id] = bld;
+        } else if (line.substr(0, 3) == "rng") {
+            PopRing rng;
+            rng.read(is);
+            popRings.push_back(rng);
         } else {
             std::cerr << "Invalid line in model file: " << line << std::endl;
             return 1;

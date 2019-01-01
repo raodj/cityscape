@@ -190,17 +190,22 @@ protected:
         \param[in] popRingID The ID of the population ring for which
         the number of buildings is to be computed.
 
-        \param[out] homeCount The count of number of buildings that
-        are homes.
-
         \param[out] bldCount The count of number of buildings found
         for the given population ring.
         
-        \return The sum of the square footage of the homes (number of
-        levels is taken into account) for the given population ring.
+        \param[out] bldSqFt The sum of the square footage of all the
+        buildings (number of levels is taken into account) for the
+        given population ring.
+        
+        \param[out] homeCount The count of number of buildings that
+        are homes.
+
+        \param[out] homeSqFt The sum of the square footage of the
+        homes (number of levels is taken into account) for the given
+        population ring.
     */
-    long getTotalSqFootage(const int popRingID, int& homeCount,
-                           int& bldCount) const;
+    void getTotalSqFootage(const int popRingID, int& bldCount, long& bldSqFt,
+                           int& homeCount, long& homeSqFt) const;
 
     /** Internal helper method to adjustments to generated model
         (specified via --adjust-model command-line argument).

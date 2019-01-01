@@ -32,6 +32,7 @@
 //---------------------------------------------------------------------------
 
 #include <cmath>
+#include <iostream>
 #include "Ring.h"
 #include "Utilities.h"
 
@@ -327,6 +328,7 @@ Ring::getInfo(const std::vector<std::string>& colName) const {
     return retVal;
 }
 
+#ifndef NO_XFIG
 void
 Ring::printXFig(XFigHelper& xfig, const int figSize, const int xClip,
                 const int yClip, const bool drawCentroid,
@@ -395,6 +397,7 @@ Ring::printXFig(XFigHelper& xfig, const int figSize, const int xClip,
         }
     }
 }
+#endif
 
 std::ostream& operator<<(std::ostream& os, const Ring& ring) {
     // Print general information about the ring.
