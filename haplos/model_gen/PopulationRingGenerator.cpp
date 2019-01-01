@@ -68,7 +68,12 @@ PopulationRingGenerator::createRings(ShapeFile& shapes,
     int startX = 0, startY = 0, endX = 0, endY = 0;
     getBounds(shapes, startX, startY, endX, endY);
     // Setup the starting latitude and longitude values.
-    double currLat = topLeftY + (startY * yPixelRes);
+    double currLat = topLeftY;
+    // Instead of multiplication do repeated addition to avoid
+    // precision issues observed in multiplication.
+    for (int i = 0; (i < startY); i++) {
+        currLat += yPixelRes;
+    }
     // Iterate over the bounds and create rings if at least one point
     // of the grid is inside a ring in the shapes.
     int ringID = shapes.getRings().size();
@@ -80,7 +85,12 @@ PopulationRingGenerator::createRings(ShapeFile& shapes,
             throw std::runtime_error("GDAL RasterIO error");
         }
         // Reset the current longitude for each iteration.
-        double currLon = topLeftX + (startX * xPixelRes);
+        double currLon = topLeftX;
+        // Instead of multiplication do repeated addition to avoid
+        // precision issues observed in multiplication.
+        for (int i = 0; (i < startX); i++) {
+            currLon += xPixelRes;
+        }
         for (int currX = startX; (currX <= endX); currX++,
                  currLon += xPixelRes) {
             // Create ring for this location if an existing ring

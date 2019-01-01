@@ -33,6 +33,7 @@
 
 #include <omp.h>
 #include <fstream>
+#include <iostream>
 #include <iomanip>
 #include <stdexcept>
 #include <algorithm>
@@ -100,11 +101,14 @@ ModelGenerator::distributePopulation() {
             continue;  // no people to distribute
         }
         // Find total square footage of all the homes in this ring.
-        int bldCount = 0, popCount = 0;  // not really used
-        long totSqFootage = getTotalSqFootage(popID, bldCount, bldCount);
+        int popCount = 0; // Population already assigned a building
+        
+        int bldCount  = 0, homeCount = 0; // not really used
+        long homeSqFt = 0, bldSqFt   = 0;
+        getTotalSqFootage(popID, bldCount, bldSqFt, homeCount, homeSqFt);
         // Distribute population to buildings proportional to square
         // footage.
-        const double sqFtPerPerson = std::floor(totSqFootage / pop);
+        const double sqFtPerPerson = std::floor(homeSqFt / pop);
         // Now distribute the people to each building.
         const int popRingID = popID;
         for (Building& bld : buildings) {
@@ -132,11 +136,12 @@ ModelGenerator::printPopulationInfo(std::ostream& os) const {
     // Assign people to buildings
     os << "ID, population, homeSqFootage, buildings, Sqft/person, info\n";
     for (size_t popID = 0; (popID < popRings.size()); popID++) {
-        int count = 0, pop = popRings[popID].getPopulation(), homes = 0;
-        long totSqFootage = getTotalSqFootage(popID, homes, count);
+        int blds = 0, pop = popRings[popID].getPopulation(), homes = 0;
+        long homeSqFt = 0, bldSqFt = 0;
+        getTotalSqFootage(popID, blds, bldSqFt, homes, homeSqFt);
         os << popID << ", " << pop << ", "
-           << totSqFootage << ", " << homes << ", "
-           << ((pop > 0) ? (totSqFootage / pop) : 0)
+           << homeSqFt << ", " << homes << ", "
+           << ((pop > 0) ? (homeSqFt / pop) : 0)
            << ", " << popRings[popID].getInfo() << std::endl;
     }
 }
@@ -247,8 +252,8 @@ ModelGenerator::writePopRing(std::ostream& os, const int idx,
         os << "# Rng"   << delim << "ID"      << delim << "ringID"   << delim
            << "shpaeID" << delim << "pop"     << delim << "num_vert" << delim
            << "tl_lat"  << delim << "tl_lon"  << delim << "br_lat"   << delim
-           << "br_lon"  << delim << "num_bld" << delim << "num_homes"<< delim
-           << "home_tot_sqft\n";
+           << "br_lon"  << delim << "num_bld" << delim << "bld_sqFt" << delim
+           << "homes"   << delim << "home_sqFt\n";
     }
     // Write the information for this building.
     os << "rng"              << delim << idx                 << delim
@@ -260,12 +265,16 @@ ModelGenerator::writePopRing(std::ostream& os, const int idx,
     ASSERT( pr.getVertexCount() == 5 );
     const Point topLeft = pr.getVertex(0), botRight = pr.getVertex(2);
     // Write the coordinates out (lat lon format)
+    const std::streamsize prec = os.precision(std::numeric_limits<double>::digits10 + 1);
     os << topLeft.second  << delim  << topLeft.first  << delim
        << botRight.second << delim  << botRight.first << delim;
+    os.precision(prec);  // restore previous precision
     // Write number of buildings and total sq.footage of buildings
     int bldCount = 0, homeCount = 0;
-    long sqFoot  = getTotalSqFootage(idx, homeCount, bldCount);
-    os << bldCount << delim << homeCount << delim << sqFoot << std::endl;
+    long bldSqFt = 0, homeSqFt  = 0;
+    getTotalSqFootage(idx, bldCount, bldSqFt, homeCount, homeSqFt);
+    os << bldCount  << delim << bldSqFt  << delim
+       << homeCount << delim << homeSqFt << std::endl;
 }
 
 void
@@ -858,12 +867,14 @@ ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
     return bld;
 }
 
-long
-ModelGenerator::getTotalSqFootage(const int popRingID, int& homeCount,
-                                  int& bldCount) const {
-    long totalArea = 0;
-    bldCount       = 0;
-    homeCount      = 0;
+void
+ModelGenerator::getTotalSqFootage(const int popRingID, int& bldCount,
+                                  long& bldSqFt, int& homeCount,
+                                  long& homeSqFt) const {
+    bldSqFt   = 0;
+    homeSqFt  = 0;
+    bldCount  = 0;
+    homeCount = 0;
     // Iterate overall the buildings and tracks buildings associated
     // with the given population ring.
     for (const Building& bld : buildings) {
@@ -872,17 +883,16 @@ ModelGenerator::getTotalSqFootage(const int popRingID, int& homeCount,
         }
         ASSERT(bld.sqFootage > 0);
         bldCount++;
+        const long sqFt = std::max(1, bld.levels) * bld.sqFootage;
+        bldSqFt += sqFt;
         // Count number of homes.
         if (bld.isHome) {
-            if (bld.levels > 1) {
-                totalArea += (bld.sqFootage * bld.levels);
-            } else {
-                totalArea += bld.sqFootage;
-            }
             homeCount++;
+            homeSqFt += sqFt;
         }
     }
-    return totalArea;
+    ASSERT( homeCount <= bldCount );
+    ASSERT( homeSqFt  <= bldSqFt  );
 }
 
 void

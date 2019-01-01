@@ -34,7 +34,10 @@
 #include <utility>
 #include <vector>
 #include <string>
+
+#ifndef NO_XFIG
 #include "XFigHelper.h"
+#endif
 
 /** A convenience alias to store coordinates for vertices.
     
@@ -477,6 +480,7 @@ public:
     */
     virtual ~Ring();
 
+#ifndef NO_XFIG    
     /** Convenience method to print information about this Ring in an
         XFig format.
 
@@ -506,7 +510,8 @@ public:
     void printXFig(XFigHelper& fig, const int figSize, const int xClip = 0,
                    const int yClip = 0, const bool drawCentroid = false,
                    const int fillColor = -1, int layer = 50) const;
-
+#endif
+    
     /** Returns the information associated with a given col name.
      *
      * \param[in] colName The column for which the information is to

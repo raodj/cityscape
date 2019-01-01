@@ -35,7 +35,11 @@
 #include "PathSegment.h"
 #include "PathFinder.h"
 #include "Utilities.h"
+
+#ifndef NO_XFIG
+// Selectively compile-in support for generating XFig
 #include "ShapeFile.h"
+#endif
 
 PathFinder::PathFinder(const OSMData& osmData) :
     osmData(osmData), distIsTime(false) {
@@ -388,6 +392,7 @@ PathFinder::getPathOnSameWay(const PathSegment& src, const PathSegment& dest) {
 void
 PathFinder::generateFig(const Path& path, const std::string& xfigFilePath,
                         const int figScale) const {
+#ifndef NO_XFIG    
     // Print some stats about the path
     std::cout << "Exploring: " << exploring.size() << ", explored paths: "
               << exploredPaths.size() << ", explored nodes: "
@@ -423,6 +428,9 @@ PathFinder::generateFig(const Path& path, const std::string& xfigFilePath,
     ShapeFile shpFile;
     shpFile.addRing(route);
     shpFile.genXFig(xfigFilePath, figScale, false, {});
+#else
+    throw std::runtime_error("generateFig is not complied-in");
+#endif
 }
 
 // Return index of node with the same ID

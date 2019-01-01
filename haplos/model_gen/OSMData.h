@@ -34,6 +34,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "PopRing.h"
 #include "Node.h"
 #include "Way.h"
 #include "Building.h"
@@ -84,6 +85,12 @@ public:
     */
     std::vector<std::vector<long>> nodesWaysList;    
 
+    /** The list of population rings in a given model file.  The rings
+        are created from the information in the model.  The rings are
+        primarily used for simulation purposes.
+    */
+    std::vector<PopRing> popRings;
+    
 protected:
     /** Add Way entries nodesWaysList vector in this class.  This
         information is handy to quickly find the list of ways

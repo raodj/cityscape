@@ -79,6 +79,8 @@ pathfinder_SOURCES = \
 	Node.cpp \
 	Way.h \
 	Way.cpp \
+	PopRing.h \
+	PopRing.cpp \
 	PathSegment.h \
 	PathSegment.cpp \
 	PathFinder.h \

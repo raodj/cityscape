@@ -31,6 +31,7 @@
 //
 //---------------------------------------------------------------------------
 
+#include <iostream>
 #include "Building.h"
 #include "Utilities.h"
 
