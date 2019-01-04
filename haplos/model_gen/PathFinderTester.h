@@ -127,6 +127,11 @@ protected:
             detected and printed.
         */
         bool printNoWays = false;
+
+        /** Use standard I/O streams to read pairs of building IDs and
+            print the route between the pairs of building IDs.
+        */
+        bool useStdIO = false;
     } cmdLineArgs;
 
     /** A simple class that encapsulates the OSM data */
@@ -187,7 +192,15 @@ private:
         but as a whole they are actually disconnected.
     */
     void printDisconnectedWays();
-    
+
+    /** Method to read pairs of building IDs from standard input.
+
+        This method is called from the run() method in this class if
+        the user specified the --stdio flag.  This method reads pairs
+        of building IDs from stdin, computes path, and print it to
+        stdout.
+    */
+    void processStdIO();
 };
 
 #endif

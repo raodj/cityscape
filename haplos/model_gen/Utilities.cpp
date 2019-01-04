@@ -217,4 +217,19 @@ void getPoint(const double node1Lat, const double node1Lon,
     }
 }
 
+std::vector<std::string>
+split(std::string str, const std::string& delimiter) {
+    std::vector<std::string> wordList;
+    while (!str.empty()) {
+        size_t delim = str.find_first_of(delimiter);
+        delim        = (delim != std::string::npos ? delim : str.size());
+        // Get the next token and add it to return list
+        std::string word = str.substr(0, delim);
+        wordList.push_back(word);
+        // Remove the word we have already added
+        str = (delim < str.size() ? str.substr(delim + 1) : "");
+    }
+    return wordList;
+}
+
 #endif

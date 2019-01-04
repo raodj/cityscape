@@ -53,6 +53,9 @@ PopRing::read(std::istream& is) {
     // Finally setup information in our base class
     Ring::operator=(Ring(Point(tlLon, tlLat), Point(brLon, brLat),
                          pop, ringID, shapeID));
+    // Rest of the line in the input stream is asssumed to be
+    // information associated with this ring.
+    std::getline(is, info);
 }
 
 #endif

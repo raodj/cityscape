@@ -249,11 +249,11 @@ ModelGenerator::writePopRing(std::ostream& os, const int idx,
     const Ring& pr = popRings.at(idx);
     // Write optional header if requested
     if (writeHeader) {
-        os << "# Rng"   << delim << "ID"      << delim << "ringID"   << delim
-           << "shpaeID" << delim << "pop"     << delim << "num_vert" << delim
-           << "tl_lat"  << delim << "tl_lon"  << delim << "br_lat"   << delim
-           << "br_lon"  << delim << "num_bld" << delim << "bld_sqFt" << delim
-           << "homes"   << delim << "home_sqFt\n";
+        os << "# Rng"   << delim << "ID"        << delim << "ringID"   << delim
+           << "shpaeID" << delim << "pop"       << delim << "num_vert" << delim
+           << "tl_lat"  << delim << "tl_lon"    << delim << "br_lat"   << delim
+           << "br_lon"  << delim << "num_bld"   << delim << "bld_sqFt" << delim
+           << "homes"   << delim << "home_sqFt" << delim << "info\n";
     }
     // Write the information for this building.
     os << "rng"              << delim << idx                 << delim
@@ -265,7 +265,8 @@ ModelGenerator::writePopRing(std::ostream& os, const int idx,
     ASSERT( pr.getVertexCount() == 5 );
     const Point topLeft = pr.getVertex(0), botRight = pr.getVertex(2);
     // Write the coordinates out (lat lon format)
-    const std::streamsize prec = os.precision(std::numeric_limits<double>::digits10 + 1);
+    const std::streamsize prec =
+        os.precision(std::numeric_limits<double>::digits10 + 1);
     os << topLeft.second  << delim  << topLeft.first  << delim
        << botRight.second << delim  << botRight.first << delim;
     os.precision(prec);  // restore previous precision
@@ -274,7 +275,9 @@ ModelGenerator::writePopRing(std::ostream& os, const int idx,
     long bldSqFt = 0, homeSqFt  = 0;
     getTotalSqFootage(idx, bldCount, bldSqFt, homeCount, homeSqFt);
     os << bldCount  << delim << bldSqFt  << delim
-       << homeCount << delim << homeSqFt << std::endl;
+       << homeCount << delim << homeSqFt << delim;
+    // Print a string containing community information
+    os << "\"" << pr.getInfo("community") << "\"" << std::endl;
 }
 
 void
@@ -283,7 +286,8 @@ ModelGenerator::generateFig() {
     if (!cmdLineArgs.xfigFilePath.empty()) {
         if (cmdLineArgs.drawPopRingID == -1) {
             // The community shapes and population grids are to be drawn
-            shpFile.genXFig(cmdLineArgs.xfigFilePath, cmdLineArgs.figScale);
+            shpFile.genXFig(cmdLineArgs.xfigFilePath,
+                            cmdLineArgs.figScale, true);
         } else {
             // Draw detailed buildings for the given population ring.
             // For this first we create a custom shapeFile and then
@@ -731,7 +735,11 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
     const std::string BldNode = "nd", Tag = "tag", Ref = "ref";
     const std::string KeyAttr = "k", ValAttr = "v", IDAttr = "id";
     const std::string HomeTypes = "yes house residential apartments "
-        "condominium";    
+        "condominium";
+    // The following types of buildings are ignored and not
+    // included.
+    const std::string IgnoreTypes = "industrial terrace garages warehouse "
+        "shed root construction manufacture";
     // Set out variables to default initial values.
     vertexLat.clear();
     vertexLon.clear();
@@ -747,7 +755,7 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
             // This a node/vertex for a building.
             ASSERT( child->first_attribute()->name() == Ref );
             // Get the node's latitude and longitude information
-            const long nodeID = std::stol(child->first_attribute()->value());
+            const long nodeID  = std::stol(child->first_attribute()->value());
             const Node& vertex = nodeMap.at(nodeID);
             // Track the vertices for this building.
             nodes.push_back(nodeID);
@@ -779,6 +787,10 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
     if (!isBuilding || isAmenity || (vertexLat.size() < 3) ||
         (vertexLat.front() != vertexLat.back())) {
         return false;  // This is not a valid buliding at all.
+    }
+    // Check and ignore industrial buildings
+    if (IgnoreTypes.find(type) != std::string::npos) {
+        return false;  // This type of building is to be ignored
     }
     // Check to see if this is a valid residential building.
     isHome = (HomeTypes.find(type) != std::string::npos);

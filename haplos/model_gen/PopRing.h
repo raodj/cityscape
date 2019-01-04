@@ -38,7 +38,7 @@
     text file regarding population rings.  The ring information is
     stored in a model file in the following format:
 
-    # Rng ID ringID shpaeID pop num_vert tl_lat tl_lon br_lat br_lon num_bld num_homes home_tot_sqft
+    # Rng ID ringID shpaeID pop num_vert tl_lat tl_lon br_lat br_lon num_bld bld_sqFt homes home_sqFt info
 */
 class PopRing : public Ring {
 public:
@@ -78,6 +78,9 @@ public:
     /** The total square footage of homes in this ring */
     long homesTotSqFt = 0;
 
+    /** The information string associated with this ring */
+    std::string info;
+    
     /** Determine the width of this population ring.
 
         \return The width (i.e., difference in longitude) for this

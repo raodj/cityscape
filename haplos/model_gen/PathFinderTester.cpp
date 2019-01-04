@@ -64,6 +64,8 @@ PathFinderTester::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.checkEntries, ArgParser::BOOLEAN},
         {"--check-noway", "Print ways with no connections to others",
          &cmdLineArgs.printNoWays, ArgParser::BOOLEAN},
+        {"--stdio", "Use standard I/O streams to read building IDs",
+         &cmdLineArgs.useStdIO, ArgParser::BOOLEAN},
         {"", "", NULL, ArgParser::INVALID}
     };
     // Process the command-line arguments.
@@ -77,7 +79,7 @@ PathFinderTester::processArgs(int argc, char *argv[]) {
     }
 
     // Ensure we have some starting and ending building IDs setup
-    if ((cmdLineArgs.rndTestCount < 0) &&
+    if ((cmdLineArgs.rndTestCount < 0) && (!cmdLineArgs.useStdIO) &&
         ((cmdLineArgs.startBldID == -1) || (cmdLineArgs.endBldID == -1))) {
         std::cerr << "Specify starting and ending building IDs.\n"
                   << ap << std::endl;
@@ -205,6 +207,22 @@ PathFinderTester::printDisconnectedWays() {
     }
 }
 
+void
+PathFinderTester::processStdIO() {
+    // The pair of buildings for which route is to be computed.
+    long startBldID, endBldID;
+    // Keep processing pairs of buildings.
+    while (std::cin >> startBldID >> endBldID) {
+        // Compute the path between the pairs of buildings
+        PathFinder pf(osmData);
+        Path path = pf.findBestPath(startBldID, endBldID,
+                                    cmdLineArgs.useTime, cmdLineArgs.minDist,
+                                    cmdLineArgs.distScale);
+        // Print the detailed path
+        pf.printDetailedPath(path);
+    }
+}
+
 int
 PathFinderTester::run(int argc, char *argv[]) {
     int error = 0;  // Error from various helper methods.
@@ -227,6 +245,11 @@ PathFinderTester::run(int argc, char *argv[]) {
     }
     // Run random tests or one given test.
     if (cmdLineArgs.rndTestCount == -1) {
+        // If user asks to use standard I/O then do that.
+        if (cmdLineArgs.useStdIO) {
+            processStdIO();
+            return 0;
+        }
         // Ensure starting and ending building ID's are valid.
         if ((osmData.buildingMap.find(cmdLineArgs.startBldID) ==
              osmData.buildingMap.end()) ||

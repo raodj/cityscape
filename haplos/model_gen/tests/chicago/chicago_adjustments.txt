@@ -81,9 +81,25 @@ remap 710 687
 remap 865 843
 
 # Regions at the edge of O'Hare whose population can be ignored.
-# remap 26  -1
-# remap  73 -1
-# remap 162 -1
-# remap 192 -1
-# remap 193 -1
+remap 26  -1
+remap  73 -1
+remap  74 -1
+remap 103 -1
+remap 162 -1
+remap 163 -1
+remap 169 -1
+remap 192 -1
+remap 193 -1
+remap 194 -1
 
+# Regions at the edge of lake Michigan without any buildings
+remap 384 -1
+remap 595 -1
+remap 759 -1
+
+# Regions at the edge of harborside marsh without any buildings
+remap 931 -1
+
+# Region at the edge of wolf lake without any buildings
+remap 971 -1
+remap 1000 -1

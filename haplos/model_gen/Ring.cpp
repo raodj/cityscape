@@ -381,7 +381,8 @@ Ring::printXFig(XFigHelper& xfig, const int figSize, const int xClip,
     // Draw the centroid of each closed polygon ring if requested and
     // it is not a subtraction region
     if (drawCentroid && !isSubtraction() &&
-        (getKind() != Ring::ARC_RING) && (getKind() != Ring::ENTRY_RING)) {
+        (getKind() != Ring::ARC_RING) && (getKind() != Ring::ENTRY_RING) &&
+        (getKind() != Ring::POPULATION_RING)) {
         Point center = getCentroid();
         int xfigX, xfigY;
         getXYValues(center.second, center.first, xfigX, xfigY,

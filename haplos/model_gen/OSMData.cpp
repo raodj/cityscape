@@ -33,6 +33,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 #include "OSMData.h"
 #include "PathSegment.h"
 
@@ -97,6 +98,55 @@ OSMData::computeNodesWaysList() {
             nodesWaysList.at(nodeID).push_back(wayID);
         }
     }
+}
+
+// Convenience stream-insertion operator for OSMData::Info
+std::ostream& operator<<(std::ostream& os, const OSMData::Info& info) {
+    return (os << info.first << ":" << info.second << "(" << info.third << ")");
+}
+
+OSMData::InfoVec
+OSMData::getSortedPopRingInfo(int infoKind, long& total) const {
+    InfoVec infoList;  // The list of information to be returned.
+    infoList.reserve(popRings.size());
+    // First build infoList based on the attribute requested.
+    total = 0;
+    for (const PopRing& pr : popRings) {
+        // Get the attribute of interest.
+        const long info = (infoKind == 0 ? pr.getPopulation() :
+                           (infoKind == 1 ? pr.bldsTotSqFt : pr.homesTotSqFt));
+        // Add it to our list
+        infoList.push_back(Info{pr.id, info});
+        total += info;
+    }
+    // Finally sort the list
+    std::sort(infoList.begin(), infoList.end());
+    // Return the sorted list of information back to the caller
+    return infoList;
+}
+
+OSMData::InfoVec
+OSMData::getSortedBldInfo(int ringID, int infoKind, long& total) const {
+    InfoVec infoList;  // The list of information to be returned.
+    // First build infoList based on the attribute requested.
+    total = 0;
+    for (auto entry : buildingMap) {
+        if ((ringID != -1) && (entry.second.attributes != ringID)) {
+            continue;  // Building not in ring.
+        }
+        // Get building attribute of interest
+        const Building& bld = entry.second;        
+        const long info = (infoKind == 0 ? bld.population :
+                           bld.sqFootage * std::max(1, bld.levels));
+        // Add it to our list
+        infoList.push_back(Info{bld.id, info, bld.attributes});
+        total += info;
+    }
+    // Finally sort the list
+    std::sort(infoList.begin(), infoList.end());
+    // Return the sorted list of information back to the caller
+    return infoList;
+    
 }
 
 #endif

@@ -37,7 +37,7 @@ modelgen_LDADD =
 modelgen_DEPENDENCIES=
 
 if GDAL
-AM_CXXFLAGS += -I$(GDAL)/include -DHAVE_GDAL
+AM_CXXFLAGS += -I$(GDAL)/include -DHAVE_GDAL  -I /usr/include/gdal
 modelgen_LDFLAGS = -L$(GDAL)/lib
 modelgen_LDADD += -lgdal
 endif

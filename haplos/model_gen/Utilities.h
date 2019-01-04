@@ -34,6 +34,7 @@
 #include <ctime>
 #include <cmath>
 #include <string>
+#include <vector>
 
 /** \def ASSERT(x)
 
@@ -209,6 +210,19 @@ const double MILES_PER_LAT = 69.04677;
  * \return The trimmed version of str.
  */
 extern std::string trim(const std::string& str);
+
+
+/** Method to tokenize a given string str.
+
+    \param[in] str The string to be tokenized
+
+    \param[in] delimiter The set of delimiter characters to be used
+    for tokening the string.
+
+    \return A vector containing the set of tokens.
+*/
+extern std::vector<std::string>
+split(std::string str, const std::string& delimiter = "\r\t ");
 
 /** Convert the given latitude, longitude to x, y coordinates given a
     dimension.
