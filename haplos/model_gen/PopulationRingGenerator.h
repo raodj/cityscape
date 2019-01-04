@@ -31,7 +31,10 @@
 //
 //---------------------------------------------------------------------------
 
-#include <gdal/gdal_priv.h>
+#ifdef HAVE_GDAL
+#include <gdal_priv.h>
+#endif
+
 #include "ShapeFile.h"
 
 /** Convenience class to process a raster layer with population data
@@ -110,6 +113,7 @@ private:
        example 0.0083333 degrees corresponds to 0.575 miles */    
     double yPixelRes;
 
+#ifdef HAVE_GDAL
     /** A pointer to the GDAL file currently being processed by this
         class.
     */
@@ -119,6 +123,7 @@ private:
         to be read.
     */
     GDALRasterBand* geoBand;
+#endif
 };
 
 #endif

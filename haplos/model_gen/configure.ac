@@ -35,6 +35,41 @@ AC_PREREQ([2.69])
 AC_INIT([modelgen], [0.1.0], [raodm@miamiOH.edu])
 AM_INIT_AUTOMAKE([-Wall -Werror subdir-objects])
 
+# Convenience macro to check for availability of GDAL
+AC_DEFUN([AC_LIB_GDAL],
+[
+    AC_ARG_WITH(gdal,
+            AC_HELP_STRING([--with-gdal=PATH],[path to GDAL library]),
+    [ if test "$withval" != "yes"; then
+          AC_MSG_CHECKING([for GDAL])
+	  if test -x "$withval" ; then
+	      GDAL="$withval"
+	      AC_MSG_RESULT([$GDAL])
+	  else
+	      GDAL="no"
+	      AC_MSG_RESULT(no)
+	  fi
+      fi
+     ])
+     
+     if test -z "$GDAL"; then
+        AC_LANG_PUSH([C++])
+     	AC_CHECK_LIB(gdal, GDALAllRegister, [GDAL="yes"], [GDAL="no"])
+        AC_LANG_POP([C++])                     
+     fi
+
+     if test "$GDAL" = "no"; then
+        AC_MSG_WARN([Could not find GDAL library. Some of the options in
+                     the software will be disabled.  If you would like to
+                     enable all the features, please install GDAL
+                     libraries or ensure you have specified the correct
+                     path to GDAL via --with-gdal option when running
+                     configureto.])
+     fi
+     AC_SUBST(GDAL)
+     AM_CONDITIONAL([GDAL], [test "x$GDAL" != "xno"])     
+])
+
 # Setup default programming language
 AC_PROG_CC
 AC_PROG_CXX
@@ -57,6 +92,11 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_CHECK_FUNCS([sqrt atan2])
 
+# Check for availability of gdal
+AC_LIB_GDAL
+
+# Check to see if hdf5 is available for optionally linking with it
+AC_CHECK_LIB(hdf5_hl, H5open)
 AC_CONFIG_FILES([Makefile])
 
 AC_OUTPUT

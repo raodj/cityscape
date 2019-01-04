@@ -33,9 +33,15 @@ bin_PROGRAMS = modelgen pathfinder
 
 AM_CXXFLAGS = -g -Wall -std=c++11 -DDEVELOPER_ASSERTIONS -fopenmp
 
-modelgen_LDFLAGS = 
-modelgen_LDADD = -lhdf5_hl -lgdal
+modelgen_LDADD =
 modelgen_DEPENDENCIES=
+
+if GDAL
+AM_CXXFLAGS += -I$(GDAL)/include -DHAVE_GDAL
+modelgen_LDFLAGS = -L$(GDAL)/lib
+modelgen_LDADD += -lgdal
+endif
+
 
 modelgen_SOURCES = \
 	shapefil.h \
@@ -65,6 +71,10 @@ modelgen_SOURCES = \
 	main.cpp
 
 pathfinder_SOURCES = \
+	shapefil.h \
+	shpopen.c \
+	shptree.c \
+	dbfopen.c \
 	ArgParser.cpp \
 	ArgParser.h \
 	Utilities.cpp \
@@ -93,6 +103,11 @@ pathfinder_SOURCES = \
 	PathFinderTester.h \
 	PathFinderTester.cpp
 
-pathfinder_LDADD = -lhdf5_hl -lgdal
+pathfinder_LDADD =
+
+if GDAL
+pathfinder_LDFLAGS = -L$(GDAL)/lib
+pathfinder_LDADD += -lgdal
+endif
 
 # End of Makefile.am
