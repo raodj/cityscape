@@ -32,6 +32,7 @@
 //---------------------------------------------------------------------------
 
 #include "Ring.h"
+#include <cmath>
 
 /** A simple class to encapsulate information extracted from a model
     text file regarding population rings.  The ring information is

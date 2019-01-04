@@ -36,30 +36,36 @@
 #include "PopulationRingGenerator.h"
 
 PopulationRingGenerator::PopulationRingGenerator() {
+#ifdef HAVE_GDAL    
     // Register readers for differen file-formats in GDAL Library
     GDALAllRegister();
     // Initialize instance variables
     geoDataset = NULL;
+#endif    
 }
 
 PopulationRingGenerator::~PopulationRingGenerator() {
+#ifdef HAVE_GDAL    
     if (geoDataset != NULL) {
         delete geoDataset;
         geoDataset = NULL;
     }
     // Allow GDAL to perform final cleanup
     GDALDestroyDriverManager();
+#endif
 }
 
 std::vector<Ring>
 PopulationRingGenerator::createRings(ShapeFile& shapes,
                                      const std::string& popGisFile,
                                      int& minPop, int& maxPop) {
+    // The new set of rings being created
+    std::vector<Ring> popRings;
+    
+#ifdef HAVE_GDAL
     // Initialize min and max population
     minPop = INT_MAX;
     maxPop = 0;
-    // The new set of rings being created
-    std::vector<Ring> popRings;
     // First setup the GIS data file to load information.
     openFile(popGisFile);
     // Next find out the bounds of the shapes in the shape file so
@@ -121,6 +127,8 @@ PopulationRingGenerator::createRings(ShapeFile& shapes,
             }
         }
     }
+#endif
+    
     // Return the created population rings.
     return popRings;
 }
@@ -166,6 +174,7 @@ PopulationRingGenerator::getBounds(const ShapeFile& shapes, int& startX,
 
 void
 PopulationRingGenerator::openFile(const std::string& popGisFile) {
+#ifdef HAVE_GDAL    
     // Attempt to open the gis file
     GDALDataset* geoDataset  = (GDALDataset *) GDALOpen(popGisFile.c_str(),
                                                         GA_ReadOnly);
@@ -216,6 +225,7 @@ PopulationRingGenerator::openFile(const std::string& popGisFile) {
               << topLeftY << ")" << std::endl;
     std::cout << "[INFO] Pixel Resolution: (" << xPixelRes << ", "
               << yPixelRes << ")" << std::endl;    
+#endif
 }
 
 #endif
