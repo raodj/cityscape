@@ -33,6 +33,8 @@
 
 #include <unordered_map>
 #include <vector>
+#include <iostream>
+#include <utility>
 
 #include "PopRing.h"
 #include "Node.h"
@@ -45,6 +47,35 @@
 */
 class OSMData {
 public:
+    /** A convenience class to obtain sorted list of information from
+        the model. This class is essentially a 3-tuple, with
+        Info::first containing ID (value depends on information) and
+        Info::second and Info::third contains associated data.
+    */
+    class Info {
+        /** Convenience stream-inserstion operator */
+        friend std::ostream& operator<<(std::ostream&, const Info&);
+    public:
+        /** A convenience initializing constructor */
+        Info(long first = -1, long second = -1, long third = -1) :
+            first(first), second(second), third(third) {}
+
+        /** Convenience comparison operator for sorting based on
+            Info::second.
+        */
+        inline bool operator<(const Info& other) const {
+            return (second > other.second);
+        }
+
+        /** The three instance variables contain values depending on
+            the context in which the Info class is being used.
+        */
+        long first, second, third;
+    };
+
+    /** A convenience shortcut to a vector of Info objects */
+    using InfoVec = std::vector<OSMData::Info>;
+
     /** Internal helper method to load nodes, ways, and buildings from
         a given model file.  Specifically it loads the data into
         nodeList, wayMap, and buildingMap instance variables in this
@@ -56,6 +87,62 @@ public:
         operate with this method.
      */
     int loadModel(const std::string& modelFilePath);
+
+    /** Method to obtain a sorted list of population rings and a
+        choice of information associated with them.
+
+        This method returns a list of objects. Each object is
+        OSMData::Info, with Info::first corresponding to an index in
+        popRings vector, and Info::second containing an atrribute of
+        the population ring based on infoKind parameter.
+
+        \param[in] infoKind The attribute to be returned for each
+        population ring as tabulated below:
+
+        infoKind | Attribute returned
+        ---------|-----------------------
+         0       | population
+         1       | all buildings sq. ft
+         2       | homes sq. ft
+
+         \param[out] total The sum of the chosen attributes for each
+         population ring.
+
+         \return A vector of population rings. The vector is sorted
+         (in descending order) based on the attribute value associated
+         with each entry.
+    */
+    OSMData::InfoVec getSortedPopRingInfo(int infoKind, long& total) const;
+
+    /** Method to obtain a sorted list of buildings and a choice of
+        information associated with them.
+
+        This method returns a list of objects. Each object is
+        OSMData::Info, with Info::first corresponding to a building ID
+        in buildingMap hash map, and Info::second containing an
+        atrribute of the building based on infoKind parameter.
+
+        \param[in] ringID An optional ID of the ring for which the
+        building information is to be returned.  If this value is -1,
+        then all buildings are returned.
+        
+        \param[in] infoKind The attribute to be returned for each
+        population ring as tabulated below:
+
+        infoKind | Attribute returned
+        ---------|-----------------------
+         0       | population
+         1       | sq. ft
+
+         \param[out] total The sum of the chosen attributes for each
+         building.
+
+         \return A vector of Info objects with building information
+         . The vector is sorted (in descending order) based on the
+         attribute value associated with each entry.
+    */
+    OSMData::InfoVec getSortedBldInfo(int ringID, int infoKind,
+                                      long& total) const;
     
     /** The list of nodes loaded from the model file.  The nodes are
         stored as a vector as they are generated as a contiguous list

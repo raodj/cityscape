@@ -392,11 +392,11 @@ PathFinder::getPathOnSameWay(const PathSegment& src, const PathSegment& dest) {
 void
 PathFinder::generateFig(const Path& path, const std::string& xfigFilePath,
                         const int figScale) const {
-#ifndef NO_XFIG    
     // Print some stats about the path
     std::cout << "Exploring: " << exploring.size() << ", explored paths: "
               << exploredPaths.size() << ", explored nodes: "
               << exploredNodes.size() << std::endl;
+#ifndef NO_XFIG        
     // The file to which the xfig file is to be written
     if (xfigFilePath.empty()) {
         return;  // Nothing else to be done.
@@ -511,5 +511,40 @@ PathFinder::setLimits(const PathSegment& src, const PathSegment& dest,
     // Have the ring build limits around the src & dest
     outerLimits = Ring::createRectRing(srcPt, destPt, maxDist);
 }
+
+void
+PathFinder::printDetailedPath(const Path& path, std::ostream& os) const {
+    // If the path is empty we have nothing much to do.
+    if (path.empty()) {
+        os << "Empty path\n";
+    } else {
+        // Print detailed information on each segment in the path
+        for (const PathSegment& ps : path) {
+            // First print default information about path segement.
+            os << ps;
+            // Print details on the speed limit for the way.
+            const Way& way   = osmData.wayMap.at(ps.wayID);
+            os << ", speed: " << way.maxSpeed << ", kind: " << way.kind;
+            // Print latitude and longitude of the node for this path
+            if (ps.buildingID == -1) {
+                // Get the node to get its information.
+                const Node& node = osmData.nodeList.at(ps.nodeID);
+                os << ", latitude: " << node.latitude << ", longitude: "
+                   << node.longitude;
+            } else {
+                // This path segement should be a building
+                const Building& bld = osmData.buildingMap.at(ps.buildingID);
+                os << ", latitude: " << bld.wayLat << ", longitude: "
+                   << bld.wayLon;
+            }
+            // Done with one path segment
+            os << std::endl;
+        }
+    }
+    os << "Exploring: " << exploring.size() << ", explored paths: "
+       << exploredPaths.size() << ", explored nodes: "
+       << exploredNodes.size() << std::endl;
+}
+
 
 #endif

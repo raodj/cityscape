@@ -55,7 +55,10 @@ AC_DEFUN([AC_LIB_GDAL],
      if test -z "$GDAL"; then
         AC_LANG_PUSH([C++])
      	AC_CHECK_LIB(gdal, GDALAllRegister, [GDAL="yes"], [GDAL="no"])
-        AC_LANG_POP([C++])                     
+        AC_LANG_POP([C++])
+        if test "x$GDAL" == "xyes" ; then
+            GDAL="/usr/"
+        fi
      fi
 
      if test "$GDAL" = "no"; then
