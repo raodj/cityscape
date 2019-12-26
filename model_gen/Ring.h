@@ -69,7 +69,7 @@ public:
         types of shapes that can be loaded from a given shape file.
     */
     enum Kind {UNKNOWN_RING, CLOSED_RING, ARC_RING, POPULATION_RING,
-               BUILDING_RING, ENTRY_RING};
+               BUILDING_RING, ENTRY_RING, PUMA_RING};
 
     /** A convenience wrapper sub-class to hold a metadata about the
         ring.  These entries are typically loaded from a separate DBF
@@ -351,6 +351,67 @@ public:
     */
     bool contains(const Ring& ring) const;
 
+    /** Determine if a given Ring intersects with this Ring.
+
+        This method may be used to test if another Ring intersects
+        this ring.  This method uses boost::geometry for the
+        intersection test.  So, it temporarly converts the 2 rings to
+        boost::geometry::model::ring and uses
+        boost::geometry::intersects alogirthm to detect intersections.
+
+        \param[in] ring The ring to be tested for intersection.
+
+        \return This method returns \c true if the ring (paremeter)
+        intersects this ring.  Otherwise this method returns false.
+    */
+    bool intersects(const Ring& ring) const;
+
+    /** Obtain a new ring that is the intersection between a given
+        ring and this ring.
+
+        This method may be used to obtain the Ring (or polygon) that
+        represents the intersection between this ring and another
+        ring.  This method uses boost::geometry for the intersection
+        test.  So, it temporarly converts the 2 rings to
+        boost::geometry::model::ring and uses
+        boost::geometry::intersection alogirthm to detect
+        intersections.
+
+        \param[in] ring The ring to be tested for intersection.
+
+        \param[in] kind An optional kind for the intersection ring
+        returned by this method.
+
+        \param[in] ringID An optional ID for the ring returned by this
+        method.
+
+        \param[in] shapeID An optional shape ID for the ring returned
+        by this method.
+
+        \param[in] population An optional population value to be set
+        for the intersection ring returned by this method.
+
+        \param[in] infoList An optional list of
+        attributes/information/metadata to be set for the intersection
+        ring returned by this method.
+        
+        \param[in] status An optional status string to be set for
+        the intersection ring returned by this method.
+
+        \param[in] subtraction Flag to indicate if this ring is a
+        subtraction ring.
+        
+        \return This method returns \c true if the ring (paremeter)
+        intersects this ring.  Otherwise this method returns false.
+    */
+    Ring intersection(const Ring& ring,
+                      const Ring::Kind kind = CLOSED_RING,
+                      const int ringID = -1, const int shapeID = -1,
+                      const double population = 0,
+                      const std::vector<Ring::Info> infoList = {},
+                      const std::string& status = "",
+                      const bool subtraction = false) const;
+    
     /** Obtain area of this Ring.
 
 	This method uses the shoelace method to compute the area of
@@ -536,6 +597,13 @@ public:
      * \return The value associated with the given list of columns.
      */
     std::string getInfo(const std::vector<std::string>& colNames) const;
+
+    /** Get the full list of information associated with this ring.
+     *
+     * \return This method returns the full list of
+     * metadata/information associated with this ring.
+     */
+    const std::vector<Ring::Info>& getInfoList() const { return infoList; }
     
     /** Get the label that was set earlier for this ring.
      *
@@ -562,7 +630,19 @@ public:
         \param[in] pop The population value to be set for this ring.
     */
     void setPopulation(const double pop) { population = pop; }
-    
+
+    /** Set the kind for this ring.
+
+        \param[in] kind The new kind to be set for this ring.
+    */
+    void setKind(const Ring::Kind kind) { this->kind = kind; }
+
+    /** Set the ID for this ring.
+
+        \param[in] id The new ID to be set for this ring.
+    */    
+    void setRingID(const int id) { ringID = id; }
+
 protected:
     /** Set the subtraction flag to indicate this ring is an \b
         exclusion.
@@ -576,7 +656,25 @@ protected:
         rings constituting the shape.
     */
     void setSubtractionFlag(const bool subtract);
-   
+
+    /** Corrects potentially convex polygons that were encountered
+        when loading shapes from a ShapeFile.
+    */
+    void correctRing();
+
+    /** Internal helper method to correct order to veritices to be
+        consistent in clockwise direction.
+
+        \note This method is called by correctRing.  So if you are
+        already using correctRing, then this method need not be
+        invoked again.
+        
+        This method internally uses boost::geometry::is_valid and
+        boost::geometry::correct to fix potential issues with the
+        order of verticies in this ring.
+     */
+    void correctWithBoost();
+    
 private:
   /** The zero-based ring ID value for this shape.
         

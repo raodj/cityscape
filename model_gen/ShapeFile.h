@@ -46,9 +46,23 @@ class ShapeFile {
 public:
     ShapeFile();
     ~ShapeFile();
+    /**
+     * \param [in] checkSubtractRing When loading PUMA data, it was
+     * observed that checks to detect subtraction rings was taking a
+     * long time.  Consequently, this flag was added to permit caller
+     * to avoid the O(n^2) check for subtraction-ring checks.
+     *
+     * \param[in] correctConvex When loading PUMA data, some of the
+     * rings have overlapping points which causes some of the
+     * boost::geometry algorithms to fail due to conave nature of
+     * shape.  If this flag is true, then this method attempts to
+     * detect and correct such points.
+     */
     bool loadShapes(const std::string& shapeFileName,
 		    const std::string& dbfFileName = "",
-		    const double scale = 1.0);
+		    const double scale = 1.0,
+                    const bool checkSubtractRing = true,
+                    const bool correctConvex = false);
     inline int getRingCount() const { return rings.size(); }
     const Ring& getRing(const int index) const;
     bool hasExclusion(const int shapeID) const;

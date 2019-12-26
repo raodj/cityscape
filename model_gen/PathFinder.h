@@ -163,6 +163,13 @@ public:
     void printDetailedPath(const Path& path,
                            std::ostream& os = std::cout) const;
 
+    /** Obtain the number of nodes explored to find a path.
+
+        \return The current count of nodes being explored and the
+        count of nodes already explored.
+    */
+    long getExploredNodeCount() const;
+
 protected:
     /** Setup a boundary ring that defines the maximum outer limits up
         to which the path finder should explore.  This ring serves an

@@ -63,9 +63,15 @@ ModelGenerator::run(int argc, char *argv[]) {
         return error;  // Error loading community shape file.
     }
 
+    // Load the PUMS and PUMA data specified by the user.
+    if ((error = loadPUMS()) != 0) {
+        return error;  // Error loading PUMS/PUMA data
+    }
+
     // Next load the population data from GIS file and create
     // convenient rings to hold population
     createPopulationRings();
+
     // Now that we know the number of population rings, resize the
     // popAreaWayIDs vector to have a list of ways per population ring.
     popAreaWayIDs.resize(popRings.size());
@@ -79,8 +85,15 @@ ModelGenerator::run(int argc, char *argv[]) {
     createBuildings();
     createHomesOnEmptyWays();
 
-    // Distribute people to buildings based on sq.footage
-    distributePopulation();
+    if (!cmdLineArgs.pumsHousingPath.empty()) {
+        pums.distributePopulation(buildings, cmdLineArgs.pumsHousingPath,
+                                  cmdLineArgs.pumsPeoplePath,
+                                  cmdLineArgs.pumsHouColNames,
+                                  cmdLineArgs.pumsPepColNames);
+    } else {
+        // Distribute people to buildings based on sq.footage
+        distributePopulation();
+    }
     // Print some statistics about the model
     printPopulationInfo();
     printNodesInfo();
@@ -191,9 +204,24 @@ ModelGenerator::processArgs(int argc, char *argv[]) {
         {"--adjust-model", "Path to file with adjustments to generated model",
          &cmdLineArgs.adjustmentsFilePath, ArgParser::STRING},
         {"--out-model", "Path to file to write generated model",
-         &cmdLineArgs.outModelFilePath, ArgParser::STRING},        
+         &cmdLineArgs.outModelFilePath, ArgParser::STRING},
+        {"--pums-p", "Path to PUMS people data CSV",
+         &cmdLineArgs.pumsPeoplePath, ArgParser::STRING},
+        {"--pums-h", "Path to PUMS housing data CSV",
+         &cmdLineArgs.pumsHousingPath, ArgParser::STRING},
+        {"--puma-shp", "Path to PUMA GIS shape file",
+         &cmdLineArgs.pumaShpPath, ArgParser::STRING},
+        {"--puma-dbf", "Path to PUMA DBF file",
+         &cmdLineArgs.pumaDbfPath, ArgParser::STRING},
+        {"--pums-h-cols", "Names of columns in PUMS housing CSV file to retain",
+         &cmdLineArgs.pumsHouColNames, ArgParser::STRING_LIST},
+        {"--pums-p-cols", "Names of columns in PUMS people CSV file to retain",
+         &cmdLineArgs.pumsPepColNames, ArgParser::STRING_LIST},
         {"", "", NULL, ArgParser::INVALID}
     };
+    // Setup default value for PUMS cols
+    cmdLineArgs.pumsHouColNames = {"SMARTPHONE"};
+    cmdLineArgs.pumsPepColNames = {"AGEP", "WAGP"};
     // Process the command-line arguments.
     ArgParser ap(arg_list);
     ap.parseArguments(argc, argv, true);
@@ -678,7 +706,11 @@ ModelGenerator::createBuildings() {
         // constituting the building.  This list is reused to keep
         // code fast.
         std::vector<double> vertexLat, vertexLon;
-        // Total number of thread running in parallel
+        // An optional PUMA area ID to be assigned to each building.
+        // This ID tracks to the previous PUMA region assigned to a
+        // building to use spatial-locality to minimize overheads.
+        int pumaAreaID = -1;   // Changed in checkExtractBuilding method.
+        // Total number of thread running in parallelxo
         const int numThreads = omp_get_num_threads();
         int nodes2skip       = omp_get_thread_num();
         // Iterate over all nodes and extract buildings
@@ -699,7 +731,8 @@ ModelGenerator::createBuildings() {
             // Use a helper method to process the XML element and
             // return a valid building entry, if the node is a valid
             // building.
-            Building bld = checkExtractBuilding(node, vertexLat, vertexLon);
+            Building bld = checkExtractBuilding(node, vertexLat,
+                                                vertexLon, pumaAreaID);
             if (bld.id != 0) {
                 threadBuildingList.push_back(bld);
             }
@@ -721,7 +754,10 @@ ModelGenerator::createBuildings() {
         }
     }  // parallel
     
-    std::cout << "Created " << buildings.size() << " buildings.\n";    
+    std::cout << "Created " << buildings.size() << " buildings.\n";
+
+    // Draw buildings with PUMA area for cross reference
+    pums.drawPUMA(buildingShapes);
 }
 
 // NOTE: This method is called from multiple threads.
@@ -734,8 +770,10 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
                                         bool& isHome) const {
     const std::string BldNode = "nd", Tag = "tag", Ref = "ref";
     const std::string KeyAttr = "k", ValAttr = "v", IDAttr = "id";
+    // Lots of homes in Chicago have just 'building=yes'
+    // attributes. For example, see home at "1250 South State Street"
     const std::string HomeTypes = "yes house residential apartments "
-        "condominium";
+        "condominium bungalow detached semidetached_house";
     // The following types of buildings are ignored and not
     // included.
     const std::string IgnoreTypes = "industrial terrace garages warehouse "
@@ -777,6 +815,12 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
                     std::cerr << "Unable to convert level " << kv.second
                               << std::endl;
                 }
+            } else if (kv.first == "tourism") {
+                // Some buildings like "Field Museum" or "Shedd
+                // Aquarium" have 'buliding=yes' and we need to use
+                // the tourism attribute to ensure that they are not
+                // tagged as residential buildings.
+                isAmenity = true;
             }
         }
     }
@@ -784,7 +828,7 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
     // Now that we have processed all the building's attributes,
     // it is time to create a new building object if the
     // conditions are met and the building is a closed polygon
-    if (!isBuilding || isAmenity || (vertexLat.size() < 3) ||
+    if (!isBuilding || (vertexLat.size() < 3) ||
         (vertexLat.front() != vertexLat.back())) {
         return false;  // This is not a valid buliding at all.
     }
@@ -793,7 +837,7 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
         return false;  // This type of building is to be ignored
     }
     // Check to see if this is a valid residential building.
-    isHome = (HomeTypes.find(type) != std::string::npos);
+    isHome = (HomeTypes.find(type) != std::string::npos) && !isAmenity;
     // Found a valid building
     return true;
 }
@@ -802,7 +846,8 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
 Building
 ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
                                      std::vector<double>& vertexLat,
-                                     std::vector<double>& vertexLon) const {
+                                     std::vector<double>& vertexLon,
+                                     int& pumaIndex) const {
     const std::string BldNode = "nd", Tag = "tag", Ref = "ref";
     const std::string KeyAttr = "k", ValAttr = "v", IDAttr = "id",
         VerAttr = "version";    
@@ -856,8 +901,19 @@ ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
         // Could not find an entrace to a given building.
         return invalidBld;
     }
+    // Setup the PUMA ID (if any for this building)
+    pumaIndex = pums.findPUMAIndex(ring.getCentroid(), pumaIndex);
+    if (pumaIndex == -1) {
+        std::cerr << "Warning: Unable to find PUMA ID for building ";
+        bld.write(std::cerr, true);   // print information about the building
+        bld.pumaID = -1;
+    } else {
+        // Set the ID of the PUMA ring rather than index to ease cross
+        // validation.
+        bld.pumaID = pums.getPUMAId(pumaIndex);
+    }
     // Add building to be drawn based on command-line args
-    if (cmdLineArgs.drawPopRingID == popRingID) {
+    if ((cmdLineArgs.drawPopRingID == popRingID) || (bld.pumaID == -1)) {
         // Entrance to draw in the figure.
         const Point entrance = findEntrance(ring, nodes);
         const std::vector<double> xCoords = {entrance.first,  bld.wayLon};
@@ -1225,7 +1281,8 @@ ModelGenerator::writeModel(const std::string& filePath) {
           << "# Rings in model: "     << popRings.size()      << "\n"
           << "# Nodes in model: "     << nodeOrderList.size() << "\n"
           << "# Buildings in model: " << buildings.size()     << "\n"
-          << "# Ways in model: "      << wayMap.size()        << "\n\n"
+          << "# Ways in model: "      << wayMap.size()        << "\n"
+          << "# PUMA IDs: "           << pums.getPUMAIds()    << "\n\n"
           << std::boolalpha;
 
     // Write the population rings in the model
@@ -1350,20 +1407,28 @@ ModelGenerator::generateHomes(const Node& currNode, const Node& nextNode,
              homeWidth / 2, homeSpcLat, homeSpcLon, true);
     // Find the population ring for this home
     const int popRingID = getPopRing(homeLat, homeLon);
+    // Get the PUMA ID for the homes
+    const int pumaIndex = pums.findPUMAIndex(Point(homeLon, homeLat));
+    const int pumaID    = (pumaIndex != -1 ? pums.getPUMAId(pumaIndex) : -1);
     // Now create a building around the centroid with given sqFootage
     Building home1 = Building::create(buildings.size(), sqFoot, wayID, homeLat,
                                       homeLon, homeLat - home1Lon - homeSpcLat,
                                       homeLon + home1Lat - homeSpcLon,
                                       homeLat - home2Lon + homeSpcLat,
                                       homeLon + home2Lat + homeSpcLon,
-                                      popRingID);
+                                      popRingID, true, 1, 0, pumaID);
     Building home2 = Building::create(buildings.size() + 1, sqFoot, wayID,
                                       homeLat, homeLon,
                                       homeLat + home1Lon - homeSpcLat,
                                       homeLon - home1Lat - homeSpcLon,
                                       homeLat + home2Lon + homeSpcLat,
                                       homeLon - home2Lat + homeSpcLon,
-                                      popRingID);
+                                      popRingID, true, 1, 0, pumaID);
+    // Check PUMA ID settings
+    if (pumaID == -1) {
+        std::cerr << "Warning: Unable to find PUMA ID for synthetic building ";
+        home1.write(std::cerr, true);   // print information about the building
+    }    
     // Add the created buildings to the list
     buildings.push_back(home1);
     buildings.push_back(home2);
@@ -1396,6 +1461,29 @@ ModelGenerator::drawBuilding(const Building& bld) {
     // Add shapes to be drawn
     buildingShapes.addRing(bldRing);
     buildingShapes.addRing(entryArc);
+}
+
+int
+ModelGenerator::loadPUMS() {
+    // Load the PUMS data only if the user has specified a valid path
+    // for us to load data from.
+    if (cmdLineArgs.pumsHousingPath.empty() ||
+        cmdLineArgs.pumaShpPath.empty()) {
+        return 0;   // No data to load. No error either.
+    }
+
+    // Find the bounds of the region we care about to limit the amount
+    // of PUMS and PUMA data that we are going to hold.
+    double minX, minY, maxX, maxY;
+    shpFile.getBounds(minX, minY, maxX, maxY);
+    std::cout << "Loading PUMS data...\n";
+    // Have the PUMS class load the necessary PUMS and PUMA data
+    const int error = 
+        pums.loadPUMA(cmdLineArgs.pumaShpPath, cmdLineArgs.pumaDbfPath,
+                      minX - 0.2, minY - 0.2, maxX + 0.2, maxY + 0.2);
+    std::cout << "Done loading PUMS data.\n";
+    // Return the error (if any) back to the caller
+    return error;
 }
 
 #endif

@@ -132,6 +132,14 @@ protected:
             print the route between the pairs of building IDs.
         */
         bool useStdIO = false;
+
+        /** This string contains the full command-line as specified to
+            the program. This string is created before any
+            command-line arguments are processed.  This is convenient
+            for logging purposes.
+        */
+        std::string fullCmdLine;
+        
     } cmdLineArgs;
 
     /** A simple class that encapsulates the OSM data */

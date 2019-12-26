@@ -68,7 +68,11 @@ modelgen_SOURCES = \
 	Node.cpp \
 	Way.h \
 	Way.cpp \
-	main.cpp
+	main.cpp \
+	PUMS.h \
+	PUMS.cpp \
+	PUMSHousehold.h \
+	PUMSHousehold.cpp
 
 pathfinder_SOURCES = \
 	shapefil.h \

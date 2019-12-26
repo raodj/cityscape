@@ -61,7 +61,8 @@ ShapeFile::setLabels(const std::vector<std::string>& colNames) {
 bool
 ShapeFile::loadShapes(const std::string& shapeFileName,
                       const std::string& dbfFileName,
-		      const double scale) {
+		      const double scale, const bool checkSubtractRing,
+                      const bool correctConvex) {
     DBFHandle dbfFile = NULL;
     std::vector<Ring::Info> metadata;
     if (!dbfFileName.empty()) {
@@ -111,9 +112,9 @@ ShapeFile::loadShapes(const std::string& shapeFileName,
         if (dbfFile != NULL) {
             infoList = getRingInfo(dbfFile, shapeID, metadata);
         }
-        size_t oldRingCount = rings.size();
+        const size_t oldRingCount = rings.size();
         // Now iterate over each ring in this shape
-        for(int partID = 0; (partID < shape->nParts); partID++) {
+        for (int partID = 0; (partID < shape->nParts); partID++) {
             // Obtain the number of vertices, starting vertex, and end
             // vertex values.
             const int nextPartIdx = ((partID + 1) < shape->nParts) ? 
@@ -125,13 +126,19 @@ ShapeFile::loadShapes(const std::string& shapeFileName,
                       shape->padfX + vertexStart, // x-coords
                       shape->padfY + vertexStart, // y-coords
                       infoList, scale);
+            // Check and correct convex or overlapping points
+            if (correctConvex) {
+                ring.correctRing();
+            }
             // Add the ring to our list of rings
             rings.push_back(ring);
         }
         // Check for subtraction rings in the newly added ring.
-        for (size_t i = oldRingCount; (i < rings.size()); i++) {
-            // Check and set subtraction flag for this ring.
-            checkSetSubtraction(rings[i]);
+        if (checkSubtractRing) {
+            for (size_t i = oldRingCount; (i < rings.size()); i++) {
+                // Check and set subtraction flag for this ring.
+                checkSetSubtraction(rings[i]);
+            }
         }
         // Now unload the shape as we no longer need it.
         SHPDestroyObject(shape);
@@ -142,8 +149,7 @@ ShapeFile::loadShapes(const std::string& shapeFileName,
 
 void
 ShapeFile::checkSetSubtraction(Ring& refRing) const {
-    for (const Ring& ring : rings) 
-    for (size_t ringIdx = 0; (ringIdx < rings.size()); ringIdx++) {
+    for (const Ring& ring : rings) {
         if ((ring.getShapeID() != refRing.getShapeID()) ||
             (ring.getRingID() == refRing.getRingID())) {
             // Only consider rings from the same shape for overlaps,
@@ -246,11 +252,15 @@ ShapeFile::genXFig(const std::string& outFileName, const int mapSize,
     // Generate a scale for the population if the minPop and maxPop are valid
     if (minPop < maxPop) {
         std::vector<double> tics = {0, minPop};
+        double prevPerc = 0;
         for (int frac = 2048; (frac > 2); frac /= 4) {
-            const double pop = (maxPop - minPop) / frac;
+            const double pop = minPop + (maxPop - minPop) / frac;
             const double perc = std::trunc(logScalePop(pop, minPop, maxPop));
-            tics.push_back(perc);
-            tics.push_back(pop);
+            if (perc > prevPerc) {
+                tics.push_back(perc);
+                tics.push_back(pop);
+                prevPerc = perc;
+            }
         }
         tics.push_back(100);
         tics.push_back(maxPop);
