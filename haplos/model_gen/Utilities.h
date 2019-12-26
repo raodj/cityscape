@@ -386,4 +386,27 @@ constexpr double TO_RADIANS(const double angle) {
     return ((angle) * M_PI / 180.0);
 }
 
+/**\def UNUSED(x)
+
+   \brief A convenient macro for specifying that a parameter or a
+   variable in a method is not used.
+
+   This macro provides a convenient approach for tagging unused
+   parameters to avoid compiler warnings.  These are only meant to be
+   used for parameters that are really not used (possibly in a base
+   class or a derived class) but are necessary for API compatibility
+   and documentation purposes.  Here is an example of how to use this
+   macro:
+
+   \code
+
+    virtual void doIt(const double gvt) {
+        UNUSED(gvt);
+        // Possibly more code goes here.
+    }
+
+   \endcode
+*/
+#define UNUSED(x) (void) x
+
 #endif

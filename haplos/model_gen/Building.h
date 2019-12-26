@@ -107,12 +107,15 @@ public:
 
         \param[in] population The initial number of people living at
         this building.
+
+        \param[in] pumaID The PUMA area ID associated with this building.
     */
     static Building create(int id, int sqFootage, long wayID,
                            double wayLat, double wayLon, double topLat,
                            double topLon, double botLat, double botLon,
                            int popRingID, bool isHome = true,
-                           int levels = 1, int population = 0);
+                           int levels = 1, int population = 0,
+                           int pumaID = -1);
     
     /** Write this Building to a given output stream.
 
@@ -198,6 +201,19 @@ public:
     /** The longitude value associated with the bottom-right corner for
         this building */
     double botLon = 0;
+
+    /** This integer contains the PUMA area ID associated with this
+        building.  This information is used to determine family and
+        age of people living in this building.
+    */
+    int pumaID;
+
+    /** This vector contains the ages of the different people assigned
+        to this building.  Note that for large buildings the number of
+        people can be a bit long. Currently, there isn't a clear
+        delineation between families.
+     */
+    std::vector<unsigned char> ages;
 };
 
 #endif

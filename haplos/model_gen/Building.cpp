@@ -61,6 +61,7 @@ Building::create(const Ring& ring, int id, int levels, int population,
     bld.wayID      = -1;
     bld.wayLat     = -1;
     bld.wayLon     = -1;
+    bld.pumaID     = -1;
     // Return the building
     return bld;
 }
@@ -69,7 +70,8 @@ Building
 Building::create(int id, int sqFootage, long wayID,
                  double wayLat, double wayLon, double topLat,
                  double topLon, double botLat, double botLon,
-                 int popRingID, bool isHome, int levels, int population) {
+                 int popRingID, bool isHome, int levels, int population,
+                 int pumaID) {
     // The building object being created by this method.
     Building bld;
     // Set the standard attributes
@@ -90,6 +92,7 @@ Building::create(int id, int sqFootage, long wayID,
     bld.wayID      = wayID;
     bld.wayLat     = wayLat;
     bld.wayLon     = wayLon;
+    bld.pumaID     = pumaID;
     // Return the building
     return bld;
 }
@@ -103,7 +106,7 @@ Building::write(std::ostream& os, const bool writeHeader,
            << "attributes"<< delim << "isHome" << delim << "sqFoot"     << delim
            << "topLon"    << delim << "topLat" << delim << "botLon"     << delim
            << "botLat"    << delim << "wayID"  << delim << "wayLat"     << delim
-           << "wayLon\n";
+           << "wayLon"    << delim << "pumaID" << std::endl;
     }
     // Write the information for this building.
     os << "bld"      << delim;
@@ -111,7 +114,7 @@ Building::write(std::ostream& os, const bool writeHeader,
        << attributes << delim << isHome << delim << sqFootage  << delim
        << topLon     << delim << topLat << delim << botLon     << delim
        << botLat     << delim << wayID  << delim << wayLat     << delim
-       << wayLon     << std::endl;;
+       << wayLon     << delim << pumaID << std::endl;
 }
 
 void
@@ -122,7 +125,7 @@ Building::read(std::istream& is) {
     is >> id     >> levels >> population >> attributes
        >> std::boolalpha   >> isHome     >> sqFootage
        >> topLon >> topLat >> botLon     >> botLat     >> wayID  >> wayLat
-       >> wayLon;
+       >> wayLon >> pumaID;
 }
 
 #endif

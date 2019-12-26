@@ -40,6 +40,7 @@
 #include "rapidxml.hpp"
 #include "ArgParser.h"
 #include "Building.h"
+#include "PUMS.h"
 
 /** A shortcut to a pair that holds the key and value */
 using KeyValue = std::pair<std::string, std::string>;
@@ -112,6 +113,21 @@ protected:
     */
     int loadShapeFile();
 
+    /** Load the PUMS and PUMA CSV, SHP, and DBF files from the input
+        files specified by the user as command-line arguments.  The
+        data is actually loaded by the PUMA class.  This is a helper
+        method in this class that calls the method in the PUMA class.
+
+        This method is typically invoked after the building generation
+        process.  The community-shape data and its bounds are used to
+        constrain the region of PUMA/PUMS data loaded.
+
+        \return This method returns zero if the command-line arguments
+        were successfully processed.  On errors it returns a non-zero
+        error code.        
+    */
+    int loadPUMS();
+    
     /** Internal method to load population from GIS data and create
         rectangular population rings.
 
@@ -250,6 +266,8 @@ protected:
     /** Internal helper method to check if a given XML node is a
         building entry and return a building object, if it is.
 
+        \note This method is called from multiple threads.
+        
         This method is an internal helper method that is called from
         createBuildings method (from many threads).  This method
         checks to see if a given XML node is valid building node. A
@@ -267,6 +285,13 @@ protected:
 
         \param[out] vertexLat This is just a reused vector to store
         latiatude / longitude values temporarily.
+
+        \param[in,out] pumaIndex The index into the puma rings from
+        where checks for the PUMA area is to commence.  This value is
+        essentially the index of the PUMA ring assigned to a building
+        in the previous check (initially it is 0).  This is done to
+        use spatial-locality of generating buildings to reduce PUMA ID
+        assignment. 
         
         \return A suitable building object if node is valid.
         Otherwise it returns an invalid building object with the
@@ -274,7 +299,8 @@ protected:
      */
     Building checkExtractBuilding(rapidxml::xml_node<>* node,
                                   std::vector<double>& vertexLat,
-                                  std::vector<double>& vertexLon) const;
+                                  std::vector<double>& vertexLon,
+                                  int& pumaIndex) const;
 
     /** Internal helper method to check if sub-lements of a given XML
         node corresponds a building entry and extract information.
@@ -712,6 +738,85 @@ private:
             set via the \c --out-model command-line argument
         */
         std::string outModelFilePath;
+
+        /** Flag to indicate if buildings generated are to be drawn in
+            the output fig file.  The default value is true.  This
+            option can be enabled via `--draw-buildings` option.
+        */
+        bool drawBuildings;
+
+        /** Flag to indicate if road ways from the input OSM XML file must
+            be drawn in the output fig file.  This is very useful to
+            provide detailed information for verification and
+            troubleshooting.  This option can be enabled via `--draw-ways`
+            command-line argument.
+        */
+        bool drawWays;
+
+        /** The directory where the images associated with the output
+            fig file are to be cached.  If image tiles are already
+            present in the cache directory then they are not
+            downloaded.  This makes the process of generating fig
+            output significantly faster.  Use the `--cache-dir` to set
+            this value.  The default value for this option is
+            "../cache"
+        */
+        std::string cacheDir;
+
+        /** Path to the PUMS people data associated with the region
+            for which buildings are being generated.  The data can be
+            downloaded from
+            https://www.census.gov/programs-surveys/acs/data/pums.html.
+            These files are of the format csv_<b>p</b>il.zip -- the
+            'p' in the file path is the one that indicates this is a
+            people micro sample.  This path is used by the PUMS class
+            to load the subset of data necessary for building
+            generation.
+        */
+        std::string pumsPeoplePath;
+
+        /** Path to the PUMS housing data associated with the region
+            for which buildings are being generated.  The data can be
+            downloaded from
+            https://www.census.gov/programs-surveys/acs/data/pums.html.
+            These files are of the format csv_<b>h</b>il.zip -- the
+            'h' in the file path is the one that indicates this is a
+            housing quarters micro sample. This path is used by the
+            PUMS class to load the subset of data necessary for
+            building generation.
+        */
+        std::string pumsHousingPath;
+
+        /** Path to the PUMA GIS Shape file. This GIS file provides
+            the polygons associated with the PUMA area codes in the
+            above 2 PUMS files.  The polygons are used to determine
+            overlapping regions for building generation.  This path is
+            used by the PUMS class to load the subset of data
+            necessary for building generation.
+        */
+        std::string pumaShpPath;
+
+        /** Path to the PUMA GIS DBF file. This DBF file provides meta
+            data about the polygons associated with the PUMA area
+            codes in the above 2 PUMS files.  The polygons are used to
+            determine overlapping regions for building generation.
+            This path is used by the PUMS class to load the subset of
+            data necessary for building generation.
+        */
+        std::string pumaDbfPath;        
+
+        /** The list of column names in PUMS household data to be
+            extracted and included in the model.  The order of column
+            numbers specified here is preserved in the generated model
+        */
+        ArgParser::StringList pumsHouColNames;
+
+        /** The list of column names in PUMS people data to be
+            extracted and included in the model.  The order of column
+            numbers specified here is preserved in the generated model
+        */
+        ArgParser::StringList pumsPepColNames;
+
     } cmdLineArgs;
 
     /** The unordered map that holds information about the nodes
@@ -764,6 +869,11 @@ private:
         arguments used to generate a model to a given model file.
     */
     std::string actualCmdLineArgs;
+
+    /** Helper class to manage PUMS and PUMA data that is used to
+        generate people living in different buildings/houses.
+    */
+    PUMS pums;
 };
 
 #endif

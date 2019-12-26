@@ -510,6 +510,8 @@ PathFinder::setLimits(const PathSegment& src, const PathSegment& dest,
     const double maxDist = minDist + (dist * scale);
     // Have the ring build limits around the src & dest
     outerLimits = Ring::createRectRing(srcPt, destPt, maxDist);
+    // std::cout << "Distance from src to dest = " << dist
+    //           << ". Outer limits = " << outerLimits << std::endl;
 }
 
 void
@@ -546,5 +548,9 @@ PathFinder::printDetailedPath(const Path& path, std::ostream& os) const {
        << exploredNodes.size() << std::endl;
 }
 
+long
+PathFinder::getExploredNodeCount() const {
+    return exploring.size () + exploredNodes.size();
+}
 
 #endif

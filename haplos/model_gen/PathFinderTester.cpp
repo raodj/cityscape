@@ -33,11 +33,16 @@
 
 #include <set>
 #include <chrono>
+#include <numeric>
 #include "PathFinder.h"
 #include "PathFinderTester.h"
 
 int
 PathFinderTester::processArgs(int argc, char *argv[]) {
+    // Save the command-line arguments for future reference.
+    auto concat = [](std::string s1, std::string s2) { return s1 + " " + s2; };
+    cmdLineArgs.fullCmdLine = std::accumulate(argv, argv + argc,
+                                              cmdLineArgs.fullCmdLine, concat);
     // Make the arg_record to process command-line arguments.
     ArgParser::ArgRecord arg_list[] = {
         {"--model", "The input model file to be processed",
@@ -113,7 +118,11 @@ PathFinderTester::runRndTest(const long startBldID, const long endBldID) const {
         duration_cast<duration<double>>(end - start);
     std::cout << (path.empty() ? "Failed" : "Success")
               << " ("     << path.size() << ", time: " << computeTime.count()
-              << " secs)" << std::endl;
+              << " secs)";
+    if (!path.empty()) {
+        std::cout << ", dist: " << path.back().distance;
+    }
+    std::cout << ", explored: " << pf.getExploredNodeCount() << " nodes\n";
 }
 
 std::vector<long>
@@ -135,6 +144,8 @@ PathFinderTester::runRndTests(int testCount) const {
     // Get the building IDs that we are working with.
     const std::vector<long> bldIDs = getBuildingIDs();
     const int BldCount             = bldIDs.size();
+    // Print the command-line being used for testing for reference
+    std::cout << "Running: " << cmdLineArgs.fullCmdLine << std::endl;
     // Run the given number of tests
     for (int i = 0; (i < testCount); i++) {
         // Randomly select the indexs of a pair of buildings

@@ -33,8 +33,15 @@
 
 #include <cmath>
 #include <iostream>
+#include <set>
 #include "Ring.h"
 #include "Utilities.h"
+
+// We use BOOST geometry for intersecting Rings. Note that we do boost
+// includes in the cpp file to keep the compilation fast -- If we
+// include boost::geometry in the header it triples the compile times.
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
 
 Ring::Ring() : ringID(-1), shapeID(-1), vertexCount(0),
                kind(Ring::UNKNOWN_RING) {
@@ -484,6 +491,222 @@ Ring::createRectRing(const Point& node1, const Point& node2,
     ASSERT(rectRing.contains(node2.first, node2.second));
     // Return the newly created cring
     return rectRing;
+}
+
+/** A couple of convenience aliases to interface with boost::geometry
+    library to handle intersection of rings. */
+using boost_point = boost::geometry::model::d2::point_xy<double>;
+using boost_ring  = boost::geometry::model::ring<boost_point>;
+
+/** Internal helper method to convert to a boost ring.
+
+    This helper method is placed here to reduce compile-time.
+    Including boost headers in the Ring.h increases compile time by
+    3x!
+
+    \param[in] ring The ring to be converted to a boost_ring
+
+    \param[in] check Optional flag to check to ensure that the ring is
+    valid.
+    
+    \return Returns a boost_ring corresponding to the given ring.
+*/
+boost_ring
+toBoostRing(const Ring& ring, const bool check = false) {
+    // Alias namespace to keep namespaces short in this method.
+    namespace bg = boost::geometry;  
+
+    // Add each point in the given ring to the boost_ring.
+    boost_ring br;  // The boost_ring being created    
+    const int vertexCount = ring.getVertexCount();
+    for (int i = 0; (i < vertexCount); i++) {
+        const Point vert = ring.getVertex(i);
+        boost::geometry::append(br, boost_point(vert.first, vert.second));
+    }
+
+    // If the user does not require checking then return the newly
+    // minted boost_ring back to the caller.
+    if (!check) {
+        return br;  // checking was not required.
+    }
+
+    // Check to ensure that the ring is valid.
+    bg::validity_failure_type failure;
+    if (!bg::is_valid(br, failure)) {
+        // Try to correct the failure.
+        boost::geometry::correct(br);
+        // And check again to see if the ring is now valid.
+        if (!boost::geometry::is_valid(br, failure)) {
+            std::cerr << "Invalid ring: #" << ring.getRingID()
+                      << ", shapeID: #"    << ring.getShapeID()
+                      << ", vertices: "    << vertexCount 
+                      << ", boost error code: " << failure << std::endl;
+        }
+    }
+    return br;  // The boost_ring version of the given ring.
+}
+
+// Determine if ring intersects.
+bool
+Ring::intersects(const Ring& ring) const {
+    // Use boost::geometry to test for intersections. 
+    const boost_ring this_ring  = toBoostRing(*this);
+    const boost_ring other_ring = toBoostRing(ring);
+    const bool check = boost::geometry::intersects(this_ring, other_ring);
+    return check;  // true if rings intersect
+}
+
+Ring
+Ring::intersection(const Ring& ring, const Ring::Kind kind, const int ringID,
+                   const int shapeID, const double population,
+                   const std::vector<Ring::Info> infoList,
+                   const std::string& status, const bool subtraction) const {
+    // Alias namespace to keep namespaces short in this method.
+    namespace bg = boost::geometry;    
+
+    // Use boost::geometry to compute the intersection polygon.
+    const boost_ring this_ring  = toBoostRing(*this);
+    const boost_ring other_ring = toBoostRing(ring);
+    // The output of intersection in theory is a set of polygons. But
+    // we expect only one.
+    std::vector<boost_ring> resultPolys;
+    bg::intersection(this_ring, other_ring, resultPolys);
+
+    // The intersection can sometimes result in more than 1 polygon
+    // due to edge cases of overlapping lines.  In this situation, we
+    // use the polygon with the largest area.
+    size_t polyToUse = 0;  // Assume first one by default.
+    if (resultPolys.size() != 1) {
+        std::cerr << "For ring# " << ring.getRingID() << ", shapeID: #"
+                  << ring.getShapeID() << ", got " << resultPolys.size()
+                  << " intersections.\n";
+        // Find polygon with largest area.
+        double maxArea = bg::area(resultPolys.at(polyToUse));
+        // Check each sub-intersection polygon.
+        for (size_t i = 0; (i < resultPolys.size()); i++) {
+            const double polyArea = bg::area(resultPolys.at(i));
+            std::cerr << "\tSub-poly area: " << polyArea << std::endl;
+            if (polyArea > maxArea) {
+                // Found a larger polygon. Use that one.
+                maxArea  = polyArea;
+                polyToUse = i;
+            }
+        }
+        std::cerr << "Using intersection polygon #" << polyToUse << std::endl;
+    }
+
+    // Use only the first polygon or the polygon with largest area.
+    boost_ring inter_poly = resultPolys.at(polyToUse);  
+
+    // Now we need to convert the intersected boost_ring into our
+    // conventional ring.  For this we need a vector of x & y coords
+    // which we create below.
+    std::vector<double> xCoords, yCoords;
+    for (const boost_point& pt : inter_poly) {
+        xCoords.push_back(pt.x());
+        yCoords.push_back(pt.y());
+    }
+
+    // Now, create the intersection ring with all the necessary
+    // attributes setup.
+    Ring interRing(ringID, shapeID, kind, xCoords.size(), xCoords.data(),
+                   yCoords.data(), infoList);
+    // Setup a couple of other attributes
+    interRing.setPopulation(population);
+    interRing.setSubtractionFlag(subtraction);
+    interRing.status = status;
+
+    // Finally return the newly created intersection ring.
+    return interRing;
+}
+
+void
+Ring::correctWithBoost() {
+    // Alias namespace to keep namespaces short in this method.
+    namespace bg = boost::geometry;      
+    // First convert to boost ring without correcting checks.
+    const boost_ring br = toBoostRing(*this);
+    // If this ring is already valid, then there is nothing further to
+    // be done.
+    if (bg::is_valid(br)) {
+        return;  // already valid. Nothing further to be done.
+    }
+    // So the ring is currently not valid. Try to correct the issue
+    const boost_ring br_corr = toBoostRing(*this, true);
+    // If the correction successful, then update the verticies.
+    if (!bg::equals(br, br_corr)) {
+        // Looks like some corrections happened. Let's update our
+        // verticies.
+        int vertIdx = 0;
+        for (const boost_point& pt : br_corr) {
+            xCoords[vertIdx] = pt.x();
+            yCoords[vertIdx] = pt.y();
+            vertIdx++;
+        }
+    }
+    // Log a message to let the user know this ring has been corrected
+    std::cerr << "Corrected ring #" << ringID << ", shape #" << shapeID
+              << std::endl;
+}
+
+// This method first removes duplicate points in the ring (that make
+// it concave instead of being convex) and then corrects rings with
+// boost.
+void
+Ring::correctRing() {
+    // Use an unordered map to disambiguate points
+    std::set<Point> duplicates;
+    // Keep adding points the map while checking for duplicates along
+    // the way. We start from index 1 because the ring should have the
+    // same 0th and last vertex.
+    for (int i = 0; (i < vertexCount - 1); i++) {
+        Point pt = getVertex(i);
+        // Check if we have already encountered this point.
+        if (duplicates.find(pt) != duplicates.end()) {
+            // This point is a duplicate. This needs to be
+            // fixed. Let's fix it by taking the average of
+            // previous-and-next points.
+            const int prevIdx = (vertexCount + i - 1) % vertexCount;
+            ASSERT((prevIdx >= 0) && (prevIdx < vertexCount));
+            const int nextIdx = (vertexCount + i + 1) % vertexCount;
+            ASSERT((nextIdx >= 0) && (nextIdx < vertexCount));
+            // Use the 3 points to compute averages
+            const Point prevPt = getVertex(prevIdx);
+            const Point nextPt = getVertex(nextIdx);
+            // Compute the new x & y coordinates as averages
+            double avgX = (prevPt.first  + nextPt.first ) / 2;
+            double avgY = (prevPt.second + nextPt.second) / 2;
+            // Check and increase the value if the change is pretty small.
+            if ((std::abs(avgX - pt.first) < 1e-5) ||
+                (std::abs(avgY - pt.second) < 1e-5)) {
+                // Magnify the smaller of the 2 differences.
+                const double diffX = avgX - pt.first, diffY = avgY - pt.second;
+                if (std::abs(diffX) < std::abs(diffY)) {
+                    avgX += (diffX * 100);  // Magnify the differences
+                } else {
+                    avgY += (diffY * 100);  // Magnify the differences
+                }
+            }
+            // Update the coordinates for the point
+            xCoords[i] = avgX;
+            yCoords[i] = avgY;
+            // Print the corrections for validation
+            std::cout << "Ring #"  << ringID << ": changed point #" << i
+                      << " ("      <<  pt.first << ", "   << pt.second
+                      << ") to (" << avgX   << ", " << avgY << ")\n";
+            // Update point for insertion below
+            const Point oldPt = pt;
+            pt = getVertex(i);
+            ASSERT( pt != oldPt  );
+            ASSERT( pt != prevPt );
+            ASSERT( pt != nextPt );
+        }
+        // Add the point to the set of vertices.
+        duplicates.insert(pt);
+    }
+
+    // Now correct order of vertices (if needed) with correctWithBoost
+    correctWithBoost();
 }
 
 #endif
