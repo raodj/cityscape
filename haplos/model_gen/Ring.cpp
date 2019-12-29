@@ -355,9 +355,12 @@ Ring::printXFig(XFigHelper& xfig, const int figSize, const int xClip,
         xfig.startPolygon(getVertexCount(), BLACK, fillColor, layer,
                           (isSubtraction() ? 41 : fillStyle));
     } else if ((getKind() == Ring::POPULATION_RING) ||
-               (getKind() == Ring::BUILDING_RING)) {
-        // Start polygon
-        xfig.startPolygon(getVertexCount(), fillColor, fillColor, layer + 2,
+               (getKind() == Ring::BUILDING_RING)   ||
+               (getKind() == Ring::PUMA_RING)) {
+        // Start polygon with rings of different kinds on different layers
+        // to ease viewing them separately in xfig program.
+        const int polyLyr = layer + 2 + getKind();
+        xfig.startPolygon(getVertexCount(), fillColor, fillColor, polyLyr,
                           SOLID_FILL);
     } else {
         // This ring is an ARC so draw it as a series of lines instead.
@@ -571,13 +574,15 @@ Ring::intersection(const Ring& ring, const Ring::Kind kind, const int ringID,
     // we expect only one.
     std::vector<boost_ring> resultPolys;
     bg::intersection(this_ring, other_ring, resultPolys);
-
+    if (resultPolys.empty()) {
+        return Ring();
+    }
     // The intersection can sometimes result in more than 1 polygon
     // due to edge cases of overlapping lines.  In this situation, we
     // use the polygon with the largest area.
     size_t polyToUse = 0;  // Assume first one by default.
-    if (resultPolys.size() != 1) {
-        std::cerr << "For ring# " << ring.getRingID() << ", shapeID: #"
+    if (resultPolys.size() > 1) {
+        std::cout << "For ring# " << ring.getRingID() << ", shapeID: #"
                   << ring.getShapeID() << ", got " << resultPolys.size()
                   << " intersections.\n";
         // Find polygon with largest area.
@@ -585,14 +590,14 @@ Ring::intersection(const Ring& ring, const Ring::Kind kind, const int ringID,
         // Check each sub-intersection polygon.
         for (size_t i = 0; (i < resultPolys.size()); i++) {
             const double polyArea = bg::area(resultPolys.at(i));
-            std::cerr << "\tSub-poly area: " << polyArea << std::endl;
+            std::cout << "\tSub-poly area: " << polyArea << std::endl;
             if (polyArea > maxArea) {
                 // Found a larger polygon. Use that one.
                 maxArea  = polyArea;
                 polyToUse = i;
             }
         }
-        std::cerr << "Using intersection polygon #" << polyToUse << std::endl;
+        std::cout << "Using intersection polygon #" << polyToUse << std::endl;
     }
 
     // Use only the first polygon or the polygon with largest area.
@@ -645,7 +650,7 @@ Ring::correctWithBoost() {
         }
     }
     // Log a message to let the user know this ring has been corrected
-    std::cerr << "Corrected ring #" << ringID << ", shape #" << shapeID
+    std::cout << "Corrected ring #" << ringID << ", shape #" << shapeID
               << std::endl;
 }
 

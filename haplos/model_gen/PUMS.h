@@ -127,12 +127,16 @@ public:
         \param[in] minX An optional minimum longitude coordinate below
         with PUMA shapes can be ignored.
 
+        \param[in] communities An optional shape file containing rings
+        that provide finer boundaries on the regions to be included.
+        
         \return This method returns zero on success. On errors it
         returns a non-zero error code.
     */
     int loadPUMA(const std::string& pumaShpPath, const std::string& pumaDbfPath,
                  const double minX = -180, const double minY = -90,
-                 const double maxX = +180, const double maxY = +90);
+                 const double maxX = +180, const double maxY = +90,
+                 const ShapeFile& communities = {});
 
     /** Top-level method to distribute households from PUMS data to
         the bulidings generated from OSM data.
@@ -215,6 +219,18 @@ public:
     */
     int findPUMAIndex(const Point& vertex, const int startPumaIndex = 0) const;
 
+    /** Finds the index of the PUMA ring for the given pumaID.
+
+        This method searches the list of PUMA rings to find the ID of
+        the puma ring for the given index.
+
+        \param[in] pumaID The puma area ID to search for.
+
+        \return The index of the puma ring corresponding to the given
+        ID. If the given ID is not found, then this method returns -1.
+     */
+    int findPUMAIndex(const int pumaID) const;
+
     /** Helper method to dump PUMA areas along with a given set of
         rings.  This method is typically used for troubleshooting
         purposes.
@@ -229,6 +245,26 @@ public:
                   const std::string& xfigPath = "puma.fig",
                   const int scale = 1638400) const;
 
+    /** Obtain the full list of PUMA rings.
+
+        \return The full list of PUMA rings.
+    */
+    const std::vector<Ring> getPUMArings() const {
+        return puma.getRings();
+    }
+    
+    /** Returns the ring corresponding to the given PUMA ID.
+
+        \param[in] index The index of the ring in the list of PUMA
+        rings to be returned by this method.
+
+        \return The ring corresponding to the given PUMA area.  If the
+        specified index is not valid, then this method throws an exception.
+    */
+    const Ring& getPUMARing(const int index) const {
+        return puma.getRing(index);
+    }
+    
 protected:
     /** Internal helper method to load PUMS household data data from
         a given data file. 
@@ -304,6 +340,10 @@ protected:
 
         \param[in] pumaID The ID of the PUMA area for which the PUMS
         data is to be distributed.
+
+        \param[in] popFrac The fraction of the households to be
+        assigned.  This fraction is for parts that overlap. If a shape
+        fully overlaps, then this value should be 1.0.
         
         \param[in,out] buildings The list of buildings from the OSM
         data to which the PUMS population is to be distributed.
@@ -311,9 +351,28 @@ protected:
         \param[in,out] households The households whose population is
         to be distributed to various buildings.
     */
-    void distributePopulation(int pumaID,
+    void distributePopulation(int pumaID, const double popFrac,
                               std::vector<Building>& buildings,
                               HouseholdMap& households) const;
+
+    /** Internal helper method to compute finer overlapping areas
+        between a given PUMA ring and community shapes.
+
+        \param[in] pumaRng The PUMA ring with which finer overlaps is
+        to be computed.
+
+        \param[in] communities The shape file containing the list of
+        community shapes being used.  If the shape file does not
+        contain any rings then this method immediately returns the
+        defOverlap value.
+
+        \param[in] defOverlap A default overlap value to be returned
+        by this method if the communities shape file does not contain
+        any rings.
+    */
+    double getIntersectionOverlap(const Ring& pumaRng,
+                                  const ShapeFile& communities,
+                                  const double defOverlap) const;
 
     /** \typedef BldIdxSqFt std::pair<int, int>
 
@@ -364,6 +423,47 @@ protected:
     */
     std::vector<HouIdSize>
     getSortedHouList(const int pumaID, const HouseholdMap& households) const;
+
+private:
+    /** Internal helper method to assign single family households to
+        the smaller buildings.
+        
+        \param[in,out] buildings The list of buildings from the OSM
+        data to which the PUMS population is to be distributed.
+
+        \param[in,out] households The households whose population is
+        to be distributed to various buildings.
+
+        \param[in] bldSzList The list of buildings in a given PUMA
+        region sorted based on the square footage of the
+        building. Families are assigned in the order of the building
+        sizes.
+
+        \param[in] houSzList The list of households sorted based on
+        the building size estimate for the household.
+
+        \param[in] popFrac The fraction of the households to be
+        assigned.  This fraction is for parts that overlap. If a shape
+        fully overlaps, then this value should be 1.0.
+        
+        \param[in,out] hldIdx The starting index in the houSzList from
+        where the households are to be assigned.  This value is
+        updated to reflect the households that have been assigned.
+
+        \param[in,out] bldIdx the starting building index from where
+        the households are to be assigned.  This value is updated to
+        reflect the people who have been assigned.
+
+        \param[in] pumaID The PUMA area ID for including in error
+        messages.
+    */
+    void assignSingleFamilies(std::vector<Building>& buildings,
+                              HouseholdMap& households,
+                              const std::vector<BldIdxSqFt> bldSzList,
+                              const std::vector<HouIdSize> houSzList,
+                              const double popFrac,
+                              size_t& hldIdx, size_t& bldIdx,
+                              const int pumaID) const;
     
 private:
     /** The set of PUMA rings that are being used to generate

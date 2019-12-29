@@ -113,20 +113,20 @@ protected:
     */
     int loadShapeFile();
 
-    /** Load the PUMS and PUMA CSV, SHP, and DBF files from the input
+    /** Load the PUMS PUMA CSV, SHP, and DBF files from the input
         files specified by the user as command-line arguments.  The
         data is actually loaded by the PUMA class.  This is a helper
         method in this class that calls the method in the PUMA class.
 
-        This method is typically invoked after the building generation
-        process.  The community-shape data and its bounds are used to
-        constrain the region of PUMA/PUMS data loaded.
+        This method is called before the building generation process
+        commences.  The community-shape data and its bounds are used
+        to constrain the region of PUMA/PUMS data loaded.
 
         \return This method returns zero if the command-line arguments
         were successfully processed.  On errors it returns a non-zero
         error code.        
     */
-    int loadPUMS();
+    int loadPUMA();
     
     /** Internal method to load population from GIS data and create
         rectangular population rings.
@@ -721,6 +721,11 @@ private:
         */
         int drawPopRingID = -1;
 
+        /** The PUMA ring whose detailed buildings are to be dumped in
+            the XFIG file.
+        */
+        int drawPUMAid = -1;
+        
         /** Path to an optional text file with information on
             adjustments to the generated model.  This includes
             buildings to be ignored and remapping of population to

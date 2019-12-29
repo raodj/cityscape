@@ -69,11 +69,11 @@ public:
 
         \param[in] pumaID The PUMA area code for this household.
 
-        \param[in] pwgtp The weight for this PUMA record that
+        \param[in] wgtp The weight for this PUMA record that
         indicates the number of occurrences of this type of household.
     */
     PUMSHousehold(const std::string houseInfo, int bedRooms, int bldCode,
-                  int pumaID, int pwgtp);
+                  int pumaID, int wgtp);
 
     /** The destructor.
 
@@ -99,8 +99,14 @@ public:
         number of bedrooms.  The return value is useful for sorting
         the households based on the estimated building size to which
         they are to be assigned.
+
+        \return An estimated size of the building that this household
+        lives in.
     */
-    size_t getSize() const { return bld * 100 + bedRooms; }
+    size_t getSize() const {
+        // return BldRecode[bld] * 100 + bedRooms;
+        return bld * 100 + bedRooms;
+    }
 
     /**
        This method can be used to obtain the average number of
@@ -120,8 +126,65 @@ public:
            07     |         15      | 10-19 apartments in building
            08     |         35      | 20-49 apartments in building
            09     |         50      | > 50 apartments in building
+
+
+        \return An estimate of number of apartments that may be
+        present in a buliding in which this household lives.
+
+        \see getBld
     */       
     int getAptInBld() const;
+
+    /** Obtain the number of families or households of this type.
+
+        \return The number of familities of households of this
+        type. This value is the same as the WGTP value in the CSV.
+    */
+    int getCount() const { return wgtp; }
+
+    /** Get information about the i'th household of this type.
+
+        This method is a convenience method that can be used to obtain
+        information about the i'th household of this type.  Household
+        information is a string containing information about the
+        people in the household. People information is a set of CSV
+        values as specified by the user. Each person information is
+        separated by semicolons.
+
+        \parma[in] i The household for which information is to be
+        returned.  0 <= i < getCount()
+
+        \param[out] pepCount The number of people in the household
+        information returned by this method.
+        
+        \return A string representing the household information. Note
+        in fractional cases, the returned string can be an empty
+        string and such returns should be ignored.
+     */
+    std::string getInfo(const int i, int& pepCount) const;
+
+    /** Obtain the type of building set for this household.
+
+        \return The BLD code as set in the PUMS data for this
+        household.
+
+        \see getAptInBld
+    */
+    int getBld() const { return bld; }
+
+    /** Get the number of bedrooms that this household lives in.
+
+        \return The number of bedrooms for this household. This value
+        is essentially the same as the BDSP column in the PUMS data,
+        but the minimum value is set to 1.
+    */
+    int getRooms() const { return std::max(1, bedRooms); }
+
+    /** Obtain the PUMA ID associated with this household.
+
+        \return The PUMA ID associated with this household.
+    */
+    int getPUMAId() const { return pumaID; }
     
 private:
     /** A string representing the data for this household to be
@@ -156,13 +219,21 @@ private:
         is set when the household is create and is never changed. */
     int pumaID;
     
-    /** The number of households of this type still remaining. This
+    /** The number of households of this type to be generated. This
         value is initialized to the WGTP value from the PUMS household
-        data. Each time a household of this type is created, this
-        value is decremented by 1 to track the remaining households to
-        be created.
+        data.
     */
-    int remaining;
+    int wgtp;
+
+    /**
+       This vector is used to recode the BLD type when estimating
+       building sizes.  This is needed because detached single-family
+       homes that have a code of 2 should have higher size than
+       attached families.  This vector is used to keep the getSize()
+       method in this class fast.  In summary, the recode enables
+       better assignment of buildings to households.
+    */
+    static const std::vector<int> BldRecode;
 };
 
 #endif

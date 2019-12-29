@@ -246,6 +246,8 @@ ShapeFile::genXFig(const std::string& outFileName, const int mapSize,
         if (ring.getKind() == Ring::POPULATION_RING) {
             // Convert popRatio to color code from 32
             fillColor = 32 + logScalePop(ring.population, minPop, maxPop);
+        } else if (ring.getKind() == Ring::PUMA_RING) {
+            fillColor = YELLOW;
         }
         ring.printXFig(fig, mapSize, xClip, yClip, drawCentroid, fillColor);
     }
