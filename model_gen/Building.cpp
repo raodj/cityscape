@@ -128,4 +128,10 @@ Building::read(std::istream& is) {
        >> wayLon >> pumaID;
 }
 
+void
+Building::addHousehold(const std::string& info, const int people) {
+    population += people;
+    households.push_back(info);
+}
+
 #endif

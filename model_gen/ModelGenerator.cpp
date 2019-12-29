@@ -42,6 +42,7 @@
 #include <unordered_set>
 #include "Utilities.h"
 #include "ModelGenerator.h"
+#include "Options.h"
 
 int
 ModelGenerator::run(int argc, char *argv[]) {
@@ -64,7 +65,7 @@ ModelGenerator::run(int argc, char *argv[]) {
     }
 
     // Load the PUMS and PUMA data specified by the user.
-    if ((error = loadPUMS()) != 0) {
+    if ((error = loadPUMA()) != 0) {
         return error;  // Error loading PUMS/PUMA data
     }
 
@@ -84,6 +85,9 @@ ModelGenerator::run(int argc, char *argv[]) {
     loadModelAdjustments();
     createBuildings();
     createHomesOnEmptyWays();
+
+    // Draw buildings with PUMA area for cross reference
+    generateFig();
 
     if (!cmdLineArgs.pumsHousingPath.empty()) {
         pums.distributePopulation(buildings, cmdLineArgs.pumsHousingPath,
@@ -201,6 +205,8 @@ ModelGenerator::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.osmFilePath, ArgParser::STRING},
         {"--pop-ring", "ID of population ring to draw buildings",
          &cmdLineArgs.drawPopRingID, ArgParser::INTEGER},
+        {"--puma-ring", "ID of PUMA ring to draw buildings",
+         &cmdLineArgs.drawPUMAid, ArgParser::INTEGER},        
         {"--adjust-model", "Path to file with adjustments to generated model",
          &cmdLineArgs.adjustmentsFilePath, ArgParser::STRING},
         {"--out-model", "Path to file to write generated model",
@@ -312,7 +318,8 @@ void
 ModelGenerator::generateFig() {
     // Write the shape information to an XFig file if specified.
     if (!cmdLineArgs.xfigFilePath.empty()) {
-        if (cmdLineArgs.drawPopRingID == -1) {
+        if ((cmdLineArgs.drawPopRingID == -1) &&
+            (cmdLineArgs.drawPUMAid == -1)) {
             // The community shapes and population grids are to be drawn
             shpFile.genXFig(cmdLineArgs.xfigFilePath,
                             cmdLineArgs.figScale, true);
@@ -320,11 +327,34 @@ ModelGenerator::generateFig() {
             // Draw detailed buildings for the given population ring.
             // For this first we create a custom shapeFile and then
             // dump the data.
-            buildingShapes.addRing(popRings.at(cmdLineArgs.drawPopRingID));
-            // Add ways for this population ring as arcs
-            for (int wayID : popAreaWayIDs.at(cmdLineArgs.drawPopRingID)) {
-                const Way& way = wayMap.at(wayID);
-                buildingShapes.addRing(getRing(way));
+            if (cmdLineArgs.drawPopRingID != -1) {
+                buildingShapes.addRing(popRings.at(cmdLineArgs.drawPopRingID));
+                // Add ways for this population ring as arcs
+                for (int wayID : popAreaWayIDs.at(cmdLineArgs.drawPopRingID)) {
+                    const Way& way = wayMap.at(wayID);
+                    buildingShapes.addRing(getRing(way));
+                }
+            }
+            // Add population rings and ways for a PUMA area ID, if specified
+            if (cmdLineArgs.drawPUMAid != -1) {
+                const int ringIdx = pums.findPUMAIndex(cmdLineArgs.drawPUMAid);
+                ASSERT(ringIdx != -1);
+                const Ring& pumaRing = pums.getPUMARing(ringIdx);
+                for (size_t rng = 0; (rng < popRings.size()); rng++) {
+                    const Ring& popRing = popRings[rng];
+                    if (pumaRing.intersects(popRing)) {
+                        // Add more details for this population ring.
+                        buildingShapes.addRing(popRing);
+                        for (int wayID : popAreaWayIDs.at(rng)) {
+                            const Way& way = wayMap.at(wayID);
+                            buildingShapes.addRing(getRing(way));
+                        }
+                    }
+                }
+                // Also add the community shapes and population grids
+                buildingShapes.addRings(shpFile.getRings());
+                // Add PUMA area shapes
+                buildingShapes.addRings(pums.getPUMArings());
             }
             // Generate XFIG
             buildingShapes.genXFig(cmdLineArgs.xfigFilePath,
@@ -755,9 +785,6 @@ ModelGenerator::createBuildings() {
     }  // parallel
     
     std::cout << "Created " << buildings.size() << " buildings.\n";
-
-    // Draw buildings with PUMA area for cross reference
-    pums.drawPUMA(buildingShapes);
 }
 
 // NOTE: This method is called from multiple threads.
@@ -772,20 +799,23 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
     const std::string KeyAttr = "k", ValAttr = "v", IDAttr = "id";
     // Lots of homes in Chicago have just 'building=yes'
     // attributes. For example, see home at "1250 South State Street"
-    const std::string HomeTypes = "yes house residential apartments "
-        "condominium bungalow detached semidetached_house";
+    const std::string HomeTypes =
+        Options::get("HomeBuildingTypes", "yes house residential apartments "
+                     "condominium bungalow detached semidetached_house");
     // The following types of buildings are ignored and not
     // included.
-    const std::string IgnoreTypes = "industrial terrace garages warehouse "
-        "shed root construction manufacture";
+    const std::string IgnoreTypes =
+        Options::get("IgnoreBuildingTypes", "industrial terrace garages "
+                     "warehouse shed root construction manufacture");
     // Set out variables to default initial values.
     vertexLat.clear();
     vertexLon.clear();
     nodes.clear();
     type   = "n/a";
-    levels = -1;
+    levels = -1;  // Overridden below
+
     // Local flags updated in the for-loop below.
-    bool isBuilding = false, isAmenity = false;
+    bool isBuilding = false, isAmenity = false, hasAddress = false;
     // Iterate over all the child nodes.
     for (rapidxml::xml_node<> *child = node->first_node();
          (child != nullptr); child = child->next_sibling()) {
@@ -821,6 +851,8 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
                 // the tourism attribute to ensure that they are not
                 // tagged as residential buildings.
                 isAmenity = true;
+            } else if (kv.first.find("addr:") == 0) {
+                hasAddress = true;
             }
         }
     }
@@ -838,6 +870,26 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
     }
     // Check to see if this is a valid residential building.
     isHome = (HomeTypes.find(type) != std::string::npos) && !isAmenity;
+    // For apartments we override unspecified levels with a default
+    // number of levels specified in the configuration file.
+    const std::string AptTypes = Options::get("ApartmentBuildingTypes",
+                                              "apartments");
+    if (isHome && (levels == -1) &&
+        (AptTypes.find(type) != std::string::npos)) {
+        // The levels for apartments was not specified. Use a
+        // user-specified default.
+        levels = Options::get("DefaultApartmentLevels", 2);
+    }
+    // Ignore buildings that do not have a street address in them.    
+    if (isHome && !hasAddress) {
+        // This is a building but does not have an address. This could
+        // be a garage building. See houses around "4255 West 82nd
+        // Place, Chicago"
+        // (https://www.openstreetmap.org/way/162245731) for examples
+        // where this check is needed.
+        isHome = false;
+    }
+
     // Found a valid building
     return true;
 }
@@ -878,8 +930,8 @@ ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
     Ring ring(bldID, -1, Ring::BUILDING_RING, vertexLat.size(),
               &vertexLon[0], &vertexLat[0], {
                   {0, "bldID", std::to_string(bldID)}});
-    if (ring.getArea() < 1.8e-05) {
-        // Area is less than 500 sq.foot. Ignore this building.  With
+    if (ring.getArea() < 9e-06) {
+        // Area is less than 250 sq.foot. Ignore this building.  With
         // 500 sq.foot threshold we generate 602393 building for
         // Chicago metro area.  With 100 sq. foot threshold we
         // generate 806201 buildings with many tiny buildings.
@@ -913,7 +965,8 @@ ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
         bld.pumaID = pums.getPUMAId(pumaIndex);
     }
     // Add building to be drawn based on command-line args
-    if ((cmdLineArgs.drawPopRingID == popRingID) || (bld.pumaID == -1)) {
+    if ((cmdLineArgs.drawPopRingID == popRingID) ||
+        (cmdLineArgs.drawPUMAid == bld.pumaID)) {
         // Entrance to draw in the figure.
         const Point entrance = findEntrance(ring, nodes);
         const std::vector<double> xCoords = {entrance.first,  bld.wayLon};
@@ -1031,8 +1084,19 @@ ModelGenerator::loadModelAdjustments() {
             }
             // Clear out population in the source ring.
             popRings[srcRingIdx].setPopulation(0);
+        } else if (cmd == "option") {
+            // Parse out options in the form "name value"
+            const size_t spcPos = line.find(' ');
+            if (spcPos != std::string::npos) {
+                const std::string name  = line.substr(0, spcPos);
+                const std::string value = trim(line.substr(spcPos + 1));
+                Options::add(name, value);
+            } else {
+                std::cerr << "Invalid option line " << line << std::endl;
+            }
         }
     }
+    
     // Finally print some informational message
     std::cout << "Loaded " << bldIgnoreIDs.size() << " buildings "
               << "to be ignored.\n";
@@ -1334,7 +1398,7 @@ ModelGenerator::createHomesOnEmptyWays(std::ostream& os) {
     os << "Out of " << wayMap.size() << " ways, "  << emptyWayCount
        << " residential ways had 0 buildings and " << genHomeCount
        << " total homes have been generated.\n";
-}
+}    
 
 int
 ModelGenerator::generateHomes(Way& way, const double spacing,
@@ -1433,7 +1497,8 @@ ModelGenerator::generateHomes(const Node& currNode, const Node& nextNode,
     buildings.push_back(home1);
     buildings.push_back(home2);
     // Draw the building if this ring is to be drawn
-    if (cmdLineArgs.drawPopRingID == popRingID) {
+    if ((cmdLineArgs.drawPopRingID == popRingID) ||
+        (cmdLineArgs.drawPUMAid == pumaID)) {
         drawBuilding(home1);
         drawBuilding(home2);
     }
@@ -1464,7 +1529,7 @@ ModelGenerator::drawBuilding(const Building& bld) {
 }
 
 int
-ModelGenerator::loadPUMS() {
+ModelGenerator::loadPUMA() {
     // Load the PUMS data only if the user has specified a valid path
     // for us to load data from.
     if (cmdLineArgs.pumsHousingPath.empty() ||
@@ -1476,12 +1541,19 @@ ModelGenerator::loadPUMS() {
     // of PUMS and PUMA data that we are going to hold.
     double minX, minY, maxX, maxY;
     shpFile.getBounds(minX, minY, maxX, maxY);
-    std::cout << "Loading PUMS data...\n";
-    // Have the PUMS class load the necessary PUMS and PUMA data
+    std::cout << "Loading PUMA data...\n";
+    // Have the PUMS class load the necessary PUMA rings that fit
+    // within our bounds.  We give a small wiggle room around to
+    // accommodate edge cases.
     const int error = 
         pums.loadPUMA(cmdLineArgs.pumaShpPath, cmdLineArgs.pumaDbfPath,
-                      minX - 0.2, minY - 0.2, maxX + 0.2, maxY + 0.2);
-    std::cout << "Done loading PUMS data.\n";
+                      minX - 0.01, minY - 0.01, maxX + 0.01, maxY + 0.01,
+                      shpFile);
+    std::cout << "Done loading PUMA data.\n";
+    // Draw the PUMA rings for cross reference
+    if (error == 0) {
+        pums.drawPUMA(shpFile);
+    }
     // Return the error (if any) back to the caller
     return error;
 }

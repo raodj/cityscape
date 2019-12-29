@@ -146,7 +146,34 @@ public:
         where the information for this building is to be read.
     */
     void read(std::istream& is);
-    
+
+    /** Add information about an household living in this building.
+
+        \param[in] info The information about the household to be
+        added.  The household information consists of a set of people
+        information separated by semicolons.
+
+        \param[in] people The number of people in the household being
+        added.
+        
+        \see PUMSHousehold::getInfo()
+    */
+    void addHousehold(const std::string& info, const int people);
+
+    /** Obtain the total square footage of all levels in this building.
+
+        \note The minimum number of levels is set to 1 in this method
+        to handle scenarios where level for a building is not
+        explicitly set.  This ensures that bulidings never get a
+        negative or zero area.
+        
+        \return The total square footage of all the levels in this
+        building.
+    */
+    inline double getArea() const {
+        return sqFootage * std::max(1, levels);
+    }
+
     /** The unique id set for this node.  This is the same id value
         that was in the OSM XML file */
     unsigned int id = 0;
@@ -208,12 +235,12 @@ public:
     */
     int pumaID;
 
-    /** This vector contains the ages of the different people assigned
-        to this building.  Note that for large buildings the number of
-        people can be a bit long. Currently, there isn't a clear
-        delineation between families.
-     */
-    std::vector<unsigned char> ages;
+    /** This vector contains PUMS information of the different
+        households assigned to this building.  Note that for large
+        buildings the number of households can be large. Each
+        household consists of a set of semicolon separated people.
+    */
+    std::vector<std::string> households;
 };
 
 #endif

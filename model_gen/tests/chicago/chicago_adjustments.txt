@@ -1,3 +1,30 @@
+# This file contains parameter values and settings that are used to 
+# configure the operations of model generator for the city of Chicago.
+# These options are needed primarily to compensate for some missing 
+# information in open street maps data. These options enable the user to
+# improve the overall quality of the generated model.  These options would
+# have to change based on the general properties of the city being analyzed
+
+#----------------------[ Options settings ]----------------------------------
+
+# The attributes for building:type in OSM that indicate the building is
+# a residential buliding
+option HomeBuildingTypes yes house residential apartments condominium bungalow detached semidetached_house
+
+# The types of bulidings that are considered apartment bulidings (that is
+# mutiple families can live in this building.
+option ApartmentBuildingTypes apartments
+
+# The attributes of building:type in OSM that are to be ignored when 
+# generating the model.
+option IgnoreBuildingTypes industrial terrace garages warehouse shed root construction manufacture
+
+# Options to set default/preferred values 
+option DefaultApartmentLevels 5
+
+#---------------------[ End options settings ]-------------------------------
+
+
 # This file contains building IDs to be ignored because they are not
 # tagged correctly in OSM and they significantly throw off area
 # calculations.

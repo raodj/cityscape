@@ -32,6 +32,7 @@
 //---------------------------------------------------------------------------
 
 #include <algorithm>
+#include <numeric>
 #include <stdexcept>
 #include "PUMS.h"
 #include "Utilities.h"
@@ -39,7 +40,7 @@
 int
 PUMS::loadPUMA(const std::string& pumaShpPath, const std::string& pumaDbfPath,
                const double minX, const double minY, const double maxX,
-               const double maxY) {
+               const double maxY, const ShapeFile& communities) {
     // First load the PUMA shape file and retain only the rings that
     // we care about.
     ShapeFile fullPuma;
@@ -67,17 +68,21 @@ PUMS::loadPUMA(const std::string& pumaShpPath, const std::string& pumaDbfPath,
         const int pumaID        = std::stoi(label);
         // Handle 2 cases -- 1: fully contained, 2: partial intersection
         if (bounds.contains(ring)) {
-            // The PUMA ring is fully contained in our bounds!
-            Ring copy = Ring(ring);   // Create copy to update attributes
-            copy.setPopulation(1.0);  // Include full population
-            // Setup the ID for the ring to the be same as the PUMA id.
-            copy.setLabel(label);
-            copy.setRingID(pumaID);
-            copy.setKind(Ring::PUMA_RING);
-#pragma omp critical (PUMA_CS)
-            puma.addRing(copy);  // Add copy to our common PUMA list.
+            // Get finer area with intersecting shapes
+            const double fracPop = getIntersectionOverlap(ring, communities, 1);
+            if (fracPop > 0) {
+                // The PUMA ring is fully contained in our bounds!
+                Ring copy = Ring(ring);   // Create copy to update attributes
+                copy.setPopulation(fracPop);  // Include part of population
+                // Setup the ID for the ring to the be same as the PUMA id.
+                copy.setLabel(label);
+                copy.setRingID(pumaID);
+                copy.setKind(Ring::PUMA_RING);
+#pragma omp critical(PUMA_CS)
+                puma.addRing(copy);  // Add copy to our common PUMA list.
+            }
         } else if (bounds.intersects(ring)) {
-            // The PUMA ring is not fully contained by only intersects
+            // The PUMA ring is not fully contained but only intersects
             // with our bounds. So create a partial intersecting
             // polygon for this PUMA ring.
             Ring inter =
@@ -89,17 +94,43 @@ PUMS::loadPUMA(const std::string& pumaShpPath, const std::string& pumaDbfPath,
             // Set the pouplation of the intersection ring to be the
             // appropriate fraction of the population of the
             // intersection area.
-            const double fracPop = inter.getArea() / ring.getArea();
+            const double fracPop =
+                getIntersectionOverlap(ring, communities,
+                                       inter.getArea() / ring.getArea());
             inter.setPopulation(fracPop);
-#pragma omp critical (PUMA_CS)            
-            puma.addRing(inter);   // Add intersection to our common PUMA list.
+            if (fracPop > 0) {
+#pragma omp critical(PUMA_CS)            
+                puma.addRing(inter);   // Add intersection to our PUMA list.
+            }
         }
-    }
+    }  // parallel for
 
     // Draw a figure to show the PUMA regions we are working with.
     puma.genXFig("puma.fig", 1638400);
 
     return 0;  // Everything went well
+}
+
+// Internal method to compute finer overlapping areas between a given
+// PUMA ring and community shapes (if available)
+double
+PUMS::getIntersectionOverlap(const Ring& pumaRng, const ShapeFile& communities,
+                             const double defOverlap) const {
+    if (communities.getRingCount() == 0) {
+        return defOverlap;  // No community rings. Use default overlap
+    }
+    // Check overlap with community shapes and accummulate percentage
+    // overlaps between multiple communities.
+    const double pumaArea = pumaRng.getArea();
+    double overlap = 0;
+    for (const Ring& commRng : communities.getRings()) {
+        if (pumaRng.intersects(commRng)) {
+            // Here there is full/partial intersection.
+            Ring inter = pumaRng.intersection(commRng);
+            overlap += inter.getArea() / pumaArea;
+        }
+    }
+    return std::min(1.0, overlap);
 }
 
 std::string
@@ -133,6 +164,16 @@ PUMS::findPUMAIndex(const Point& vertex, const int startPumaIndex) const {
     return -1;
 }
 
+int
+PUMS::findPUMAIndex(const int pumaID) const {
+    for (int i = 0; (i < puma.getRingCount()); i++) {
+        if (puma.getRing(i).getRingID() == pumaID) {
+            return i;  // found the pumaID
+        }
+    }
+    return -1;  // PUMA ID not found.
+}
+
 // Generates xfig file with pums data along with extra rings (if any)
 void
 PUMS::drawPUMA(const ShapeFile& extraRings, const std::string& xfigPath,
@@ -164,14 +205,15 @@ PUMS::distributePopulation(std::vector<Building>& buildings,
     const int MaxRings = puma.getRingCount();
     for (int i = 0; (i < MaxRings); i++) {
         const Ring& ring = puma.getRing(i);
-        distributePopulation(ring.getRingID(), buildings, households);
+        distributePopulation(ring.getRingID(), ring.getPopulation(),
+                             buildings, households);
     }
 }
 
 // Load household information into the map
 HouseholdMap
 PUMS::loadHousehold(const std::string& pumsHouPath,
-                    const ArgParser::StringList& pumsColNames) const{
+                    const ArgParser::StringList& pumsColNames) const {
     std::ifstream houCsv(pumsHouPath);  // Open the CSV file.
     if (!houCsv.good()) {
         std::string msg = "Error reading PUMS household file " + pumsHouPath;
@@ -207,11 +249,12 @@ PUMS::loadHousehold(const std::string& pumsHouPath,
         // Extract some of the specific household information.
         const std::string houseInfo = toCSV(colIndexs, info);
         // Create the household record to be stored only for homes and
-        // not group quarters.
-        if (info[TYPE] == "1") {
+        // not group quarters. Note: We ignore mobile homes.
+        if ((info[TYPE] == "1") && (info[BLD] != "01")) {
             PUMSHousehold ph(houseInfo, std::stoi(info[BDSP]),
                              std::stoi(info[BLD]), std::stoi(info[PUMA]),
                              std::stoi(info[WGTP]));
+            ASSERT(ph.getBld() != 1);
             // Add the household record to our map
             households[info[SERIALNO]] = ph;
         }
@@ -233,7 +276,7 @@ PUMS::toColIndex(const std::string& titles,
             std::distance(titleCols.begin(),
                           std::find(titleCols.begin(), titleCols.end(),
                                     colName));
-        if ((index >= 0) && (index < (int) titleCols.size())) {
+        if ((index >= 0) && (index < static_cast<int>(titleCols.size()))) {
             colIndexs.push_back(index);
         } else {
             std::cerr << "Warning: Unable to find PUMS col with name "
@@ -321,7 +364,7 @@ PUMS::getSortedBldList(const int pumaID,
     // First collect information we need into a vector
     for (size_t i = 0; (i < buildings.size()); i++) {
         if ((buildings[i].isHome) && (buildings[i].pumaID == pumaID)) {
-            bldSizeList.push_back({i, buildings[i].sqFootage});
+            bldSizeList.push_back({i, buildings[i].getArea()});
         }
     }
     // Sort on sq. footage to place biggest homes last
@@ -342,8 +385,10 @@ PUMS::getSortedHouList(const int pumaID, const HouseholdMap& households) const {
     // sorted on BLD and then on number of bedrooms.  Here we use a
     // pair with housing ID and (BLD * 100 + BDSP) for sorting.    
     for (const HouseholdMap::value_type& entry : households) {
-        const size_t houSz = entry.second.getSize();
-        houIdSzList.push_back(HouIdSize(entry.first, houSz));
+        if (entry.second.getPUMAId() == pumaID) {
+            const size_t houSz = entry.second.getSize();
+            houIdSzList.push_back(HouIdSize(entry.first, houSz));
+        }
     }
     // Sort of household size
     std::sort(houIdSzList.begin(), houIdSzList.end(),
@@ -355,18 +400,127 @@ PUMS::getSortedHouList(const int pumaID, const HouseholdMap& households) const {
 
 // NOTE: This method is called from multiple threads.
 void
-PUMS::distributePopulation(int pumaID,
+PUMS::distributePopulation(int pumaID, const double popFrac,
                            std::vector<Building>& buildings,
                            HouseholdMap& households) const {
     // Get the list of buildings in the area, sorted on sq.foot
-    const std::vector<BldIdxSqFt> bldSzLize =
+    const std::vector<BldIdxSqFt> bldSzList =
         getSortedBldList(pumaID, buildings);
     // Get the list of households in the area, sorted on house size
     const std::vector<HouIdSize> houSzList =
         getSortedHouList(pumaID, households);
+    // Ignore PUMA areas that have no buildings or households
+    if (bldSzList.empty() || houSzList.empty()) {
+        std::cout << "PUMA ID " << pumaID << " ignored. (buildings = "
+                  << bldSzList.size() << ", households = "
+                  << houSzList.size() << std::endl;
+        return;
+    }
     // Now we have 2 lists of sorted buildings and households. For
-    // each building assign households.
-    
+    // each household start assigning buildings.
+    size_t currBld = 0, currHld = 0;  // building & household counter
+    // First assign households that live in single-family homes.
+    assignSingleFamilies(buildings, households, bldSzList, houSzList,
+                         popFrac, currHld, currBld, pumaID);
+
+    // Next we assign apartment buildings that hold multiple
+    // households.  Households are assigned based on number of
+    // bedrooms for each family and square footage of buildings.  For
+    // this we need to estimate average sq.ft-per-bedroom.
+    const int totRooms =
+        std::accumulate(houSzList.begin() + currHld, houSzList.end(), 0,
+                        [&households](const int& rooms, const HouIdSize& ent) {
+                            const PUMSHousehold& hld = households.at(ent.first);
+                            return rooms + (hld.getRooms() * hld.getCount());
+                        });
+    const int totSqFt =
+        std::accumulate(bldSzList.begin() + currBld, bldSzList.end(), 0,
+                        [&buildings](const int& sqFt, const BldIdxSqFt& bld) {
+                            return sqFt + buildings.at(bld.first).getArea();
+                        });
+    int sqFtPerRm = totSqFt / totRooms;
+    std::cout << "For puma " << pumaID << ", average sq.ft/room = "
+              << sqFtPerRm << " from " << (bldSzList.size() - currBld)
+              << " buildings and " << (houSzList.size() - currHld)
+              << " household rows, totalRooms = " << totRooms << std::endl;
 }
+
+#pragma GCC push_options
+#pragma GCC optimize ("-O0")
+
+// Method to assign single-family households to buildings
+void
+PUMS::assignSingleFamilies(std::vector<Building>& buildings,
+                           HouseholdMap& households,
+                           const std::vector<BldIdxSqFt> bldSzList,
+                           const std::vector<HouIdSize> houSzList,
+                           const double popFrac,
+                           size_t& hldIdx, size_t& bldIdx,
+                           const int pumaID) const {
+    // A shortcut to number of buildings to streamline code below
+    const size_t BldCount = bldSzList.size();
+    const size_t startBldIdx = bldIdx;  // just to print stats below
+    const size_t startHldIdx = hldIdx;  // just to print stats below
+    // Keep assigning single-family households
+    int hldsAssigned = 0;
+    while ((hldIdx < houSzList.size()) && (bldIdx < bldSzList.size())) {
+        // Get the household information that we are working with
+        const PUMSHousehold& hld = households.at(houSzList.at(hldIdx).first);
+        // If the household we are working with is no longer a single
+        // family household then break out of this loop
+        if (hld.getBld() > 3) {
+            break;  // End of single family homes.
+        }
+        
+        // Each household has 1-or-more occurrences associated with
+        // them. So we need to assign with multiple families.
+        const int hldCount = hld.getCount() * popFrac;
+        for (int i = 0; ((i < hldCount) && (bldIdx < BldCount)); i++) {
+            // Get the i'th household information
+            int pepCount;
+            const std::string hldInfo = hld.getInfo(i, pepCount);
+            if (hldInfo.empty()) {
+                continue;  // In some fractional cases we skip an household
+            }
+            // Have a helper method assign the i'th familiy to thie
+            // current building.
+            const size_t bldMainIdx = bldSzList.at(bldIdx).first;
+            ASSERT((bldMainIdx >= 0) && (bldMainIdx < buildings.size()));
+            Building& bld = buildings[bldMainIdx];
+            // Basic checks for compatibility between buildings and
+            // households.
+            const int sqFtPerRoom = bld.getArea() / hld.getRooms();
+            if ((sqFtPerRoom < 100) || (sqFtPerRoom > 2000)) {
+                std::cout << "Building "     << bld.id << " is bad size for "
+                          << "household "    << houSzList.at(hldIdx).first
+                          << ", bld type "   << hld.getBld()
+                          << ", rooms = "    << hld.getRooms()
+                          << ", sqFt/room = " << sqFtPerRoom
+                          << " (puma ID = "   << pumaID << ")\n";
+            }
+            // Add household to building
+            bld.addHousehold(hldInfo, pepCount);
+            hldsAssigned++;
+            // Onto the next building.
+            bldIdx++;
+        }
+        // If we run out of the buildings we break out of this loop
+        if (bldIdx >= BldCount) {
+            std::cout << "Ran out of buildings for PUMA id " << pumaID
+                      << ". Bld count = " << BldCount << ".\n";
+            break;  // Break of out the outer range-based for-loop.
+        }
+        // On to the next single-family household (if any)
+        hldIdx++;
+    }
+    // Print stats on number of households assigned
+    std::cout << "For PUMA " << pumaID << ": Assigned " << hldsAssigned
+              << " single-family households to "  << (bldIdx - startBldIdx)
+              << " buildings out of " << BldCount << " buildings using "
+              << (hldIdx - startHldIdx) << " of " << houSzList.size()
+              << " PUMS records.\n";
+}
+
+#pragma GCC pop_options
 
 #endif

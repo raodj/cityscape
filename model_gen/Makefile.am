@@ -60,6 +60,8 @@ modelgen_SOURCES = \
 	XFigHelper.h \
 	PopulationRingGenerator.h \
 	PopulationRingGenerator.cpp \
+	Options.h \
+	Options.cpp \
 	ModelGenerator.h \
 	ModelGenerator.cpp \
 	Building.h \
