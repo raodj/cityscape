@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Cab Simulation Viewer</title>
+    <link rel="stylesheet" href="CabSimMap.css" type="text/css">        
+    <link rel="stylesheet" href="libs/ol.css" type="text/css">    
+    <script src="libs/ol.js" type="text/javascript"></script>
+    <script src="libs/FileSaver.min.js"></script>
+
+    <script src="Taxi.js" type="text/javascript"></script>        
+    <script src="TaxiLayer.js" type="text/javascript"></script>        
+    <script src="CabSimMap.js"></script>
+  </head>
+  <body>
+    <header>
+      <div style="padding:10px;">
+        <span class="my-title">CabSim Viewer</span>
+        <input type="file" name="logFile" id="logFile" multiple></input>
+      </div>
+    </header>
+    <div id="cabSimMap" class="map my-map"></div>
+    <!-- Kick off the operations of the java script viewer -->
+    <script>
+      // Create the main map display object.
+      const cabMap = new CabSimMap('cabSimMap', false);
+      // Setup handler to process log file when user selects one
+      document.getElementById('logFile').onchange = function() {
+          // Everything looks ok. Process and log logs.
+          cabMap.processLogAndIndex(this.files);
+      }
+    </script>
+  </body>
+</html>

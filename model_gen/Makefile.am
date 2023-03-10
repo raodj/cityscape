@@ -29,9 +29,9 @@
 #
 #---------------------------------------------------------------------------
 
-bin_PROGRAMS = modelgen pathfinder
+bin_PROGRAMS = modelgen pathfinder drawshapes riskanalyzer accidents_collator
 
-AM_CXXFLAGS = -g -Wall -std=c++11 -DDEVELOPER_ASSERTIONS -fopenmp
+AM_CXXFLAGS = -g -Wall -std=c++14 -DDEVELOPER_ASSERTIONS -fopenmp
 
 modelgen_LDADD =
 modelgen_DEPENDENCIES=
@@ -41,7 +41,6 @@ AM_CXXFLAGS += -I$(GDAL)/include -DHAVE_GDAL  -I /usr/include/gdal
 modelgen_LDFLAGS = -L$(GDAL)/lib
 modelgen_LDADD += -lgdal
 endif
-
 
 modelgen_SOURCES = \
 	shapefil.h \
@@ -107,13 +106,118 @@ pathfinder_SOURCES = \
 	OSMData.h \
 	OSMData.cpp \
 	PathFinderTester.h \
-	PathFinderTester.cpp
+	PathFinderTester.cpp \
+	ShpBldCatalog.h \
+	ShpBldCatalog.cpp
 
 pathfinder_LDADD =
 
 if GDAL
 pathfinder_LDFLAGS = -L$(GDAL)/lib
 pathfinder_LDADD += -lgdal
+endif
+
+drawshapes_SOURCES = \
+	shapefil.h \
+	shpopen.c \
+	shptree.c \
+	dbfopen.c \
+	ArgParser.cpp \
+	ArgParser.h \
+	Utilities.cpp \
+	Utilities.h \
+	XFigHelper.cpp \
+	XFigHelper.h \
+	Ring.h \
+	Ring.cpp \
+	PopRing.h \
+	PopRing.cpp \
+	ShapeFile.h \
+	ShapeFile.cpp \
+	DrawShapes.h\
+	DrawShapes.cpp
+
+drawshapes_LDADD =
+
+if GDAL
+drawshapes_LDFLAGS = -L$(GDAL)/lib
+drawshapes_LDADD += -lgdal
+endif
+
+riskanalyzer_SOURCES = \
+	shapefil.h \
+	shpopen.c \
+	shptree.c \
+	dbfopen.c \
+	ArgParser.cpp \
+	ArgParser.h \
+	Utilities.cpp \
+	Utilities.h \
+	XFigHelper.cpp \
+	XFigHelper.h \
+	Ring.h \
+	Ring.cpp \
+	Building.h \
+	Building.cpp \
+	Node.h \
+	Node.cpp \
+	Way.h \
+	Way.cpp \
+	PopRing.h \
+	PopRing.cpp \
+	PathSegment.h \
+	PathSegment.cpp \
+	PathFinder.h \
+	PathFinder.cpp \
+	IndexedPriorityQueue.h \
+	ShapeFile.h \
+	ShapeFile.cpp \
+	OSMData.h \
+	OSMData.cpp \
+	ShpBldCatalog.h \
+	ShpBldCatalog.cpp \
+	WayRiskAnalyzer.h \
+	WayRiskAnalyzer.cpp \
+	Stopwatch.h \
+	Stopwatch.cpp
+
+riskanalyzer_LDADD =
+if GDAL
+riskanalyzer_LDFLAGS = -L$(GDAL)/lib
+riskanalyzer_LDADD  += -lgdal
+endif
+
+accidents_collator_SOURCES = \
+	ArgParser.cpp \
+	ArgParser.h \
+	Utilities.cpp \
+	Utilities.h \
+	XFigHelper.cpp \
+	XFigHelper.h \
+	Ring.h \
+	Ring.cpp \
+	Building.h \
+	Building.cpp \
+	Node.h \
+	Node.cpp \
+	Way.h \
+	Way.cpp \
+	PopRing.h \
+	PopRing.cpp \
+	PathSegment.h \
+	PathSegment.cpp \
+	PathFinder.h \
+	OSMData.h \
+	OSMData.cpp \
+	ShapeFile.h \
+	ShapeFile.cpp \
+	AccidentsCollator.h \
+	AccidentsCollator.cpp
+
+accidents_collator_LDADD =
+if GDAL
+accidents_collator_LDFLAGS = -L$(GDAL)/lib
+accidents_collator_LDADD  += -lgdal
 endif
 
 # End of Makefile.am

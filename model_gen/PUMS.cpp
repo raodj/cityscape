@@ -106,7 +106,7 @@ PUMS::loadPUMA(const std::string& pumaShpPath, const std::string& pumaDbfPath,
     }  // parallel for
 
     // Draw a figure to show the PUMA regions we are working with.
-    puma.genXFig("puma.fig", 1638400);
+    // puma.genXFig("puma.fig", 1638400);
 
     return 0;  // Everything went well
 }

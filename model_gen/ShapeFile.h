@@ -65,12 +65,21 @@ public:
                     const bool correctConvex = false);
     inline int getRingCount() const { return rings.size(); }
     const Ring& getRing(const int index) const;
+    int findRing(const std::string& info,
+                 const std::vector<std::string>& colNames) const;
     bool hasExclusion(const int shapeID) const;
 
     void genXFig(const std::string& outFileName,
                  const int mapSize = 4096, const bool drawCentroid = false,
-                 const std::vector<std::string>& colNames = {}) const;
-
+                 const std::vector<std::string>& colNames = {},
+                 const bool drawScaleBar = true) const;
+    
+    void genXFig(XFigHelper& fig, int& xClip, int& yClip,
+                 const int mapSize = 4096, const bool drawCentroid = false,
+                 const std::vector<std::string>& colNames = {},
+                 const bool drawScaleBar = true,
+                 const std::string& outFileName = "") const;
+    
     void getBounds(double& minX, double& minY, double& maxX,
                    double& maxY) const;
     void getClipBounds(const int mapSize, int& xClip, int& yClip) const;

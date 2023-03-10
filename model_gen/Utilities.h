@@ -35,6 +35,7 @@
 #include <cmath>
 #include <string>
 #include <vector>
+#include <numeric>
 
 /** \def ASSERT(x)
 
@@ -408,5 +409,55 @@ constexpr double TO_RADIANS(const double angle) {
    \endcode
 */
 #define UNUSED(x) (void) x
+
+/**
+ * Helper method to get a substring for a given column from a given
+ * string based on a delimiter.
+ *
+ * \param[in] line The line from where a given column is to be extracting.
+ *
+ * \param[in] column The zero-based column number to be returned.
+ *
+ * \param[in] delim The delimiter character to be used. Default is tab.
+ *
+ * \return The substring for the given coliumn. If the column is
+ * invalid then the return value is empty string.
+ */
+std::string getColumn(const std::string& line, const int column,
+                      const char delim = '\t');
+
+/**
+ * Helper method to get a substring for a given column from a given
+ * string based on a delimiter.
+ *
+ * \param[in] line The line from where a given column is to be extracting.
+ *
+ * \param[in] column The zero-based column number to be returned.
+ *
+ * \param[in] defVal The default value to be returned if the column
+ * value is an empty string.
+ *
+ * \param[in] delim The delimiter character to be used. Default is
+ * tab.
+ *
+ * \return The substring for the given coliumn. If the column is
+ * invalid then the return value is empty string.
+ */
+std::string getColumn(const std::string& line, const int column,
+                      const std::string& defVal, const char delim = '\t');
+
+/**
+ * Helper method to return the sum of values in a given vector.  This
+ * method is templatized on the data type contained by the vector.
+ *
+ * \param[in] vec The vector whose entries are to be added together.
+ *
+ * \param[in] init Initial value for the sum.
+ *
+ * \return The sum of all values in the vector.
+ */
+template<typename T> T sum(const std::vector<T>& vec, const T init = 0) {
+    return std::accumulate(vec.begin(), vec.end(), init);
+}
 
 #endif

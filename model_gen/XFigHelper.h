@@ -197,7 +197,8 @@ public:
 
     void drawScaleBar(const int x, const int y,
                       const int width, const int height, 
-                      std::vector<double> tics, const int layer = 60);
+                      std::vector<double> tics, const int fontSize = 12,
+                      const int layer = 60);
 
 protected:
     /** Method to dump initial XFig header to the file.

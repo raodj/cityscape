@@ -51,6 +51,21 @@ ShapeFile::getRing(const int index) const {
     return rings.at(index);
 }
 
+int
+ShapeFile::findRing(const std::string& info,
+                    const std::vector<std::string>& colNames) const {
+    for (int i = 0; (i < getRingCount()); i++) {
+        const Ring& ring = getRing(i);
+        for (const std::string& col : colNames) {
+            if (ring.getInfo(col) == info) {
+                return i;
+            }
+        }
+    }
+    // return an invalid ring index.
+    return -1;
+}
+
 void
 ShapeFile::setLabels(const std::vector<std::string>& colNames) {
     for (Ring& ring : rings) {
@@ -219,18 +234,14 @@ ShapeFile::logScalePop(const double pop, const double minPop,
 }
 
 void
-ShapeFile::genXFig(const std::string& outFileName, const int mapSize,
-                   const bool drawCentroid,
-                   const std::vector<std::string>& colNames) const {
-    XFigHelper fig;
-    if (!fig.setOutput(outFileName, true)) {
-        std::cerr << "Error writing xfig file " << outFileName << std::endl;
-        return;
-    }
-    // Get the clip bounds to align the top-left corner at zero
-    int xClip = 0, yClip = 0;
+ShapeFile::genXFig(XFigHelper& fig, int& xClip, int& yClip,
+                   const int mapSize, const bool drawCentroid,
+                   const std::vector<std::string>& colNames,
+                   const bool drawScaleBar,
+                   const std::string& outFileName) const {
     getClipBounds(mapSize, xClip, yClip);
-    std::cout << "xClip = " << xClip << ", yClip = " << yClip << std::endl;
+    std::cout << "ShapeFile::genXFig(" << outFileName << "): xClip = "
+              << xClip << ", yClip = " << yClip << std::endl;
     // Get the min and max population in the rings to enable color coding.
     double minPop = INT_MAX, maxPop = 0;
     for (const Ring& ring : rings) {
@@ -240,16 +251,29 @@ ShapeFile::genXFig(const std::string& outFileName, const int mapSize,
             maxPop = std::max(maxPop, ring.population);
         }
     }
+    std::cout << "ShapeFile::genXFig: minPop = " << minPop
+              << ", maxPop = " << maxPop << std::endl;
+    if (minPop == 0) {
+        minPop = 1;
+        std::cout << "ShapeFile::genXFig(" << outFileName << "): minPop "
+                  << "adjusted to 1 for log-scale coloring.\n";
+    }
     // Dump the XFig for each ring in the shapefile
     for (const Ring& ring : rings) {
         int fillColor = -1;
         if (ring.getKind() == Ring::POPULATION_RING) {
             // Convert popRatio to color code from 32
             fillColor = 32 + logScalePop(ring.population, minPop, maxPop);
+            // std::cout << "ShapeFile::genXFig(" << outFileName << "): color = "
+            //          << fillColor << ", pop = "
+            //          << ring.population << std::endl;
         } else if (ring.getKind() == Ring::PUMA_RING) {
             fillColor = YELLOW;
         }
         ring.printXFig(fig, mapSize, xClip, yClip, drawCentroid, fillColor);
+    }
+    if (!drawScaleBar) {
+        return;  // We are not drawing the scale bar.
     }
     // Generate a scale for the population if the minPop and maxPop are valid
     if (minPop < maxPop) {
@@ -266,9 +290,31 @@ ShapeFile::genXFig(const std::string& outFileName, const int mapSize,
         }
         tics.push_back(100);
         tics.push_back(maxPop);
-        fig.drawScaleBar(XFIG_SCALE, XFIG_SCALE, 500 * XFIG_SCALE,
-                         30 * XFIG_SCALE, tics);
+        // The scale bar is drawn proportional to the size of the map
+        // so that it is readable/visible.  For this we have to play a
+        // bit with scale to make this visually appealing.
+        const int scale = 136500;
+        fig.drawScaleBar(XFIG_SCALE, mapSize / XFIG_SCALE / 3.3,
+                         100 * mapSize / scale * XFIG_SCALE,  // width
+                         5 * mapSize / scale * XFIG_SCALE, tics,
+                         3 * mapSize / scale);
     }
+}
+
+void
+ShapeFile::genXFig(const std::string& outFileName, const int mapSize,
+                   const bool drawCentroid,
+                   const std::vector<std::string>& colNames,
+                   const bool drawScaleBar) const {
+    XFigHelper fig;
+    if (!fig.setOutput(outFileName, true)) {
+        std::cerr << "Error writing xfig file " << outFileName << std::endl;
+        return;
+    }
+    // Get the clip bounds to align the top-left corner at zero
+    int xClip = 0, yClip = 0;
+    genXFig(fig, xClip, yClip, mapSize, drawCentroid, colNames, drawScaleBar,
+            outFileName);
 }
 
 void

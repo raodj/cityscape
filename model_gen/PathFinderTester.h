@@ -32,6 +32,7 @@
 //---------------------------------------------------------------------------
 
 #include "ArgParser.h"
+#include "ShpBldCatalog.h"
 
 class PathFinderTester {
 public:
@@ -139,11 +140,23 @@ protected:
             for logging purposes.
         */
         std::string fullCmdLine;
+
+        /** The path to the shape file from where census tract shapes
+            are to be loaded. This is specified via --shape */
+        std::string shapeFilePath;
+
+        /** The path to the DBF file that contains metadata for the
+            census tract shapes. This is specified via the --dbf
+            command-line option */
+        std::string dbfFilePath;
         
     } cmdLineArgs;
 
     /** A simple class that encapsulates the OSM data */
     OSMData osmData;
+
+    /** The catalog that eases finding buildings in a given shape */
+    ShpBldCatalog shpBldCatalog;
     
 private: 
     /** Internal helper method to parse command-line arguments and

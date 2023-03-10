@@ -1,4 +1,4 @@
- #ifndef POPULATION_RING_GENERATOR_CPP
+#ifndef POPULATION_RING_GENERATOR_CPP
 #define POPULATION_RING_GENERATOR_CPP
 
 //---------------------------------------------------------------------------

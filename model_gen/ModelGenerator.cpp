@@ -269,6 +269,8 @@ ModelGenerator::createPopulationRings() {
     PopulationRingGenerator prg;
     popRings = prg.createRings(shpFile, cmdLineArgs.popGisFilePath,
                                minPop, maxPop);
+    ASSERT(!popRings.empty());
+    ASSERT(popRings.front().getKind() == Ring::POPULATION_RING);
     shpFile.addRings(popRings);
     std::cout << "min pop = " << minPop << ", maxPop = " << maxPop
                   << std::endl;
@@ -478,6 +480,7 @@ ModelGenerator::extractWays() {
     // A constant string to ease checks below.
     const std::string ElementWay = "way", IDAttr  = "id";
     const std::string ElementNd  = "nd",  RefAttr = "ref", TagElement = "tag";
+    const std::string Name = "name", Name1 = "name_1";
     // Track number of ways that have speed set.
     int knowSpeedCount = 0;
     // Find our root node
@@ -515,7 +518,7 @@ ModelGenerator::extractWays() {
             // nodes) in the way.
             bool hasLoop = false;
             std::unordered_set<long> nodeSet;
-            std::string wayType;
+            std::string wayType, wayName;
             for (rapidxml::xml_node<> *child = node->first_node();
                  (child != nullptr); child = child->next_sibling()) {
                 if (child->name() == ElementNd) {
@@ -561,6 +564,9 @@ ModelGenerator::extractWays() {
                             std::cerr << "Unknown oneway value "
                                       << kv.second << " found.\n";
                         }
+                    } else if (kv.first == Name || kv.first == Name1) {
+                        // This is a name associated with the way.
+                        wayName += (wayName.empty() ? "" : "|") + kv.second;
                     }
                 }
             }
@@ -568,6 +574,7 @@ ModelGenerator::extractWays() {
             if (!isBuilding && isHighway && (wayEntry.nodeList.size() > 1)) {
                 ASSERT(node->first_attribute()->name() == IDAttr);
                 wayEntry.id = std::stol(node->first_attribute()->value());
+                wayEntry.name = wayName;
                 // If the oneWay flag is set to -1, then we need to
                 // reverse the direction of the nodes to get the
                 // direction corrected.

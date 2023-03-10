@@ -232,4 +232,21 @@ split(std::string str, const std::string& delimiter) {
     return wordList;
 }
 
+std::string getColumn(const std::string& line, const int column,
+                      const char delim) {
+    int currCol = 0, startPos = 0;
+    while (currCol < column) {
+        startPos = line.find(delim, startPos + 1);
+        currCol++;
+    }
+    int nextTab = line.find(delim, startPos + 1);
+    return line.substr(startPos + 1, nextTab - startPos - 1);
+}
+
+std::string getColumn(const std::string& line,   const int column,
+                      const std::string& defVal, const char delim) {
+    const std::string val = getColumn(line, column, delim);
+    return (val.empty() ? defVal : val);
+}
+
 #endif

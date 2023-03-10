@@ -88,6 +88,17 @@ public:
     /** The number of buildings with entrances on this way */
     int numBuildings = 0;
 
+    /** The name for the way extracted from the OSM file */
+    std::string name;
+
+    /**
+     * Returns the kind of this way as a string for printing
+     *
+     * \return The kind of this way as a string representation for
+     * logging/printing.
+     */
+    std::string getKindStr() const;
+    
     /** Write this Way to a given output stream.
 
         This is a helper method that is used to write the information

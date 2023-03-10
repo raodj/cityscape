@@ -32,6 +32,11 @@
 //---------------------------------------------------------------------------
 
 #include "OSMData.h"
+#include "SimConfig.h"
+#include "Area.h"
+
+// Forward declaration for classes included in source
+class XFigHelper;
 
 class CabSim {
 public:
@@ -87,12 +92,33 @@ protected:
     */
     bool processArgs(int argc, char** argv);
 
+    void distributeTaxis(const int numTaxis) const;
+    void initTaxiLocations(int ring, const int numTaxis, 
+                           const OSMData::InfoVec& bldInfo,
+                           XFigHelper& xfig, bool firstBld = false,
+                           const int mapSize = 1638400) const;
+    void createAgents(const int numTaxis);
+
+    /**
+       Convenience method to setup time duration for simulation and
+       initiate the actual simulation.  This is a convenience method
+       that is primarily used to streamline the top-level run() method
+       in this class.
+    */
+    void simulate();
+
 private:
     /** The generated model containing rings, building, street, and
         population data to be used for simulation.  The data is loaded
         from the processArgs method.
     */
     OSMData model;
+
+    /** The simulation-time configuration information loaded from a
+        user-specified configuration file.  The configuration is
+        loaded from the processArgs method.
+    */
+    SimConfig simConfig;
 };
 
 #endif
