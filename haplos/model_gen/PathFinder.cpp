@@ -52,7 +52,7 @@ PathFinder::findBestPath(long startBldId, long endBldId, bool useTime,
     // Get the building information for quick reference.
     const Building begBld = osmData.buildingMap.at(startBldId);
     const Building endBld = osmData.buildingMap.at(endBldId);    
-    // Setup the beginning and destination path segmenets for further
+    // Setup the beginning and destination path segments for further
     // processing.
     PathSegment begSeg{begBld.wayID, StartNodeID, begBld.id,    0,
             segIdCounter++, -1};
@@ -73,7 +73,7 @@ PathFinder::findBestPath(const PathSegment& src, const PathSegment& dest,
     if ((minDist != -1) && (getDistance(src, dest) > 0.01)) {
         setLimits(src, dest, minDist, scale);
     }
-    // Setup flag to indicat eis distance or time is to be used
+    // Setup flag to indicate if distance or time is to be used
     distIsTime = useTime;
     // Add the source and destination to the paths being explored.
     exploring.push(src);

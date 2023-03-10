@@ -216,7 +216,8 @@ XFigHelper::addComment(const std::string& comment) {
 void
 XFigHelper::drawScaleBar(const int x, const int y,
                          const int width, const int height, 
-                         std::vector<double> tics, const int layer) {
+                         std::vector<double> tics, const int fontSize,
+                         const int layer) {
     const int diffX = width / 100;
     size_t currTic = 0;
     for (int currX = x, i = 0; (i < 101); i++, currX += diffX) {
@@ -228,7 +229,7 @@ XFigHelper::drawScaleBar(const int x, const int y,
             drawLine(ticX, y, ticX, y + height + XFIG_SCALE * 3,
                      BLACK, layer);
             drawText(std::to_string(value), currX, y + height + XFIG_SCALE * 4,
-                     CENTER_JUSTIFIED, 14, 12, BLACK, layer - 2);
+                     CENTER_JUSTIFIED, 14, fontSize, BLACK, layer - 2);
             currTic += 2;
         }
     }

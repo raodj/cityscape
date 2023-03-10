@@ -5,7 +5,12 @@
 #
 # NOTE: Script makes implicit assumptions about column order in CSV file
 #
-csv="bld_info_data.csv"
+scriptDir="$( dirname "${BASH_SOURCE[0]}" )"
+csv="${scriptDir}/bld_info_data_2022.csv"
+
+# The above csv file is generated via:
+# echo "ID, population, totSqFootage, buildings, Sqft/person, info" > "bld_info_data_2022.csv"
+# grep "area_numbe" bld_info_2023.txt >> bld_info_data_2022.csv
 
 # Print generic header
 echo -e "#AreaID\tName\tTotPop\tTotSqFt\tTotBlds"

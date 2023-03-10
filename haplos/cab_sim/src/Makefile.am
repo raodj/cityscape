@@ -68,6 +68,10 @@ cab_sim_SOURCES = \
 	XFigHelper.cpp \
 	PopGrid.h \
 	PopGrid.cpp \
+	SimConfig.h \
+	SimConfig.cpp \
+	Area.h \
+	Area.cpp \
 	CabSim.h \
 	CabSim.cpp \
 	main.cpp

@@ -71,6 +71,10 @@ PathFinderTester::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.printNoWays, ArgParser::BOOLEAN},
         {"--stdio", "Use standard I/O streams to read building IDs",
          &cmdLineArgs.useStdIO, ArgParser::BOOLEAN},
+        {"--shape", "The input shapefile to be drawn",
+         &cmdLineArgs.shapeFilePath, ArgParser::STRING },
+        {"--dbf", "The associated DBF file to be used for metadata",
+         &cmdLineArgs.dbfFilePath, ArgParser::STRING },
         {"", "", NULL, ArgParser::INVALID}
     };
     // Process the command-line arguments.
@@ -254,6 +258,13 @@ PathFinderTester::run(int argc, char *argv[]) {
     if (cmdLineArgs.printNoWays) {
         printDisconnectedWays();
     }
+    // Load census tracts and assign buildings to census tracts, if a
+    // census shape file is given.
+    if (!cmdLineArgs.shapeFilePath.empty()) {
+        shpBldCatalog.buildCatalog(cmdLineArgs.shapeFilePath,
+                                   cmdLineArgs.dbfFilePath, osmData);
+    }
+    
     // Run random tests or one given test.
     if (cmdLineArgs.rndTestCount == -1) {
         // If user asks to use standard I/O then do that.

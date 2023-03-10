@@ -49,7 +49,7 @@ class OSMData;
 /** A class to encapsulate a matrix-like grid of population rings to
     ease taxi location management.
 
-    <p>This class is used to maintain a matrix-like organizatio of
+    <p>This class is used to maintain a matrix-like organization of
     population rings that logically manage all the taxis in the
     simulation.  This grid essentially enables quickly locating
     adjacent population rings to hand-off taxis as they logically move
@@ -104,7 +104,8 @@ public:
         compute the dimensions of the matrix.</li>
 
         <li>It then copies the data for each entry from the model into
-        this each grid entry.</li>
+        each grid entry.  It updates the grid-coordinates for each
+        ring in the ringGridCoords vector</li>
 
         <li>Finally, it computes a generic adjacency list to ease
         dispatching events to adjacent grid entries during
@@ -116,7 +117,24 @@ public:
         are used to create and populate the grid.
     */
     void setupGrid(const std::vector<PopRing>& rings);
-    
+
+    /** Obtain The minimum top-left coordinate (useful for generating
+        xfig output).
+
+        \note The value returned by this method is meaningful only
+        after the setupGrid method has successfully completed.
+
+        \return The top-left (or minimum) longitude (in Point::first)
+        and latitude (in Point::second).
+    */
+    Point getMinTopLeft() const { return minTopLeft; }
+
+    /** A vector that maintains the logical position of each ring in
+        the matrix of grids.  Entries are added to this vector when
+        the setupGrid method is invoked.
+    */
+    std::vector<GridCoord> ringGridCoords;
+
 protected:
     /** Populate the adjacent nodes to search, given the logical
         offset from a root node.
@@ -156,7 +174,13 @@ protected:
         should search in for information.
     */
     AdjacentSearchList adjSearchLists;
-    
+
+    /** The minimum top-left longitude (in Point::first) and latitude
+        (in Point::second).  The value in this point is meaningful
+        only after the setupGrid method has successfully completed.
+    */
+    Point minTopLeft;
+
 private:
     /** The default constructor.
 

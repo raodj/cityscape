@@ -1,0 +1,86 @@
+/**
+ *---------------------------------------------------------------------------
+ *
+ * Copyright (c) PC2Lab Development Team
+ * All rights reserved.
+ *
+ * This file is part of free(dom) software -- you can redistribute it
+ * and/or modify it under the terms of the GNU General Public
+ * License (GPL)as published by the Free Software Foundation, either
+ * version 3 (GPL v3), or (at your option) a later version.
+ *
+ * The software is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * Miami University and PC2Lab makes no representations or warranties
+ * about the suitability of the software, either express or implied,
+ * including but not limited to the implied warranties of
+ * merchantability, fitness for a particular purpose, or
+ * non-infringement.  Miami University and PC2Lab is not be liable for
+ * any damages suffered by licensee as a result of using, result of
+ * using, modifying or distributing this software or its derivatives.
+ *
+ *
+ * By using or copying this Software, Licensee agrees to abide by the
+ * intellectual property laws, and all other applicable laws of the
+ * U.S., and the terms of this license.
+ *
+ * Authors: Dhananjai M. Rao       raodm@miamiOH.edu
+ *
+ *---------------------------------------------------------------------------
+ */
+
+/** Remove margin around body to make map fit full area */
+body {
+    margin: 0px;
+}
+
+/** Setup properties for the header at the top of the page. */
+header {
+    padding: 0px;
+    height: 7vh;  /** Fixed height header */
+    background: rgba(0, 60, 136, 0.2);
+    border-bottom: 1px solid rgba(0, 60, 136, 0.3);
+}
+
+/** Make the map occupy the whole display area */
+.my-map {
+    height: 93vh;  /** this is 100 - height of header */
+    width: 100%
+}
+
+/* Move scale line up so that the 2 do not overlap */
+.scale-line2 {
+    margin-bottom: 1.5em;
+}
+
+/* Set the latitudue, longitude display of current mouse position to
+   top-right corner of map */
+.my-mouse-pos {
+    position: absolute;
+    text-align: right;
+    top: 0.5em;
+    right: .5em;
+    background: rgba(0, 60, 136, 0.6);
+    padding: 2px 4px 2px 4px;
+    border-radius: 4px;
+    font-weight: normal;
+    font-size: 12px;
+    font-family: sans-serif;
+}
+
+/* Set the overview map control higher on bottom-left corner of map */
+.my-map-overview {
+    margin-bottom: 3.5em;
+}
+
+/* Make the scale lines a bit darker -- the default was too transparent */
+.map .ol-scale-line {
+    background: rgba(0, 60, 136, 0.5);
+}
+
+.my-title {
+    font-size: xx-large;
+    padding-right: 40px;
+}

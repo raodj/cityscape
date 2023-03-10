@@ -49,7 +49,7 @@ PopGrid::setupGrid(const std::vector<PopRing>& rings) {
     ASSERT(height > 0);
     // Variables to track min & max bounds.  Point::first is longitude
     // and point::second is latitude.
-    Point minTopLeft {rings[0].tlLon, rings[0].tlLat};
+    minTopLeft = Point{rings[0].tlLon, rings[0].tlLat};
     Point maxBotRight{rings[0].brLon, rings[0].brLat};
     // Compute the minimum and maximum coordinates (to eventually
     // determine the overall dimensions of the grid).
@@ -84,6 +84,8 @@ PopGrid::setupGrid(const std::vector<PopRing>& rings) {
         ringGrid[row][col] = pr;
         // Now the entry should be valid.
         ASSERT(ringGrid[row][col].isValid());
+        // Record the row, col coordinates for each grid
+        ringGridCoords.push_back(GridCoord{row, col});
     }
 
     // Now build the adjacency search lists using a helper method.
