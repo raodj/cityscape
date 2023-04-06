@@ -132,16 +132,19 @@ Building::read(std::istream& is) {
 }
 
 void
-Building::writeHouseholds(std::ostream& os, const std::string& delim) const {
-    for (const std::string& hld : households) {
-        os << "hld" << delim << id << delim << hld << '\n';
+Building::writeHouseholds(std::ostream& os, bool writeHeader,
+                          const std::string& delim) const {
+    for (const PUMSHousehold& hld : households) {
+        hld.write(os, writeHeader);
+        writeHeader = false;
     }
 }
 
 void
-Building::addHousehold(const std::string& info, const int people) {
+Building::addHousehold(const PUMSHousehold& hld, const int people,
+                       const std::string& peopleInfo) {
     population += people;
-    households.push_back(info);
+    households.push_back(PUMSHousehold(hld, id, people, peopleInfo));
 }
 
 #endif
