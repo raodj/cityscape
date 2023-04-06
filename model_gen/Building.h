@@ -134,6 +134,21 @@ public:
     */
     void write(std::ostream& os, const bool writeHeader = false,
                const std::string& delim = " ") const;
+
+    /** Write households associated with this building to a given
+        output stream.
+
+        This is a helper method that is used to write the information
+        associated with households to a given output stream.
+
+        \param[out] os The output stream to where the information
+        about this building is to be written.
+        
+        \param[in] delim An optional delimiter between each value
+        associated with this node.
+    */
+    void writeHouseholds(std::ostream& os,
+                         const std::string& delim = " ") const;
     
     /** Load the data for this building from a given input stream.
 

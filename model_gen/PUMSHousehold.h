@@ -47,6 +47,8 @@ using PepWtInfoList = std::vector<PepWtInfo>;
     that is used to pulate the buildings in the generated model.  Each
     household is identified by a unique SERIALNO set for them in the
     PUMS files.
+
+    For column information see: https://www2.census.gov/programs-surveys/acs/tech_docs/pums/data_dict/PUMS_Data_Dictionary_2017-2021.pdf
 */
 class PUMSHousehold {
 public:
@@ -71,9 +73,11 @@ public:
 
         \param[in] wgtp The weight for this PUMA record that
         indicates the number of occurrences of this type of household.
+
+        \param[in] hincp The annual household income for this record.
     */
     PUMSHousehold(const std::string houseInfo, int bedRooms, int bldCode,
-                  int pumaID, int wgtp);
+                  int pumaID, int wgtp, int hincp);
 
     /** The destructor.
 
@@ -225,6 +229,20 @@ private:
     */
     int wgtp;
 
+    /** Househod income. -- see
+        https://www2.census.gov/programs-surveys/acs/tech_docs/pums/data_dict/PUMS_Data_Dictionary_2017-2021.pdf
+        
+        Household income (past 12 months, use ADJINC to adjust HINCP to
+        constant dollars)
+            bbbbbbbb    .N/A (GQ/vacant)
+            0           .No household income
+            -59999      .Loss of $59,999 or more
+            -59998..-1  .Loss of $1 to $59,998
+            1..99999999 .Total household income in dollars
+                         (Components .are rounded)
+    */
+    int hincp;
+    
     /**
        This vector is used to recode the BLD type when estimating
        building sizes.  This is needed because detached single-family

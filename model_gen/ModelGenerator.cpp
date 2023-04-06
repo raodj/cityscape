@@ -1375,12 +1375,25 @@ ModelGenerator::writeModel(const std::string& filePath) {
     for (const auto entry : wayMap) {
         entry.second.write(model, entry.first == firstWayID);
     }
-    // Finally write the buildings in the model
+    // Next write the buildings in the model
     model << "\n# Buildings in model: " << buildings.size() << std::endl;    
     const long firstBldID = buildings.front().id;
     for (const Building& bld : buildings) {
         bld.write(model, bld.id == firstBldID);
-    }    
+    }
+
+    // Finally, write the households in each building.  This header
+    // should be obtained from PUMSHousehold instead.
+    model << "# Hld bldID";
+    bool first = true;
+    for (const std::string& col : cmdLineArgs.pumsHouColNames) {
+        model << (first ? ' ' : ',') << col;
+        first = false;
+    }
+    model << " bedRooms BLDtype pumaID WGTP HINCP peopleInfo\n";
+    for (const Building& bld : buildings) {
+        bld.writeHouseholds(model);
+    }
 }
 
 void
