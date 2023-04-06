@@ -106,7 +106,8 @@ Building::write(std::ostream& os, const bool writeHeader,
            << "attributes"<< delim << "isHome" << delim << "sqFoot"     << delim
            << "topLon"    << delim << "topLat" << delim << "botLon"     << delim
            << "botLat"    << delim << "wayID"  << delim << "wayLat"     << delim
-           << "wayLon"    << delim << "pumaID" << std::endl;
+           << "wayLon"    << delim << "pumaID" << delim << "#households"
+           << std::endl;
     }
     // Write the information for this building.
     os << "bld"      << delim;
@@ -114,18 +115,27 @@ Building::write(std::ostream& os, const bool writeHeader,
        << attributes << delim << isHome << delim << sqFootage  << delim
        << topLon     << delim << topLat << delim << botLon     << delim
        << botLat     << delim << wayID  << delim << wayLat     << delim
-       << wayLon     << delim << pumaID << std::endl;
+       << wayLon     << delim << pumaID << delim << households.size()
+       << std::endl;
 }
 
 void
 Building::read(std::istream& is) {
     // Read information for this building
-    std::string bld;  // string to be read and discarted
+    std::string bld;     // string to be read and discarted
+    size_t hldSize = 0;  // Number of households
     is >> bld;
     is >> id     >> levels >> population >> attributes
        >> std::boolalpha   >> isHome     >> sqFootage
        >> topLon >> topLat >> botLon     >> botLat     >> wayID  >> wayLat
-       >> wayLon >> pumaID;
+       >> wayLon >> pumaID >> hldSize;
+}
+
+void
+Building::writeHouseholds(std::ostream& os, const std::string& delim) const {
+    for (const std::string& hld : households) {
+        os << "hld" << delim << id << delim << hld << '\n';
+    }
 }
 
 void

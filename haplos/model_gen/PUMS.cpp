@@ -227,7 +227,7 @@ PUMS::loadHousehold(const std::string& pumsHouPath,
     const std::vector<int> colIndexs = toColIndex(header, pumsColNames);
     // Validate implicit assumptions on column order below.
     constexpr int SERIALNO = 1, PUMA = 3, WGTP = 8, TYPE = 10,
-        BDSP = 15, BLD = 16;
+        BDSP = 15, BLD = 16, HINCP = 67;
 
     // Double check order of columns just to play it safe if program
     // is compiled in development mode.
@@ -237,7 +237,8 @@ PUMS::loadHousehold(const std::string& pumsHouPath,
            (titleCols[PUMA]  == "PUMA")         &&
            (titleCols[WGTP]  == "WGTP")         &&
            (titleCols[BDSP]  == "BDSP")         &&
-           (titleCols[BLD]   == "BLD"));
+           (titleCols[BLD]   == "BLD")          &&
+           (titleCols[HINCP] == "HINCP"));
 #endif
     
     // Process each line of the input and retain the necessary
@@ -253,7 +254,7 @@ PUMS::loadHousehold(const std::string& pumsHouPath,
         if ((info[TYPE] == "1") && (info[BLD] != "01")) {
             PUMSHousehold ph(houseInfo, std::stoi(info[BDSP]),
                              std::stoi(info[BLD]), std::stoi(info[PUMA]),
-                             std::stoi(info[WGTP]));
+                             std::stoi(info[WGTP]), std::stoi(info[HINCP]));
             ASSERT(ph.getBld() != 1);
             // Add the household record to our map
             households[info[SERIALNO]] = ph;
@@ -398,6 +399,9 @@ PUMS::getSortedHouList(const int pumaID, const HouseholdMap& households) const {
     return houIdSzList;
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("-O0")
+
 // NOTE: This method is called from multiple threads.
 void
 PUMS::distributePopulation(int pumaID, const double popFrac,
@@ -443,10 +447,59 @@ PUMS::distributePopulation(int pumaID, const double popFrac,
               << sqFtPerRm << " from " << (bldSzList.size() - currBld)
               << " buildings and " << (houSzList.size() - currHld)
               << " household rows, totalRooms = " << totRooms << std::endl;
-}
 
-#pragma GCC push_options
-#pragma GCC optimize ("-O0")
+    if ((currBld >= bldSzList.size()) || (currHld >= houSzList.size())) {
+        // No need to do any further processing as we are either out of
+        // buildings or households.
+        return;
+    }
+    // Assign households to buildings.  Recollect that at this point
+    // the households and buildings are sorted.
+    int remainingSqFt = buildings.at(bldSzList[currBld].first).getArea();
+    const std::string hldId = houSzList.at(currHld).first;
+    int hldsRemaining = households.at(hldId).getCount() * popFrac;
+    // Keep assigning buildings.
+    while ((currBld < bldSzList.size()) && (currHld < houSzList.size())) {
+        // Check and skip to next building if we have run out of space
+        // in the current building.
+        if (remainingSqFt <= 0) {
+            currBld++;
+            if (currBld < bldSzList.size()) {
+                remainingSqFt = buildings.at(bldSzList[currBld].first).getArea();
+            }
+            continue;
+        }
+        // Move onto the next type of household if we have assigned
+        // all households in the current type of household.
+        if (hldsRemaining < 1) {
+            currHld++;
+            if (currHld < houSzList.size()) {
+                const std::string hldId = houSzList.at(currHld).first;
+                hldsRemaining = households.at(hldId).getCount() * popFrac;
+            }
+            continue;
+        }
+
+
+        // Assign current household to current building
+        int pepCount = -2;
+        const std::string hldId = houSzList.at(currHld).first;
+        const std::string hldInfo = households.at(hldId).getInfo(hldsRemaining, pepCount);
+        hldsRemaining--;  // Household processed.
+        if (hldInfo.empty()) {
+            continue;  // In some fractional cases we skip an household
+        }
+        
+        // Assign household to the current building.
+        // Have a helper method assign the i'th familiy to the
+        // current building.
+        const size_t bldMainIdx = bldSzList.at(currBld).first;
+        ASSERT((bldMainIdx >= 0) && (bldMainIdx < buildings.size()));
+        Building& bld = buildings[bldMainIdx];
+        // Add household to building
+        bld.addHousehold(hldInfo, pepCount);
+    }
+}
 
 // Method to assign single-family households to buildings
 void
@@ -471,7 +524,11 @@ PUMS::assignSingleFamilies(std::vector<Building>& buildings,
         if (hld.getBld() > 3) {
             break;  // End of single family homes.
         }
-        
+
+        if ((hld.getBld() != 2) || (hld.getBld() != 3)) {
+            continue;  // This is not an attached/detached home.
+        }
+
         // Each household has 1-or-more occurrences associated with
         // them. So we need to assign with multiple families.
         const int hldCount = hld.getCount() * popFrac;
@@ -482,7 +539,7 @@ PUMS::assignSingleFamilies(std::vector<Building>& buildings,
             if (hldInfo.empty()) {
                 continue;  // In some fractional cases we skip an household
             }
-            // Have a helper method assign the i'th familiy to thie
+            // Have a helper method assign the i'th familiy to the
             // current building.
             const size_t bldMainIdx = bldSzList.at(bldIdx).first;
             ASSERT((bldMainIdx >= 0) && (bldMainIdx < buildings.size()));

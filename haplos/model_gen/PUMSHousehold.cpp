@@ -42,9 +42,9 @@ const std::vector<int> PUMSHousehold::BldRecode =
     {0, 1, 3, 2, 4, 5, 6, 7, 8, 9, 1};
 
 PUMSHousehold::PUMSHousehold(const std::string houseInfo, int bedRooms,
-                             int bldCode, int pumaID, int wgtp) :
+                             int bldCode, int pumaID, int wgtp, int hincp) :
     houseInfo(houseInfo), bedRooms(bedRooms), bld(bldCode), pumaID(pumaID),
-    wgtp(wgtp) {
+    wgtp(wgtp), hincp(hincp) {
     ASSERT(bldCode >= 0);
     ASSERT(bldCode <= 10);
     // Nothing else to be done.
@@ -52,7 +52,7 @@ PUMSHousehold::PUMSHousehold(const std::string houseInfo, int bedRooms,
 
 int
 PUMSHousehold::getAptInBld() const {
-    // Convert the building code to number of rooms to ease soring in
+    // Convert the building code to number of rooms to ease sorting in
     // future.
     static const std::vector<int> Code2Apts = {99, 1, 1, 1, 2,
                                                4, 7, 15, 35, 50, 0};
@@ -99,6 +99,10 @@ PUMSHousehold::getInfo(const int i, int& pepCount) const {
     // empty string.  Calling pop_back on empty string causes weird error
     if (!info.empty()) {
         info.pop_back();  // Remove trailing semicolon.
+        info = houseInfo + ' ' + std::to_string(bedRooms)
+            + ' ' + std::to_string(bld) + ' ' + std::to_string(pumaID)
+            + ' ' + std::to_string(wgtp) + ' ' + std::to_string(hincp)
+            + ' ' + info;
     }
     return info;
 }
