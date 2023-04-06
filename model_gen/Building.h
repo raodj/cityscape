@@ -32,6 +32,7 @@
 //---------------------------------------------------------------------------
 
 #include "Ring.h"
+#include "PUMSHousehold.h"
 
 /** A simple class to encapsulate node information extracted from
     parse XML file.  This class essentially encapsulates the following
@@ -143,11 +144,14 @@ public:
 
         \param[out] os The output stream to where the information
         about this building is to be written.
+
+        \param[in] writeHeader If this flag is true then a header is
+        written before the actual data.
         
         \param[in] delim An optional delimiter between each value
         associated with this node.
     */
-    void writeHouseholds(std::ostream& os,
+    void writeHouseholds(std::ostream& os, bool writeHeader = false,
                          const std::string& delim = " ") const;
     
     /** Load the data for this building from a given input stream.
@@ -164,16 +168,19 @@ public:
 
     /** Add information about an household living in this building.
 
-        \param[in] info The information about the household to be
-        added.  The household information consists of a set of people
-        information separated by semicolons.
+        \param[in] hdl The household to be added to this building.
+        The household class encapsulates information about the
+        household to be added.  The household information consists of
+        a set of people (when serialized, people is written separated
+        by semicolons).
 
         \param[in] people The number of people in the household being
         added.
         
         \see PUMSHousehold::getInfo()
     */
-    void addHousehold(const std::string& info, const int people);
+    void addHousehold(const PUMSHousehold& hld, const int people,
+                      const std::string& peopleInfo);
 
     /** Obtain the total square footage of all levels in this building.
 
@@ -255,7 +262,7 @@ public:
         buildings the number of households can be large. Each
         household consists of a set of semicolon separated people.
     */
-    std::vector<std::string> households;
+    std::vector<PUMSHousehold> households;
 };
 
 #endif

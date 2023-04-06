@@ -77,8 +77,24 @@ public:
         \param[in] hincp The annual household income for this record.
     */
     PUMSHousehold(const std::string houseInfo, int bedRooms, int bldCode,
-                  int pumaID, int wgtp, int hincp);
+                  int pumaID, int wgtp, int hincp, int people);
 
+    /** Convenience constructor to create a huousehold record with the
+        necessary information pre-set.
+
+        \param[in] hld The basic household information.
+
+        \param[in] bldId The actual building ID to which this
+        household has been assigned.
+
+        \param[in] people The numnber of people to be set for this
+        household.
+
+        \param[in] peopleInfo The information about the people.
+    */
+    PUMSHousehold(const PUMSHousehold& hld, int bldId, int people,
+                  const std::string& peopleInfo);
+    
     /** The destructor.
 
         Has nothing much to do because this class currently does not
@@ -146,7 +162,20 @@ public:
     */
     int getCount() const { return wgtp; }
 
-    /** Get information about the i'th household of this type.
+    /** Obtain the number of people in this household.
+
+        \return The nunber of people. The return value is -1 if this
+        household is a template.
+     */
+    int getPeopleCount() const  { return people; }
+
+    /** Obtain information about the people in this household.
+
+        \return The information about the people in the household.
+     */
+    std::string getPeopleInfo() const { return peopleInfo; }
+    
+    /** Generate information about the i'th household of this type.
 
         This method is a convenience method that can be used to obtain
         information about the i'th household of this type.  Household
@@ -160,12 +189,17 @@ public:
 
         \param[out] pepCount The number of people in the household
         information returned by this method.
+
+        \param[in] addInfo If this flag is true then full information
+        about the household is returned.  Otherwise only people
+        information is returned.
         
         \return A string representing the household information. Note
         in fractional cases, the returned string can be an empty
         string and such returns should be ignored.
      */
-    std::string getInfo(const int i, int& pepCount) const;
+    std::string getInfo(const int i, int& pepCount,
+                        const bool addInfo = false) const;
 
     /** Obtain the type of building set for this household.
 
@@ -189,6 +223,50 @@ public:
         \return The PUMA ID associated with this household.
     */
     int getPUMAId() const { return pumaID; }
+
+    /** Obtain the building to which this household has been assigned.
+
+        \return The building ID. It is -1 if this household is not
+        assigned to an building.
+     */
+    int getBuildingID() const { return buildingID; }
+    
+    /** Load the data for this household from a given input stream.
+
+        This is a helper method that is used to read information for
+        this household from a given input stream.  This method assumes that
+        the data has been written by a prior call to the write method
+        in this class.
+
+        \param[in,out] is The input stream with 1 line of data from
+        where the information for this household is to be read.
+    */
+    void read(std::istream& is);
+
+    /** Write this household information to a given output stream.
+
+        This is a helper method that is used to write the information
+        associated with this household to a given output stream.
+
+        \param[out] os The output stream to where the information
+        about this household is to be written.
+
+        \param[in] writeHeader If this flag is true then a simple
+        comment with the order of the fields is written for future
+        reference.
+        
+        \param[in] delim An optional delimiter between each value
+        associated with this node.
+    */
+    void write(std::ostream& os, const bool writeHeader = false,
+               const std::string& delim = " ") const;
+
+    /**
+       This is just a convenience string that is used to generate the
+       header before the information is written to the model.  This
+       value is set by ModelGenerator.
+     */
+    static std::vector<std::string> pumsHouColNames;
     
 private:
     /** A string representing the data for this household to be
@@ -242,6 +320,28 @@ private:
                          (Components .are rounded)
     */
     int hincp;
+
+    /** This instance variable tracks the number of people set for
+        this household.  The number of people is computed by the
+        getInfo method.  This value is set when an actual household is
+        created from a reference household in
+        PUMS::distributePopulation method.
+     */
+    int people;
+
+    /**
+     * The ID of the building to which this household has been
+     * assigned. This value is set only when this household is added
+     * to a building.
+     */
+    int buildingID = -1;
+
+    /**
+     * Information about the people in this household.  This value is
+     * set when an household is being added to a building.  The
+     * information about the people is created in the getInfo method.
+     */
+    std::string peopleInfo;
     
     /**
        This vector is used to recode the BLD type when estimating
@@ -251,7 +351,7 @@ private:
        method in this class fast.  In summary, the recode enables
        better assignment of buildings to households.
     */
-    static const std::vector<int> BldRecode;
+    static const std::vector<int> BldRecode;    
 };
 
 #endif

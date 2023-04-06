@@ -31,6 +31,8 @@
 //
 //---------------------------------------------------------------------------
 
+#include <iostream>
+#include <iomanip>
 #include "PUMSHousehold.h"
 #include "Utilities.h"
 
@@ -41,12 +43,27 @@
 const std::vector<int> PUMSHousehold::BldRecode =
     {0, 1, 3, 2, 4, 5, 6, 7, 8, 9, 1};
 
+// The list of column names specified as command-line args.  This is
+// set in ModelGenerator::processArgs method.
+std::vector<std::string> PUMSHousehold::pumsHouColNames;
+
 PUMSHousehold::PUMSHousehold(const std::string houseInfo, int bedRooms,
-                             int bldCode, int pumaID, int wgtp, int hincp) :
+                             int bldCode, int pumaID, int wgtp, int hincp,
+                             int people) :
     houseInfo(houseInfo), bedRooms(bedRooms), bld(bldCode), pumaID(pumaID),
-    wgtp(wgtp), hincp(hincp) {
+    wgtp(wgtp), hincp(hincp), people(people) {
     ASSERT(bldCode >= 0);
     ASSERT(bldCode <= 10);
+    // Nothing else to be done.
+}
+
+PUMSHousehold::PUMSHousehold(const PUMSHousehold& hld, int bldId, int people,
+                             const std::string& peopleInfo) :
+    houseInfo(hld.houseInfo), bedRooms(hld.bedRooms), bld(hld.bld),
+    pumaID(hld.pumaID), wgtp(hld.wgtp), hincp(hld.hincp), people(people),
+    buildingID(bldId), peopleInfo(peopleInfo) {
+    ASSERT(bld >= 0);
+    ASSERT(bld <= 10);
     // Nothing else to be done.
 }
 
@@ -67,7 +84,7 @@ PUMSHousehold::addPersonInfo(const int occurrence, const std::string& info) {
 }
 
 std::string
-PUMSHousehold::getInfo(const int i, int& pepCount) const {
+PUMSHousehold::getInfo(const int i, int& pepCount, bool addInfo) const {
     // Ensure i is valid.
     ASSERT((i >= 0) && (i < getCount()));
     std::string info;  // household information to be returned.
@@ -99,12 +116,44 @@ PUMSHousehold::getInfo(const int i, int& pepCount) const {
     // empty string.  Calling pop_back on empty string causes weird error
     if (!info.empty()) {
         info.pop_back();  // Remove trailing semicolon.
-        info = houseInfo + ' ' + std::to_string(bedRooms)
-            + ' ' + std::to_string(bld) + ' ' + std::to_string(pumaID)
-            + ' ' + std::to_string(wgtp) + ' ' + std::to_string(hincp)
-            + ' ' + info;
+        if (addInfo) {
+            info = houseInfo + ' ' + std::to_string(bedRooms)
+                + ' ' + std::to_string(bld) + ' ' + std::to_string(pumaID)
+                + ' ' + std::to_string(wgtp) + ' ' + std::to_string(hincp)
+                + ' ' + info;
+        }
     }
     return info;
+}
+
+void
+PUMSHousehold::write(std::ostream& os, const bool writeHeader,
+                     const std::string& delim) const {
+    if (writeHeader) {
+        os << "# Hld bldID";
+        bool first = true;
+        for (const std::string& col : pumsHouColNames) {
+            os << (first ? ' ' : ',') << col;
+            first = false;
+        }
+        os << " bedRooms BLDtype pumaID WGTP HINCP #people peopleInfo\n";
+    }
+
+    // Write the actual data for this household
+    os << "hld "     << delim << buildingID << delim << std::quoted(houseInfo)
+       << delim      << bedRooms   << delim << bld   << delim << pumaID
+       << delim      << wgtp       << delim << hincp      << delim
+       << people     << delim      << std::quoted(peopleInfo) << '\n'; 
+    
+}
+
+void
+PUMSHousehold::read(std::istream& is) {
+    // Read information for this household
+    std::string hld;     // string to be read and discarted
+    is >> hld;
+    is >> buildingID  >> std::quoted(houseInfo) >> bedRooms >> bld
+       >> pumaID >> wgtp >> hincp >> people >> std::quoted(peopleInfo);
 }
 
 #endif

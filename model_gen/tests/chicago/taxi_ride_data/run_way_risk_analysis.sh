@@ -1,5 +1,11 @@
 #!/bin/bash
 
+#SBATCH --job-name=Chicago_TaxiAnalysis
+#SBATCH --time=02:00:00
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=16g
+
 # This is the file that contains all taxi ride data. This file is
 # downloaded from the chicago taxi trips portal as indicated further
 # below in this script.
@@ -7,7 +13,7 @@ FullTaxiRideFile="Taxi_Trips.tsv"
 
 # This is a script to run the riskanayzer to generate a TSV of risk
 # scores for a given year (as command-line argument).
-year=2018
+year=2019
 if [ $# -gt 1 ]; then
     # Override default year with command-line argument.
     year="$1"
@@ -23,7 +29,7 @@ if [ ! -e "${FullTaxiRideFile}" ]; then
     echo "This is a large file and you can download it separately"
     echo "via the following command (it is about 100 GB and takes a while"
     echo "to download based on your internet speed)"
-    echo "wget https://data.cityofchicago.org/api/views/wrvz-psew/rows.tsv?accessType=DOWNLOAD&bom=true"
+    echo "wget https://data.cityofchicago.org/api/views/wrvz-psew/rows.tsv?accessType=DOWNLOAD&bom=true" -O "${FullTaxiRideFile}"
     exit 1
 fi
 
@@ -46,11 +52,11 @@ fi
 
 # Now we just extract the year of data out of the file to make the
 # overall processing a bit easier for us.
-TaxiTripsYear="Taxi_Trips_${year}.txt"
+TaxiTripsYear="Taxi_Trips_${year}.tsv"
 
 # Perform the data extraction only if the target file doesn't exist
 if [ ! -e "${TaxiTripsYear}" ]; then
-    echo "Extracting trips for year ${year} into ${TaxiTripsYear}"
+    echo "Extracting trips for year ${year} from ${FullTaxiRideFile} into ${TaxiTripsYear}"
     head -1 "${FullTaxiRideFile}" > "${TaxiTripsYear}"
     grep "../../${year}" "${FullTaxiRideFile}" >> "${TaxiTripsYear}"
 else
@@ -59,6 +65,6 @@ fi
 
 
 # Now run the anaysis with the necessary data.
-/usr/bin/time ../../../riskanalyzer --model ../chicago_model.txt --best-time --shape "${CensusTractDir}/geo_export_*.shp --dbf "${CensusTractDir}/geo_export_*.dbf" --taxi-rides "${TaxiTripsYear}" --batch-size 8000 --start-date "01/01/${Year}" --end-date "12/31/${year}" --node-summary "nodes_summary_${year}.tsv" --way-summary "ways_summary_${year}.tsv" 2> "error_logs_${year}.txt"
+/usr/bin/time ../../../riskanalyzer --model ../chicago_model.txt --best-time --shape ${CensusTractDir}/geo_export_*.shp --dbf ${CensusTractDir}/geo_export_*.dbf --taxi-rides "${TaxiTripsYear}" --batch-size 32000 --start-date "01/01/${year}" --end-date "12/31/${year}" --node-summary "nodes_summary_${year}.tsv" --way-summary "ways_summary_${year}.tsv" 2> "error_logs_${year}.txt"
 
 # End of script

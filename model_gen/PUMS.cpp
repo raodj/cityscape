@@ -243,7 +243,7 @@ PUMS::loadHousehold(const std::string& pumsHouPath,
     
     // Process each line of the input and retain the necessary
     // household information.
-    HouseholdMap households;    
+    HouseholdMap households;
     while (std::getline(houCsv, line)) {
         // Split into individual columns for convenience.
         const std::vector<std::string> info = split(line, ",");
@@ -252,9 +252,15 @@ PUMS::loadHousehold(const std::string& pumsHouPath,
         // Create the household record to be stored only for homes and
         // not group quarters. Note: We ignore mobile homes.
         if ((info[TYPE] == "1") && (info[BLD] != "01")) {
+            // For some households the income HINCP is empty. Use -1 for them.
+            const int hincp = (info[HINCP].empty() ? - 1 :
+                               std::stoi(info[HINCP]));
+            // Create a template household. This template has people
+            // == -1. Actual households are created in
+            // distributePopulation method.
             PUMSHousehold ph(houseInfo, std::stoi(info[BDSP]),
                              std::stoi(info[BLD]), std::stoi(info[PUMA]),
-                             std::stoi(info[WGTP]), std::stoi(info[HINCP]));
+                             std::stoi(info[WGTP]), hincp, -1);
             ASSERT(ph.getBld() != 1);
             // Add the household record to our map
             households[info[SERIALNO]] = ph;
@@ -420,6 +426,10 @@ PUMS::distributePopulation(int pumaID, const double popFrac,
                   << houSzList.size() << std::endl;
         return;
     }
+    std::cout << "Distributing population for pumaID " << pumaID
+              << " with popFrac = " << popFrac << ", using "
+              << households.size()  << " household-templates and "
+              << buildings.size()   << " buildings.\n";
     // Now we have 2 lists of sorted buildings and households. For
     // each household start assigning buildings.
     size_t currBld = 0, currHld = 0;  // building & household counter
@@ -496,9 +506,15 @@ PUMS::distributePopulation(int pumaID, const double popFrac,
         const size_t bldMainIdx = bldSzList.at(currBld).first;
         ASSERT((bldMainIdx >= 0) && (bldMainIdx < buildings.size()));
         Building& bld = buildings[bldMainIdx];
-        // Add household to building
-        bld.addHousehold(hldInfo, pepCount);
+        // Add household to bu oilding with given people count.
+        bld.addHousehold(households.at(hldId), pepCount, hldInfo);
     }
+
+    std::cout << "distributePopulation: For PUMA ID " << pumaID
+              << " assigned " << currHld
+              << " households out of " << houSzList.size() << " to "
+              << currBld << " buildings out of " << bldSzList.size()
+              << " buildings\n";
 }
 
 // Method to assign single-family households to buildings
@@ -525,7 +541,7 @@ PUMS::assignSingleFamilies(std::vector<Building>& buildings,
             break;  // End of single family homes.
         }
 
-        if ((hld.getBld() != 2) || (hld.getBld() != 3)) {
+        if ((hld.getBld() != 2) && (hld.getBld() != 3)) {
             continue;  // This is not an attached/detached home.
         }
 
@@ -556,7 +572,7 @@ PUMS::assignSingleFamilies(std::vector<Building>& buildings,
                           << " (puma ID = "   << pumaID << ")\n";
             }
             // Add household to building
-            bld.addHousehold(hldInfo, pepCount);
+            bld.addHousehold(hld, pepCount, hldInfo);
             hldsAssigned++;
             // Onto the next building.
             bldIdx++;

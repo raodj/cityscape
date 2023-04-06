@@ -74,6 +74,16 @@ OSMData::loadModel(const std::string& modelFilePath) {
             PopRing rng;
             rng.read(is);
             popRings.push_back(rng);
+        } else if (line.substr(0, 3) == "hld") {
+            PUMSHousehold hld;
+            hld.read(is);
+            // Add hosuehold to its corresponding building.
+            if (buildingMap.find(hld.getBuildingID()) != buildingMap.end()) {
+                // Add this household to its building.
+                Building& bld = buildingMap.at(hld.getBuildingID());
+                bld.addHousehold(hld, hld.getPeopleCount(),
+                                 hld.getPeopleInfo());
+            }
         } else {
             std::cerr << "Invalid line in model file: " << line << std::endl;
             return 1;

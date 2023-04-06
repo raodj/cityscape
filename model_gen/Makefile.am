@@ -89,6 +89,8 @@ pathfinder_SOURCES = \
 	Ring.h \
 	Ring.cpp \
 	Building.h \
+	PUMSHousehold.h \
+	PUMSHousehold.cpp \
 	Building.cpp \
 	Node.h \
 	Node.cpp \
@@ -159,6 +161,8 @@ riskanalyzer_SOURCES = \
 	Ring.cpp \
 	Building.h \
 	Building.cpp \
+	PUMSHousehold.h \
+	PUMSHousehold.cpp \
 	Node.h \
 	Node.cpp \
 	Way.h \
@@ -198,6 +202,8 @@ accidents_collator_SOURCES = \
 	Ring.cpp \
 	Building.h \
 	Building.cpp \
+	PUMSHousehold.h \
+	PUMSHousehold.cpp \
 	Node.h \
 	Node.cpp \
 	Way.h \

@@ -239,6 +239,8 @@ ModelGenerator::processArgs(int argc, char *argv[]) {
                   << "files to be processed.\n";
         return 1;
     }
+    // Setup the header information for use in household
+    PUMSHousehold::pumsHouColNames = cmdLineArgs.pumsHouColNames;
     // Things seem fine so far
     return 0;
 }
@@ -1384,15 +1386,10 @@ ModelGenerator::writeModel(const std::string& filePath) {
 
     // Finally, write the households in each building.  This header
     // should be obtained from PUMSHousehold instead.
-    model << "# Hld bldID";
-    bool first = true;
-    for (const std::string& col : cmdLineArgs.pumsHouColNames) {
-        model << (first ? ' ' : ',') << col;
-        first = false;
-    }
-    model << " bedRooms BLDtype pumaID WGTP HINCP peopleInfo\n";
+    bool writeHeader = true;
     for (const Building& bld : buildings) {
-        bld.writeHouseholds(model);
+        bld.writeHouseholds(model, writeHeader);
+        writeHeader = false;
     }
 }
 
