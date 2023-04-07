@@ -153,6 +153,16 @@ public:
     */
     void writeHouseholds(std::ostream& os, bool writeHeader = false,
                          const std::string& delim = " ") const;
+
+    /** Return information about the building based on a given key
+        column.
+
+        \param[in] key The key column for which information is to be
+        returned. Valid keys are: "people", "households", "avg_income"
+
+        \return The information about this building.
+    */
+    int getInfo(const std::string& key) const;
     
     /** Load the data for this building from a given input stream.
 

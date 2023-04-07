@@ -240,7 +240,8 @@ ShapeFile::genXFig(XFigHelper& fig, int& xClip, int& yClip,
                    const int mapSize, const bool drawCentroid,
                    const std::vector<std::string>& colNames,
                    const bool drawScaleBar,
-                   const std::string& outFileName, const int startLayer) const {
+                   const std::string& outFileName, const int startLayer,
+                   const int lineColor) const {
     if ((xClip == -1) || (yClip == -1)) {
         // Here we compute the bounds. Otherwise we just use the
         // specified x and y clip
@@ -277,7 +278,7 @@ ShapeFile::genXFig(XFigHelper& fig, int& xClip, int& yClip,
             fillColor = YELLOW;
         }
         ring.printXFig(fig, mapSize, xClip, yClip, drawCentroid, fillColor,
-                       startLayer);
+                       startLayer, lineColor);
     }
     if (!drawScaleBar) {
         return;  // We are not drawing the scale bar.

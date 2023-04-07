@@ -35,6 +35,8 @@
 #include <set>
 #include "XFigHelper.h"
 #include "ArgParser.h"
+#include "ShapeFile.h"
+#include "OSMData.h"
 
 /** A shortcut to a pair that holds the key and value */
 using KeyValue = std::pair<std::string, std::string>;
@@ -114,7 +116,8 @@ protected:
         error code.        
     */
     int drawShapeFiles(XFigHelper& fig, const StringList& shapeFiles,
-                       const StringList& dbfFiles, int startShapeLevel = 100);
+                       const StringList& dbfFiles,
+                       const int figScale = 4096, int startShapeLevel = 100);
 
     /**
        Helper method to get a specific column from a given string
@@ -131,6 +134,26 @@ protected:
     */
     std::string getColumn(const std::string& line, const int column,
                           const char delim = '\t');
+
+protected:
+    /** Helper method to return intersecting shapes between a primary
+        and secondary set of shapes.
+
+        \param[in] primary The primary shape file to be used for
+        intersections.
+
+        \param[in] secondary The secondary shape file to be used for
+        intersections.
+    */
+    ShapeFile intersections(const ShapeFile& primary,
+                            const ShapeFile& secondary) const;
+
+    int getInfo(const Building& bld, const std::string& infoKey) const;
+    
+    void drawBuildings(const OSMData& model, XFigHelper& fig,
+                       const std::string& infoKey);
+
+    Ring getBldRing(int bldId, const Building& bld, const std::string& infoKey) const;
     
 private:
     /** This is a simple inner class that is used to conveniently

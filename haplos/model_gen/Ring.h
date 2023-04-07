@@ -570,7 +570,8 @@ public:
     */
     void printXFig(XFigHelper& fig, const int figSize, const int xClip = 0,
                    const int yClip = 0, const bool drawCentroid = false,
-                   const int fillColor = -1, int layer = 50) const;
+                   const int fillColor = -1, int layer = 50,
+                   const int lineColor = BLACK) const;
 #endif
     
     /** Returns the information associated with a given col name.

@@ -339,7 +339,7 @@ Ring::getInfo(const std::vector<std::string>& colName) const {
 void
 Ring::printXFig(XFigHelper& xfig, const int figSize, const int xClip,
                 const int yClip, const bool drawCentroid,
-                const int fillColor, int layer) const {
+                const int fillColor, int layer, int lineColor) const {
     // Add a comment to the xfig file for this ring.
     std::string info = getInfo();
     if (!info.empty()) {
@@ -352,7 +352,7 @@ Ring::printXFig(XFigHelper& xfig, const int figSize, const int xClip,
         }        
         // Start polygon
         const int fillStyle = (fillColor != -1 ? SOLID_FILL : NO_FILL);
-        xfig.startPolygon(getVertexCount(), BLACK, fillColor, layer,
+        xfig.startPolygon(getVertexCount(), lineColor, fillColor, layer,
                           (isSubtraction() ? 41 : fillStyle));
     } else if ((getKind() == Ring::POPULATION_RING) ||
                (getKind() == Ring::BUILDING_RING)   ||
@@ -360,15 +360,15 @@ Ring::printXFig(XFigHelper& xfig, const int figSize, const int xClip,
         // Start polygon with rings of different kinds on different layers
         // to ease viewing them separately in xfig program.
         const int polyLyr = layer + 2 + getKind();
-        xfig.startPolygon(getVertexCount(), BLACK, fillColor, polyLyr,
+        xfig.startPolygon(getVertexCount(), lineColor, fillColor, polyLyr,
                           SOLID_FILL);
     } else {
         // This ring is an ARC so draw it as a series of lines instead.
         xfig.addComment("Arc " + std::to_string(ringID));
         // xfig.startPolyLine(ring.getVertexCount(), ringIdx % 7, 20);
         const int level = (getKind() == Ring::ARC_RING ? 20 : 25);
-        const int color = (getKind() == Ring::ARC_RING ? BLACK : BLUE);
-	xfig.startPolyLine(getVertexCount(), color, level);
+        const int color = (getKind() == Ring::ARC_RING ? lineColor : BLUE);
+        xfig.startPolyLine(getVertexCount(), color, level);
     }
     
     // Add all the vertices.
@@ -377,8 +377,8 @@ Ring::printXFig(XFigHelper& xfig, const int figSize, const int xClip,
         Point p = getVertex(vertex);
         getXYValues(p.second, p.first, xfigX, xfigY,
                     figSize * XFIG_SCALE, false);
-	xfigX -= xClip;
-	xfigY -= yClip;
+        xfigX -= xClip;
+        xfigY -= yClip;
         xfig.addVertex(xfigX, xfigY);
     }
     // Done with one ring and on to the next one.
