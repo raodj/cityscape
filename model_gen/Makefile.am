@@ -29,7 +29,7 @@
 #
 #---------------------------------------------------------------------------
 
-bin_PROGRAMS = modelgen pathfinder drawshapes riskanalyzer accidents_collator
+bin_PROGRAMS = modelgen pathfinder drawshapes riskanalyzer accidents_collator draw_buildings
 
 AM_CXXFLAGS = -g -Wall -std=c++14 -DDEVELOPER_ASSERTIONS -fopenmp
 
@@ -224,6 +224,43 @@ accidents_collator_LDADD =
 if GDAL
 accidents_collator_LDFLAGS = -L$(GDAL)/lib
 accidents_collator_LDADD  += -lgdal
+endif
+
+draw_buildings_SOURCES = \
+	shapefil.h \
+	shpopen.c \
+	shptree.c \
+	dbfopen.c \
+	ArgParser.cpp \
+	ArgParser.h \
+	Utilities.cpp \
+	Utilities.h \
+	XFigHelper.cpp \
+	XFigHelper.h \
+	Ring.h \
+	Ring.cpp \
+	PopRing.h \
+	PopRing.cpp \
+	ShapeFile.h \
+	ShapeFile.cpp \
+	Building.h \
+	Building.cpp \
+	PUMSHousehold.h \
+	PUMSHousehold.cpp \
+	Node.h \
+	Node.cpp \
+	Way.h \
+	Way.cpp \
+	OSMData.h \
+	OSMData.cpp \
+	DrawBuildings.h\
+	DrawBuildings.cpp
+
+draw_buildings_LDADD =
+
+if GDAL
+draw_buildings_LDFLAGS = -L$(GDAL)/lib
+draw_buildings_LDADD += -lgdal
 endif
 
 # End of Makefile.am

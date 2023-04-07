@@ -140,10 +140,10 @@ PUMSHousehold::write(std::ostream& os, const bool writeHeader,
     }
 
     // Write the actual data for this household
-    os << "hld "     << delim << buildingID << delim << std::quoted(houseInfo)
-       << delim      << bedRooms   << delim << bld   << delim << pumaID
-       << delim      << wgtp       << delim << hincp      << delim
-       << people     << delim      << std::quoted(peopleInfo) << '\n'; 
+    os << "hld"  << delim    << buildingID << delim << std::quoted(houseInfo)
+       << delim  << bedRooms << delim      << bld   << delim << pumaID
+       << delim  << wgtp     << delim      << hincp << delim
+       << people << delim    << std::quoted(peopleInfo) << '\n'; 
     
 }
 

@@ -145,6 +145,9 @@ Building::addHousehold(const PUMSHousehold& hld, const int people,
                        const std::string& peopleInfo) {
     population += people;
     households.push_back(PUMSHousehold(hld, id, people, peopleInfo));
+    if (households.size() > 1000) {
+        std::cout << "Building with more than 1000 households encountered!\n";
+    }
 }
 
 #endif

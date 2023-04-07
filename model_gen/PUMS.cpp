@@ -429,7 +429,7 @@ PUMS::distributePopulation(int pumaID, const double popFrac,
     std::cout << "Distributing population for pumaID " << pumaID
               << " with popFrac = " << popFrac << ", using "
               << households.size()  << " household-templates and "
-              << buildings.size()   << " buildings.\n";
+              << bldSzList.size()   << " buildings.\n";
     // Now we have 2 lists of sorted buildings and households. For
     // each household start assigning buildings.
     size_t currBld = 0, currHld = 0;  // building & household counter
@@ -452,7 +452,7 @@ PUMS::distributePopulation(int pumaID, const double popFrac,
                         [&buildings](const int& sqFt, const BldIdxSqFt& bld) {
                             return sqFt + buildings.at(bld.first).getArea();
                         });
-    int sqFtPerRm = totSqFt / totRooms;
+    const int sqFtPerRm = totSqFt / (totRooms * popFrac);
     std::cout << "For puma " << pumaID << ", average sq.ft/room = "
               << sqFtPerRm << " from " << (bldSzList.size() - currBld)
               << " buildings and " << (houSzList.size() - currHld)
@@ -506,8 +506,11 @@ PUMS::distributePopulation(int pumaID, const double popFrac,
         const size_t bldMainIdx = bldSzList.at(currBld).first;
         ASSERT((bldMainIdx >= 0) && (bldMainIdx < buildings.size()));
         Building& bld = buildings[bldMainIdx];
-        // Add household to bu oilding with given people count.
-        bld.addHousehold(households.at(hldId), pepCount, hldInfo);
+        // Add household to building with given people count.
+        const PUMSHousehold& hld = households.at(hldId);
+        bld.addHousehold(hld, pepCount, hldInfo);
+        // Decrease area left in this building
+        remainingSqFt -= (hld.getRooms() * sqFtPerRm);
     }
 
     std::cout << "distributePopulation: For PUMA ID " << pumaID

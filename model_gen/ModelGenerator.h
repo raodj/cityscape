@@ -749,7 +749,7 @@ private:
             option can be enabled via `--draw-buildings` option.
         */
         bool drawBuildings;
-
+        
         /** Flag to indicate if road ways from the input OSM XML file must
             be drawn in the output fig file.  This is very useful to
             provide detailed information for verification and
