@@ -230,6 +230,13 @@ public:
         assigned to an building.
      */
     int getBuildingID() const { return buildingID; }
+
+    /** Obtain family income set for this household.
+
+        \return The family income (which is the exactly the same as
+        the hincp PUMA attribute).
+     */
+    int getFamilyIncome() const { return hincp; }
     
     /** Load the data for this household from a given input stream.
 

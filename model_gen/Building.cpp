@@ -145,9 +145,22 @@ Building::addHousehold(const PUMSHousehold& hld, const int people,
                        const std::string& peopleInfo) {
     population += people;
     households.push_back(PUMSHousehold(hld, id, people, peopleInfo));
-    if (households.size() > 1000) {
-        std::cout << "Building with more than 1000 households encountered!\n";
+}
+
+int
+Building::getInfo(const std::string& key) const {
+    if (key == "people") {
+        return population;
+    } else if (key == "households") {
+        return households.size();
+    } else if (key == "avg_income") {
+        const long totIncome =
+            std::accumulate(households.begin(), households.end(), 0,
+                            [](const auto& v1, const auto& v2) {
+                                return v1 + v2.getFamilyIncome(); });
+        return (households.size() > 0 ? (totIncome / households.size()) : 0);
     }
+    throw std::runtime_error("Unsupported info key: " + key);
 }
 
 #endif

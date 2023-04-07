@@ -79,7 +79,7 @@ public:
                  const std::vector<std::string>& colNames = {},
                  const bool drawScaleBar = true,
                  const std::string& outFileName = "",
-                 const int startLayer = 50) const;
+                 const int startLayer = 50, const int lineColor = BLACK) const;
     
     void getBounds(double& minX, double& minY, double& maxX,
                    double& maxY) const;
