@@ -78,7 +78,8 @@ public:
                  const int mapSize = 4096, const bool drawCentroid = false,
                  const std::vector<std::string>& colNames = {},
                  const bool drawScaleBar = true,
-                 const std::string& outFileName = "") const;
+                 const std::string& outFileName = "",
+                 const int startLayer = 50) const;
     
     void getBounds(double& minX, double& minY, double& maxX,
                    double& maxY) const;

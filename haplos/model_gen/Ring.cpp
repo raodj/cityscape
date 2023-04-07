@@ -360,7 +360,7 @@ Ring::printXFig(XFigHelper& xfig, const int figSize, const int xClip,
         // Start polygon with rings of different kinds on different layers
         // to ease viewing them separately in xfig program.
         const int polyLyr = layer + 2 + getKind();
-        xfig.startPolygon(getVertexCount(), fillColor, fillColor, polyLyr,
+        xfig.startPolygon(getVertexCount(), BLACK, fillColor, polyLyr,
                           SOLID_FILL);
     } else {
         // This ring is an ARC so draw it as a series of lines instead.

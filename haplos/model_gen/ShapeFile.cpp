@@ -98,7 +98,9 @@ ShapeFile::loadShapes(const std::string& shapeFileName,
     // Load the rings present in the shape file now.
     int numberOfShapes = -1;
     Ring::Kind firstShapeType = Ring::UNKNOWN_RING;
-    SHPGetInfo(shapeFile, &numberOfShapes, NULL, NULL, NULL);
+    int shapeType = -1;
+    SHPGetInfo(shapeFile, &numberOfShapes, &shapeType, NULL, NULL);
+    std::cout << "Shape type = " << shapeType << std::endl;
     // Iterate over all the shapes in the file and create rings for
     // each shape using the Ring class.
     for (int shapeID = 0; (shapeID < numberOfShapes); shapeID++) {
@@ -238,8 +240,12 @@ ShapeFile::genXFig(XFigHelper& fig, int& xClip, int& yClip,
                    const int mapSize, const bool drawCentroid,
                    const std::vector<std::string>& colNames,
                    const bool drawScaleBar,
-                   const std::string& outFileName) const {
-    getClipBounds(mapSize, xClip, yClip);
+                   const std::string& outFileName, const int startLayer) const {
+    if ((xClip == -1) || (yClip == -1)) {
+        // Here we compute the bounds. Otherwise we just use the
+        // specified x and y clip
+        getClipBounds(mapSize, xClip, yClip);
+    }
     std::cout << "ShapeFile::genXFig(" << outFileName << "): xClip = "
               << xClip << ", yClip = " << yClip << std::endl;
     // Get the min and max population in the rings to enable color coding.
@@ -270,7 +276,8 @@ ShapeFile::genXFig(XFigHelper& fig, int& xClip, int& yClip,
         } else if (ring.getKind() == Ring::PUMA_RING) {
             fillColor = YELLOW;
         }
-        ring.printXFig(fig, mapSize, xClip, yClip, drawCentroid, fillColor);
+        ring.printXFig(fig, mapSize, xClip, yClip, drawCentroid, fillColor,
+                       startLayer);
     }
     if (!drawScaleBar) {
         return;  // We are not drawing the scale bar.
@@ -312,7 +319,7 @@ ShapeFile::genXFig(const std::string& outFileName, const int mapSize,
         return;
     }
     // Get the clip bounds to align the top-left corner at zero
-    int xClip = 0, yClip = 0;
+    int xClip = -1, yClip = -1;
     genXFig(fig, xClip, yClip, mapSize, drawCentroid, colNames, drawScaleBar,
             outFileName);
 }
