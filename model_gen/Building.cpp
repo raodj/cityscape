@@ -32,12 +32,16 @@
 //---------------------------------------------------------------------------
 
 #include <iostream>
+#include <iomanip>
 #include "Building.h"
 #include "Utilities.h"
 
+// The constant string for synthetic homes
+const std::string Building::SynthHome = "syn_home";
+
 Building
 Building::create(const Ring& ring, int id, int levels, int population,
-                 int attributes) {
+                 int attributes, const std::string& kind) {
     // The building object being created by this method.
     Building bld;
     // Set the standard attributes
@@ -46,6 +50,7 @@ Building::create(const Ring& ring, int id, int levels, int population,
     bld.population = population;
     bld.attributes = attributes;
     bld.isHome     = false;
+    bld.kind       = kind;
     // Compute the bounds and square-footage for this building.
     bld.sqFootage  = ring.getArea() * 27878000.0;
     ASSERT(bld.sqFootage > 0);
@@ -71,7 +76,7 @@ Building::create(int id, int sqFootage, long wayID,
                  double wayLat, double wayLon, double topLat,
                  double topLon, double botLat, double botLon,
                  int popRingID, bool isHome, int levels, int population,
-                 int pumaID) {
+                 int pumaID, const std::string& kind) {
     // The building object being created by this method.
     Building bld;
     // Set the standard attributes
@@ -80,10 +85,13 @@ Building::create(int id, int sqFootage, long wayID,
     bld.population = population;
     bld.attributes = popRingID;
     bld.isHome     = isHome;
+    bld.kind       = kind;
     // Compute the bounds and square-footage for this building.
     bld.sqFootage  = sqFootage;
     ASSERT(bld.sqFootage > 0);
     // Setup the bounds in the building object
+    ASSERT( topLon != botLon );
+    ASSERT( topLat != botLat );
     bld.topLon     = topLon;
     bld.topLat     = topLat;
     bld.botLon     = botLon;
@@ -103,19 +111,21 @@ Building::write(std::ostream& os, const bool writeHeader,
     // Write optional header if requested
     if (writeHeader) {
         os << "# Bld ID"  << delim << "levels" << delim << "population" << delim
-           << "attributes"<< delim << "isHome" << delim << "sqFoot"     << delim
-           << "topLon"    << delim << "topLat" << delim << "botLon"     << delim
-           << "botLat"    << delim << "wayID"  << delim << "wayLat"     << delim
+           << "attributes"<< delim << "isHome" << delim << "kind"       << delim
+           << "sqFoot"    << delim << "topLon" << delim << "topLat"     << delim
+           << "botLon"    << delim << "botLat" << delim
+           << "wayID"  << delim << "wayLat"    << delim
            << "wayLon"    << delim << "pumaID" << delim << "#households"
            << std::endl;
     }
     // Write the information for this building.
-    os << "bld"      << delim;
+    os << "bld"      << delim << std::setprecision(7);
     os << id         << delim << levels << delim << population << delim
-       << attributes << delim << isHome << delim << sqFootage  << delim
-       << topLon     << delim << topLat << delim << botLon     << delim
-       << botLat     << delim << wayID  << delim << wayLat     << delim
-       << wayLon     << delim << pumaID << delim << households.size()
+       << attributes << delim << isHome << delim << std::quoted(kind) << delim
+       << sqFootage  << delim << topLon << delim << topLat     << delim
+       << botLon     << delim << botLat << delim << wayID      << delim
+       << wayLat     << delim << wayLon << delim << pumaID
+       << delim      << households.size()
        << std::endl;
 }
 
@@ -126,9 +136,9 @@ Building::read(std::istream& is) {
     size_t hldSize = 0;  // Number of households
     is >> bld;
     is >> id     >> levels >> population >> attributes
-       >> std::boolalpha   >> isHome     >> sqFootage
-       >> topLon >> topLat >> botLon     >> botLat     >> wayID  >> wayLat
-       >> wayLon >> pumaID >> hldSize;
+       >> std::boolalpha   >> isHome     >> std::quoted(kind)
+       >> sqFootage        >> topLon     >> topLat >> botLon >> botLat
+       >> wayID  >> wayLat >> wayLon     >> pumaID >> hldSize;
 }
 
 void
@@ -142,7 +152,7 @@ Building::writeHouseholds(std::ostream& os, bool writeHeader,
 
 void
 Building::addHousehold(const PUMSHousehold& hld, const int people,
-                       const std::string& peopleInfo) {
+                       const std::vector<PUMSPerson>& peopleInfo) {
     population += people;
     households.push_back(PUMSHousehold(hld, id, people, peopleInfo));
 }
@@ -154,11 +164,21 @@ Building::getInfo(const std::string& key) const {
     } else if (key == "households") {
         return households.size();
     } else if (key == "avg_income") {
-        const long totIncome =
-            std::accumulate(households.begin(), households.end(), 0,
-                            [](const auto& v1, const auto& v2) {
-                                return v1 + v2.getFamilyIncome(); });
-        return (households.size() > 0 ? (totIncome / households.size()) : 0);
+        if (households.size() > 0) {
+            const long totIncome =
+                std::accumulate(households.begin(), households.end(), 0L,
+                                [](const auto& v1, const auto& v2) {
+                                    return v1 + v2.getFamilyIncome(); });
+            const int avgInc = totIncome / (int) households.size();
+            // In some cases PUMS data has decrease in household
+            // income without an absolute value. We currently ignore
+            // these entries.
+            if (avgInc < 0) {
+                return 0;
+            }
+            return avgInc;
+        }
+        return 0;
     }
     throw std::runtime_error("Unsupported info key: " + key);
 }

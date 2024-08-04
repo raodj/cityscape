@@ -73,7 +73,9 @@ modelgen_SOURCES = \
 	PUMS.h \
 	PUMS.cpp \
 	PUMSHousehold.h \
-	PUMSHousehold.cpp
+	PUMSHousehold.cpp \
+	PUMSPerson.h \
+	PUMSPerson.cpp
 
 pathfinder_SOURCES = \
 	shapefil.h \
@@ -91,6 +93,8 @@ pathfinder_SOURCES = \
 	Building.h \
 	PUMSHousehold.h \
 	PUMSHousehold.cpp \
+	PUMSPerson.h \
+	PUMSPerson.cpp \
 	Building.cpp \
 	Node.h \
 	Node.cpp \
@@ -163,6 +167,8 @@ riskanalyzer_SOURCES = \
 	Building.cpp \
 	PUMSHousehold.h \
 	PUMSHousehold.cpp \
+	PUMSPerson.h \
+	PUMSPerson.cpp \
 	Node.h \
 	Node.cpp \
 	Way.h \
@@ -204,6 +210,8 @@ accidents_collator_SOURCES = \
 	Building.cpp \
 	PUMSHousehold.h \
 	PUMSHousehold.cpp \
+	PUMSPerson.h \
+	PUMSPerson.cpp \
 	Node.h \
 	Node.cpp \
 	Way.h \
@@ -247,6 +255,8 @@ draw_buildings_SOURCES = \
 	Building.cpp \
 	PUMSHousehold.h \
 	PUMSHousehold.cpp \
+	PUMSPerson.h \
+	PUMSPerson.cpp \
 	Node.h \
 	Node.cpp \
 	Way.h \

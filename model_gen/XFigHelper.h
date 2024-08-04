@@ -1,4 +1,3 @@
-
 #ifndef XFIG_HELPER_H
 #define XFIG_HELPER_H
 
@@ -37,6 +36,7 @@
 #include <exception>
 #include <string>
 #include <vector>
+#include <functional>
 
 // Color codes for xfig
 #define BLACK   0
@@ -197,7 +197,8 @@ public:
 
     void drawScaleBar(const int x, const int y,
                       const int width, const int height, 
-                      std::vector<double> tics, const int fontSize = 12,
+                      std::vector<double> tics,
+                      const int fontSize = 12,
                       const int layer = 60);
 
 protected:

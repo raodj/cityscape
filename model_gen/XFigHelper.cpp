@@ -71,7 +71,7 @@ XFigHelper::dumpHeader(const bool genCustomColors) {
        << "Single\n"
        << "-2\n"
        << "1200 2\n"
-       << "0 32 #cccccc\n";
+       << "0 32 #dddddd\n";
 
     if (genCustomColors) {
         generateColorTable();
@@ -119,7 +119,7 @@ XFigHelper::drawRect(int x, int y, int width, int height, int colorCode,
 void
 XFigHelper::generateColorTable() {
     // Dump 100 custom color codes for further use.
-    int colorCode = 32;
+    int colorCode = 33;
     struct Color { int red; int green; int blue; };
     Color lowColor = { 10, 10, 225 }, midColor = { 225, 225, 10 },
           hiColor  = { 225, 10, 10 };

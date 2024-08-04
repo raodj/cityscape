@@ -356,6 +356,7 @@ Ring::printXFig(XFigHelper& xfig, const int figSize, const int xClip,
                           (isSubtraction() ? 41 : fillStyle));
     } else if ((getKind() == Ring::POPULATION_RING) ||
                (getKind() == Ring::BUILDING_RING)   ||
+               (getKind() == Ring::SYNTH_BUILDING_RING)   ||
                (getKind() == Ring::PUMA_RING)) {
         // Start polygon with rings of different kinds on different layers
         // to ease viewing them separately in xfig program.

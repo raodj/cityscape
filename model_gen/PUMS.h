@@ -129,6 +129,17 @@ public:
 
         \param[in] communities An optional shape file containing rings
         that provide finer boundaries on the regions to be included.
+
+        \param[in] roundUpThreshold In the 2020 data set the PUMA
+        areas along the edge of the lake in Chicago were made
+        larger than the community lines.  Consequently, the
+        overlap in PUMA is just about 79% instead of 100%.  Hence
+        several households were not getting included.
+        Consequently, this command-line option was added to allow
+        rounding up of PUMA areas above the 80% threshold.  The
+        default value is 1.0 which means no rounding is done.
+        Setting this to 0.79 will round up all values above 79% to
+        100%.
         
         \return This method returns zero on success. On errors it
         returns a non-zero error code.
@@ -136,7 +147,8 @@ public:
     int loadPUMA(const std::string& pumaShpPath, const std::string& pumaDbfPath,
                  const double minX = -180, const double minY = -90,
                  const double maxX = +180, const double maxY = +90,
-                 const ShapeFile& communities = {});
+                 const ShapeFile& communities = {},
+                 double roundUpThreshold = 1.0);
 
     /** Top-level method to distribute households from PUMS data to
         the bulidings generated from OSM data.
@@ -457,7 +469,7 @@ private:
         \param[in] pumaID The PUMA area ID for including in error
         messages.
     */
-    void assignSingleFamilies(std::vector<Building>& buildings,
+    int assignSingleFamilies(std::vector<Building>& buildings,
                               HouseholdMap& households,
                               const std::vector<BldIdxSqFt> bldSzList,
                               const std::vector<HouIdSize> houSzList,

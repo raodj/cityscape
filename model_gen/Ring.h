@@ -69,7 +69,7 @@ public:
         types of shapes that can be loaded from a given shape file.
     */
     enum Kind {UNKNOWN_RING, CLOSED_RING, ARC_RING, POPULATION_RING,
-               BUILDING_RING, ENTRY_RING, PUMA_RING};
+               BUILDING_RING, ENTRY_RING, PUMA_RING, SYNTH_BUILDING_RING};
 
     /** A convenience wrapper sub-class to hold a metadata about the
         ring.  These entries are typically loaded from a separate DBF

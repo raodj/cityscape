@@ -265,7 +265,7 @@ void AccidentsCollator::genXFig(const AccidentsMap& accidents,
 void AccidentsCollator::write(const AccidentsMap& accidents,
                               const OSMData& model, std::ostream& os) {
     // First write the fixed header lines
-    os << "# Accidents collated information on " << getSystemTime() << '\n'
+    os << "# Accidents collated information on " << getSystemTime()
        << "# Command run as: " << fullCmdLine    << '\n'
        << "# NodeID\tOSMId\tLatitude\tLongitude\tAccCount\tInjuries\t"
        << "Deaths\tOtherInfo\n";
@@ -339,7 +339,7 @@ AccidentsCollator::collate(std::istream& accidentsData,
             // filled-in.  We ignore these for now.
             if (latStr.empty() || lonStr.empty()) {
 #pragma omp critical (cerr)
-                std::cerr << "Accident entry on line #" << lNum
+                std::cerr << "Accident entry on line #" << (lNum + i)
                           << " did not have "
                           << "latitude or longitude. Ignoring line.\n";
                 continue;

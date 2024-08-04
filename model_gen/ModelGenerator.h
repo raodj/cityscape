@@ -573,8 +573,8 @@ protected:
 
         \return The number of homes generated.
     */
-    int generateHomes(Way& way, const double spacing = 0.014,
-                      const double sqFoot = 1000,
+    int generateHomes(Way& way, const double spacing = 0.01,
+                      const double sqFoot = 800,
                       const double depth = 0.01);
 
     /** Generate a home on either side of the given latitude and
@@ -822,6 +822,18 @@ private:
         */
         ArgParser::StringList pumsPepColNames;
 
+        /** In the 2020 data set the PUMA areas along the edge of the
+            lake in Chicago were made larger than the community lines.
+            Consequently, the overlap in PUMA is just about 79%
+            instead of 100%.  Hence several households were not
+            getting included.  Consequently, this command-line option
+            was added to allow rounding up of PUMA areas above the 80%
+            threshold.  The default value is 1.0 which means no
+            rounding is done.  Setting this to 0.79 will round up all
+            values above 79% to 100%.
+         */
+        double roundUpThreshold = 1.0;
+        
     } cmdLineArgs;
 
     /** The unordered map that holds information about the nodes

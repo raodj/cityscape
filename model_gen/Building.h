@@ -58,6 +58,11 @@
 */
 class Building {
 public:
+    /** A predefined building type for synthetic homes are are generated
+        by the model generator.
+     */
+    static const std::string SynthHome;
+    
     /** Convenience method to create a building from a ring of points.
 
         \param[in] ring The ring with the points associated with this
@@ -71,9 +76,14 @@ public:
 
         \param[in] attributes The attributes (if any) to be associated
         with this building.
+
+        \param[in] kind The kind of building. This string is typically
+        extracted from the OSM data. The strings are of the form
+        "house", "residential", "apartments", "condominium" etc.
     */
     static Building create(const Ring& ring, int id, int levels = -1,
-                           int population = 0, int attributes = 0);
+                           int population = 0, int attributes = 0,
+                           const std::string& kind = "");
 
     /** Convenience method to create a building from a given set of
         information.
@@ -110,13 +120,17 @@ public:
         this building.
 
         \param[in] pumaID The PUMA area ID associated with this building.
+
+        \param[in] kind The kind of building. This string is typically
+        extracted from the OSM data. The strings are of the form
+        "house", "residential", "apartments", "condominium" etc.        
     */
     static Building create(int id, int sqFootage, long wayID,
                            double wayLat, double wayLon, double topLat,
                            double topLon, double botLat, double botLon,
                            int popRingID, bool isHome = true,
                            int levels = 1, int population = 0,
-                           int pumaID = -1);
+                           int pumaID = -1, const std::string& kind = "");
     
     /** Write this Building to a given output stream.
 
@@ -190,7 +204,7 @@ public:
         \see PUMSHousehold::getInfo()
     */
     void addHousehold(const PUMSHousehold& hld, const int people,
-                      const std::string& peopleInfo);
+                      const std::vector<PUMSPerson>& peopleInfo);
 
     /** Obtain the total square footage of all levels in this building.
 
@@ -229,6 +243,17 @@ public:
     /** Any custom attributes associated with this building */
     int attributes;
 
+    /** The kind of building. This string is typically read from the
+        OSM data and currently stored verbatim as is
+
+        \note Rather than normalizing the string into a specific
+        categories, we add helper methods that can deduce different
+        kinds of buildings.  The only special kind of building
+        currently we identify are homes, to speed-up household
+        assignments.
+    */
+    std::string kind;
+    
     /** The ID (obtained from OSM XML) for the street associated with
         this building. This street information is used for routing
         traffic to/from this building. */

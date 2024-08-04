@@ -253,7 +253,8 @@ ShapeFile::genXFig(XFigHelper& fig, int& xClip, int& yClip,
     double minPop = INT_MAX, maxPop = 0;
     for (const Ring& ring : rings) {
         if ((ring.getKind() == Ring::POPULATION_RING) ||
-            (ring.getKind() == Ring::BUILDING_RING)) {
+            (ring.getKind() == Ring::BUILDING_RING)   ||
+            (ring.getKind() == Ring::SYNTH_BUILDING_RING)) {
             minPop = std::min(minPop, ring.population);
             maxPop = std::max(maxPop, ring.population);
         }
@@ -276,9 +277,11 @@ ShapeFile::genXFig(XFigHelper& fig, int& xClip, int& yClip,
             //          << ring.population << std::endl;
         } else if (ring.getKind() == Ring::PUMA_RING) {
             fillColor = YELLOW;
+        } else if (ring.getKind() == Ring::BUILDING_RING) {
+            fillColor = 32;  // gray for existing buildings
         }
         ring.printXFig(fig, mapSize, xClip, yClip, drawCentroid, fillColor,
-                       startLayer, lineColor);
+                       startLayer, (lineColor == -1 ? fillColor : lineColor));
     }
     if (!drawScaleBar) {
         return;  // We are not drawing the scale bar.

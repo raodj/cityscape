@@ -223,6 +223,8 @@ ModelGenerator::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.pumsHouColNames, ArgParser::STRING_LIST},
         {"--pums-p-cols", "Names of columns in PUMS people CSV file to retain",
          &cmdLineArgs.pumsPepColNames, ArgParser::STRING_LIST},
+        {"--round-up-thresh", "Threshold to round up PUMA overlap to 100%",
+         &cmdLineArgs.roundUpThreshold, ArgParser::DOUBLE},        
         {"", "", NULL, ArgParser::INVALID}
     };
     // Setup default value for PUMS cols
@@ -825,6 +827,7 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
 
     // Local flags updated in the for-loop below.
     bool isBuilding = false, isAmenity = false, hasAddress = false;
+    std::string amenityType = "";
     // Iterate over all the child nodes.
     for (rapidxml::xml_node<> *child = node->first_node();
          (child != nullptr); child = child->next_sibling()) {
@@ -840,13 +843,19 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
             vertexLon.push_back(vertex.longitude);
         } else if (child->name() == Tag) {
             const KeyValue kv = getKeyValue(child, KeyAttr, ValAttr);
-            if (kv.first == "building") {
+            if ((kv.first == "building") && (kv.second != "no")) {
                 type = kv.second;
                 isBuilding = true;
             } else if (kv.first == "amenity") {
                 isAmenity  = true;
+                amenityType = kv.second;                
             } else if (kv.first == "building:use") {
                 isAmenity = HomeTypes.find(kv.second) == std::string::npos;
+                if (isAmenity) {
+                    amenityType = kv.second;
+                }
+            } else if (kv.first == "shop") {
+                amenityType = kv.second;
             } else if (kv.first == "building:levels") {
                 try {
                     levels = std::stoi(kv.second);
@@ -860,8 +869,15 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
                 // the tourism attribute to ensure that they are not
                 // tagged as residential buildings.
                 isAmenity = true;
+                type = kv.second;
+            } else if (kv.first == "man_made") {
+                isAmenity = true;
+                type = kv.second;
             } else if (kv.first.find("addr:") == 0) {
                 hasAddress = true;
+            } else if (kv.first == "power") {
+                isAmenity = true;
+                type = kv.second;
             }
         }
     }
@@ -873,6 +889,9 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
         (vertexLat.front() != vertexLat.back())) {
         return false;  // This is not a valid buliding at all.
     }
+    // We replace all blank spaces in building type with underscore to
+    // ease further processing
+    std::replace(type.begin(), type.end(), ' ', '_');
     // Check and ignore industrial buildings
     if (IgnoreTypes.find(type) != std::string::npos) {
         return false;  // This type of building is to be ignored
@@ -898,6 +917,10 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
         // where this check is needed.
         isHome = false;
     }
+
+    // We finally combine the home and amenity
+    type += ':';
+    type += amenityType;
 
     // Found a valid building
     return true;
@@ -954,7 +977,8 @@ ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
     }
 
     // Compute the nearest way and intersection for the building.
-    Building bld = Building::create(ring, bldID, levels, 0, popRingID);
+    Building bld = Building::create(ring, bldID, levels, 0, popRingID,
+                                    buildingType);
     bld.isHome   = isHome;
     bld.wayID = findNearestIntersection(ring, popRingID, nodes,
                                         bld.wayLat, bld.wayLon);
@@ -1384,12 +1408,27 @@ ModelGenerator::writeModel(const std::string& filePath) {
         bld.write(model, bld.id == firstBldID);
     }
 
+    // Next write the people each building in the model
+    bool writeHeader = true;    
+    for (const Building& bld : buildings) {
+        if (!bld.households.empty()) {
+            for (const PUMSHousehold& hld : bld.households) {
+                for (const auto& pep : hld.getPeopleInfo()) {
+                    pep.write(model, writeHeader);
+                    writeHeader = false;
+                }
+            }
+        }
+    }
+
     // Finally, write the households in each building.  This header
     // should be obtained from PUMSHousehold instead.
-    bool writeHeader = true;
+    writeHeader = true;
     for (const Building& bld : buildings) {
-        bld.writeHouseholds(model, writeHeader);
-        writeHeader = false;
+        if (!bld.households.empty()) {
+            bld.writeHouseholds(model, writeHeader);
+            writeHeader = false;
+        }
     }
 }
 
@@ -1497,19 +1536,21 @@ ModelGenerator::generateHomes(const Node& currNode, const Node& nextNode,
                                       homeLon + home1Lat - homeSpcLon,
                                       homeLat - home2Lon + homeSpcLat,
                                       homeLon + home2Lat + homeSpcLon,
-                                      popRingID, true, 1, 0, pumaID);
+                                      popRingID, true, 1, 0, pumaID,
+                                      Building::SynthHome);
     Building home2 = Building::create(buildings.size() + 1, sqFoot, wayID,
                                       homeLat, homeLon,
                                       homeLat + home1Lon - homeSpcLat,
                                       homeLon - home1Lat - homeSpcLon,
                                       homeLat + home2Lon + homeSpcLat,
                                       homeLon - home2Lat + homeSpcLon,
-                                      popRingID, true, 1, 0, pumaID);
+                                      popRingID, true, 1, 0, pumaID,
+                                      Building::SynthHome);
     // Check PUMA ID settings
     if (pumaID == -1) {
         std::cerr << "Warning: Unable to find PUMA ID for synthetic building ";
         home1.write(std::cerr, true);   // print information about the building
-    }    
+    }
     // Add the created buildings to the list
     buildings.push_back(home1);
     buildings.push_back(home2);
@@ -1532,7 +1573,7 @@ ModelGenerator::drawBuilding(const Building& bld) {
         std::to_string(bld.wayID);
     const std::vector<Ring::Info> info= {{1, "info",  entInfo }};
     // Create a ring for this building.
-    const Ring bldRing = Ring(bld.id, bld.id, Ring::BUILDING_RING, 5,
+    const Ring bldRing = Ring(bld.id, bld.id, Ring::SYNTH_BUILDING_RING, 5,
                               &xCoords[0], &yCoords[0], info);
     // Create an entry ring for this building.
     const Point ent = bldRing.getCentroid();
@@ -1565,7 +1606,7 @@ ModelGenerator::loadPUMA() {
     const int error = 
         pums.loadPUMA(cmdLineArgs.pumaShpPath, cmdLineArgs.pumaDbfPath,
                       minX - 0.01, minY - 0.01, maxX + 0.01, maxY + 0.01,
-                      shpFile);
+                      shpFile, cmdLineArgs.roundUpThreshold);
     std::cout << "Done loading PUMA data.\n";
     // Draw the PUMA rings for cross reference
     if (error == 0) {

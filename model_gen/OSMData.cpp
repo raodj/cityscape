@@ -36,6 +36,7 @@
 #include <algorithm>
 #include "OSMData.h"
 #include "PathSegment.h"
+#include "Utilities.h"
 
 int
 OSMData::loadModel(const std::string& modelFilePath) {
@@ -47,9 +48,14 @@ OSMData::loadModel(const std::string& modelFilePath) {
     }
     // Process line-by-line from the model text file to load model
     // data into memory.
+    PersonMap personMap;   // Cross-reference for person entries
     std::string line;
     while (std::getline(model, line)) {
         if (line.empty() || line.front() == '#') {
+            if (line.substr(0, 5) == "# Per ") {
+                // Load column titles for person entries
+                PUMSPerson::readColTitles(line);
+            }
             continue;  // empty or comment line. Ignore.
         }
         // Wrap string in a stream to ease extractions in if-else below
@@ -76,7 +82,7 @@ OSMData::loadModel(const std::string& modelFilePath) {
             popRings.push_back(rng);
         } else if (line.substr(0, 3) == "hld") {
             PUMSHousehold hld;
-            hld.read(is);
+            hld.read(is, personMap);
             // Add hosuehold to its corresponding building.
             if (buildingMap.find(hld.getBuildingID()) != buildingMap.end()) {
                 // Add this household to its building.
@@ -84,6 +90,11 @@ OSMData::loadModel(const std::string& modelFilePath) {
                 bld.addHousehold(hld, hld.getPeopleCount(),
                                  hld.getPeopleInfo());
             }
+        } else if (line.substr(0, 3) == "per") {
+            PUMSPerson per;
+            per.read(is);
+            ASSERT(personMap.find(per.getPerID()) == personMap.end());
+            personMap[per.getPerID()] = per;
         } else {
             std::cerr << "Invalid line in model file: " << line << std::endl;
             return 1;

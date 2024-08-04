@@ -32,6 +32,8 @@
 //---------------------------------------------------------------------------
 
 #include <numeric>
+#include <algorithm>
+#include <sstream>
 #include "Utilities.h"
 #include "DrawShapes.h"
 
@@ -124,10 +126,29 @@ DrawShapes::addAnnotations(const std::string& annotPath,
 
 void
 DrawShapes::generateFig() {
-    // Write the shape information to an XFig file if specified.
-    // The community shapes and population grids are to be drawn
-    shpFile.genXFig(cmdLineArgs.xfigFilePath,
-                    cmdLineArgs.figScale, true);
+    XFigHelper fig;
+    if (!fig.setOutput(cmdLineArgs.xfigFilePath, true)) {
+        std::cerr << "Error writing xfig file "
+                  << cmdLineArgs.xfigFilePath << std::endl;
+        return;
+    }
+    // Get the clip bounds to align the top-left corner at zero
+    int xClip = -1, yClip = -1;
+    shpFile.genXFig(fig, xClip, yClip, cmdLineArgs.figScale, true,
+                    cmdLineArgs.labelColNames,
+                    true, cmdLineArgs.xfigFilePath);
+    // Draw the ways with risk node information if an input file has
+    // been specified.
+    if (!cmdLineArgs.wayRiskFile.empty()) {
+        std::ifstream waysRiskTSV(cmdLineArgs.wayRiskFile);
+        if (!waysRiskTSV) {
+            std::cerr << "Error reading TSV file "
+                      << cmdLineArgs.wayRiskFile << std::endl;
+            return;
+        }
+        // Get helper method to plot the 
+        plotRiskWays(waysRiskTSV, fig, xClip, yClip, cmdLineArgs.figScale);
+    }
 }
 
 int
@@ -167,7 +188,9 @@ DrawShapes::processArgs(int argc, char *argv[]) {
         {"--annot-area-col", "0-based col index of area ID in annot-tsv",
          &cmdLineArgs.annotAreaNumCol, ArgParser::INTEGER},
         {"--annot-color-col", "0-based col index of data for coloring",
-         &cmdLineArgs.annotColorCol, ArgParser::INTEGER},        
+         &cmdLineArgs.annotColorCol, ArgParser::INTEGER},
+        {"--way-risk-tsv", "Output TSV from risk analysis for plotting",
+         &cmdLineArgs.wayRiskFile, ArgParser::STRING},
         {"", "", NULL, ArgParser::INVALID}
     };
     // Process the command-line arguments.
@@ -186,6 +209,75 @@ DrawShapes::processArgs(int argc, char *argv[]) {
     
     // Things seem fine so far
     return 0;
+}
+
+int
+DrawShapes::getColor(const int value) const {
+    if (value < 10) {
+        return 32;
+    }
+    return std::min(132., 32 + log10(value / 10) * 30);
+}
+
+void
+DrawShapes::plotRiskWays(std::istream& waysRiskTSV, XFigHelper& xfig,
+                         const int xClip, const int yClip, const int xfigSize,
+                         const int stLevel) const {
+    // Process line by line
+    for (std::string line; std::getline(waysRiskTSV, line);) {
+        if (line.empty() || line.at(0) == '#') {
+            continue;  // ignore empty lines and comments.
+        }
+        // Break the line into columns separated by tabs.
+        auto words = split(line, "\t");
+        ASSERT(words.size() > 25);
+        // Build a string for comment.
+        const std::string wayInfo = "OSM_WayID: " + words[0] + ", Name: " +
+            words[1] + ", kind: " + words[2] + ", speed: " + words[3] +
+            ", Nodes: " + words[6] + ", #Visits: " + words[8] +
+            ", Accidents: " + words[9];
+        // Add comment to the xfig
+        xfig.addComment(wayInfo);
+        // Plot the nodes in the way using the node info
+        const int nodeCount = std::stoi(words[6]);
+        ASSERT(nodeCount > 0 && nodeCount < 1000);
+        // Start a poly line for the way
+        const int color = getColor(std::stoi(words[8]));
+        ASSERT((color > 31) && (color < 134));
+        xfig.startPolyLine(nodeCount, color, stLevel);
+        // The information for each node is comma separated. Here we replace
+        // commas with spaces to ease read values
+        std::replace(words[25].begin(), words[25].end(), ',', ' ');
+        std::istringstream iss(words[25]);
+        // Add each vertex in the way        
+        for (int i = 0; (i < nodeCount); i++) {
+            long nodeID, osmID;
+            double lat, lon;
+            iss >> nodeID >> osmID >> lat >> lon;
+            // Translate the lat and lon to XFig coordinates
+            int xfigX, xfigY;
+            getXYValues(lat, lon, xfigX, xfigY,
+                        xfigSize * XFIG_SCALE, false);
+            xfigX -= xClip;
+            xfigY -= yClip;
+            xfig.addVertex(xfigX, xfigY);
+        }
+        // Done adding vertices
+        xfig.endPolyLine();
+    }
+    // Finally draw the color scale bar for the roadways
+    const std::vector<double> tics = {0, 1, 1, 100, 50, 5000, 75, 32500, 
+                                      100, 100000};
+    const int scale = 136500;
+    // void drawScaleBar(const int x, const int y,
+    //                   const int width, const int height,
+    //                   std::vector<double> tics,
+    //                   const int fontSize = 12,
+    //                   const int layer = 60);
+    xfig.drawScaleBar(XFIG_SCALE, xfigSize / XFIG_SCALE / 3.3,
+                     100 * xfigSize / scale * XFIG_SCALE,  // width
+                     5 * xfigSize / scale * XFIG_SCALE, tics,
+                     5 * xfigSize / scale);
 }
 
 int main(int argc, char *argv[]) {

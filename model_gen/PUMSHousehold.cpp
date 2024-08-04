@@ -33,6 +33,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <stdexcept>
 #include "PUMSHousehold.h"
 #include "Utilities.h"
 
@@ -47,6 +48,9 @@ const std::vector<int> PUMSHousehold::BldRecode =
 // set in ModelGenerator::processArgs method.
 std::vector<std::string> PUMSHousehold::pumsHouColNames;
 
+// Unique person ID value
+long PUMSHousehold::perIDcounter = 0;
+
 PUMSHousehold::PUMSHousehold(const std::string houseInfo, int bedRooms,
                              int bldCode, int pumaID, int wgtp, int hincp,
                              int people) :
@@ -58,7 +62,7 @@ PUMSHousehold::PUMSHousehold(const std::string houseInfo, int bedRooms,
 }
 
 PUMSHousehold::PUMSHousehold(const PUMSHousehold& hld, int bldId, int people,
-                             const std::string& peopleInfo) :
+                             const std::vector<PUMSPerson>& peopleInfo) :
     houseInfo(hld.houseInfo), bedRooms(hld.bedRooms), bld(hld.bld),
     pumaID(hld.pumaID), wgtp(hld.wgtp), hincp(hld.hincp), people(people),
     buildingID(bldId), peopleInfo(peopleInfo) {
@@ -79,21 +83,27 @@ PUMSHousehold::getAptInBld() const {
 }
 
 void
-PUMSHousehold::addPersonInfo(const int occurrence, const std::string& info) {
-    pepWtInfo.push_back(PepWtInfo(occurrence, info));
+PUMSHousehold::addPersonInfo(const int occurrence, const PUMSPerson& person) {
+    pepWtInfo.push_back(PepWtInfo(occurrence, person));
 }
 
-std::string
-PUMSHousehold::getInfo(const int i, int& pepCount, bool addInfo) const {
+std::vector<PUMSPerson>
+PUMSHousehold::getInfo(const int i, int& pepCount) const {
     // Ensure i is valid.
-    ASSERT((i >= 0) && (i < getCount()));
-    std::string info;  // household information to be returned.
+    ASSERT((i >= 0) && (i <= getCount()));
+    std::vector<PUMSPerson> info;  // persons information to be returned.
     pepCount = 0;
 
     // Iterate over each person in this household and include them in
-    // the family information.
+    // the family information. 
     for (size_t per = 0; (per < pepWtInfo.size()); per++) {
-        const double perScale = pepWtInfo[per].first * 1.0 / wgtp;
+        /** April 9 2023 -- raodm -- The following formula is
+            incorrect in the context of households. Replacing with a
+            simpler/correct approach to generate the same number of
+            people as in the household */
+        // const double perScale = pepWtInfo[per].first * 1.0 / wgtp;
+        const double perScale = 1.0;
+        
         // Compute number of occurrences of a person. Note that the
         // occurrence can be zero-or-more depending on the
         // characteristics of this household.
@@ -107,20 +117,11 @@ PUMSHousehold::getInfo(const int i, int& pepCount, bool addInfo) const {
         }
         // Add the number of occurrences to the household information.
         while (occurs-- > 0) {
-            info += pepWtInfo[per].second + ";";
+            // info += pepWtInfo[per].second.getInfo() + ";";
+            PUMSPerson person = pepWtInfo[per].second;
+            person.setPerID(perIDcounter++);
+            info.push_back(person);
             pepCount++;
-        }
-    }
-
-    // Note that in some fractional cases, household info can be an
-    // empty string.  Calling pop_back on empty string causes weird error
-    if (!info.empty()) {
-        info.pop_back();  // Remove trailing semicolon.
-        if (addInfo) {
-            info = houseInfo + ' ' + std::to_string(bedRooms)
-                + ' ' + std::to_string(bld) + ' ' + std::to_string(pumaID)
-                + ' ' + std::to_string(wgtp) + ' ' + std::to_string(hincp)
-                + ' ' + info;
         }
     }
     return info;
@@ -136,24 +137,44 @@ PUMSHousehold::write(std::ostream& os, const bool writeHeader,
             os << (first ? ' ' : ',') << col;
             first = false;
         }
-        os << " bedRooms BLDtype pumaID WGTP HINCP #people peopleInfo\n";
+        os << " bedRooms BLDtype pumaID WGTP HINCP #people peopleIDs...\n";
     }
 
     // Write the actual data for this household
     os << "hld"  << delim    << buildingID << delim << std::quoted(houseInfo)
        << delim  << bedRooms << delim      << bld   << delim << pumaID
-       << delim  << wgtp     << delim      << hincp << delim
-       << people << delim    << std::quoted(peopleInfo) << '\n'; 
-    
+       << delim  << wgtp     << delim      << hincp << delim << people;
+
+    // Write the IDs of each person record 
+    for (const auto person : peopleInfo) {
+        os << delim << person.getPerID();
+    }
+    os << '\n';
 }
 
 void
-PUMSHousehold::read(std::istream& is) {
+PUMSHousehold::read(std::istream& is, const PersonMap& personMap) {
     // Read information for this household
     std::string hld;     // string to be read and discarted
     is >> hld;
     is >> buildingID  >> std::quoted(houseInfo) >> bedRooms >> bld
-       >> pumaID >> wgtp >> hincp >> people >> std::quoted(peopleInfo);
+       >> pumaID >> wgtp >> hincp >> people;
+    // Read each person's ID and look-up the person's info in the
+    // person map to get the information about the person.
+    peopleInfo.resize(people);
+    for (int i = 0; (i < people); i++) {
+        long perID;
+        is >> perID;
+        const auto entry = personMap.find(perID);
+        if (entry == personMap.end()) {
+            throw std::runtime_error("Did not find entry for perID " +
+                                     std::to_string(perID) + 
+                                     " for household " + houseInfo);
+        }
+        // Add this person entry to the household.
+        peopleInfo[i] = entry->
+            second;
+    }
 }
 
 #endif

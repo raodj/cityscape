@@ -63,8 +63,12 @@ DrawBuildings::run(int argc, char *argv[]) {
     }
     
     // Next load and draw the shape files
+    int xClip = -1, yClip = -1;
     if ((error = drawShapeFiles(xfig, cmdLineArgs.shapeFilePaths,
-                                cmdLineArgs.dbfFilePaths)) != 0) {
+                                cmdLineArgs.dbfFilePaths,
+                                xClip, yClip,
+                                cmdLineArgs.figScale,
+                                cmdLineArgs.startShapeLevel)) != 0) {
         return error;  // Error loading community shape file.
     }
 
@@ -77,7 +81,7 @@ DrawBuildings::run(int argc, char *argv[]) {
     }
 
     // Draw the buildings based on specified information.
-    drawBuildings(model, xfig, cmdLineArgs.key_info);
+    drawBuildings(model, xfig, cmdLineArgs.key_info, xClip, yClip);
     
     return 0;  // All went well.
 }
@@ -89,23 +93,34 @@ DrawBuildings::getInfo(const Building& bld, const std::string& infoKey) const {
 
 void
 DrawBuildings::drawBuildings(const OSMData& model, XFigHelper& fig,
-                             const std::string& infoKey) {
+                             const std::string& infoKey,
+                             int xClip, int yClip) {
     // In order to repurpose the features of drawing scale etc, we
     // just create a shape file object and add buildings to it as
     // rings.
     ShapeFile bldsSF;   // buildings shape file
     for (const auto bldEntry : model.buildingMap) {
         const Building& bld = bldEntry.second;  // Reference to building
-        // Create a ring for this building
-        bldsSF.addRing(getBldRing(bldEntry.first, bld, infoKey));
+        // Create a ring for this building if the info is non-zero
+        // Get info to use as population for the building
+        int info = bld.getInfo(infoKey);
+        // To keep the average income figure clearly visible, we truncate
+        // everything below 10k to 0.
+        info = ((infoKey == "avg_income" && (info < 10'000)) ? 0 : info);
+        if (bld.isHome && info > 0) {
+            bldsSF.addRing(getBldRing(bldEntry.first, bld, infoKey));
+        }
     }
+
+    bldsSF.genXFig(fig, xClip, yClip, cmdLineArgs.figScale, false, {}, true,
+                   cmdLineArgs.modelFilePath, 50, -1);
 }
 
 Ring
 DrawBuildings::getBldRing(int bldId, const Building& bld,
                           const std::string& infoKey) const {
     // Get info to use as population for the building
-    const int info = bld.getInfo(infoKey);    
+    const int info = bld.getInfo(infoKey);
     // Create the top-left and bottom-right points.
     const Point topLeft(bld.topLon, bld.topLat),
         botRight(bld.botLon, bld.botLat);
@@ -131,7 +146,9 @@ DrawBuildings::getColumn(const std::string& line, const int column,
 int
 DrawBuildings::drawShapeFiles(XFigHelper& fig, const StringList& shapeFiles,
                               const StringList& dbfFiles,
+                              int& minXclip, int& minYclip,
                               const int figScale, int startShapeLevel) {
+                              
     // The first shapefile becomes the primary. Other shape files are
     // intersected with this file to make the figure better.
     std::vector<ShapeFile> shapes;
@@ -139,7 +156,7 @@ DrawBuildings::drawShapeFiles(XFigHelper& fig, const StringList& shapeFiles,
     // The folllowing minXclip and minYclip are updated in loop below
     // to track the minimum values from all the shape files being
     // drawn.
-    int minXclip = INT_MAX, minYclip = INT_MAX;
+    minXclip = minYclip = INT_MAX;
 
     // Below we accummulate all the shapes into a vector so that we
     // can determine the overall XClip and YClip values to know what
@@ -181,7 +198,7 @@ DrawBuildings::drawShapeFiles(XFigHelper& fig, const StringList& shapeFiles,
     // clipping bounds.
     const std::vector<int> Colors = { BLACK, RED, BLUE, GREEN, CYAN };
     for (size_t i = 0; (i < shapes.size()); i++) {
-        shapes[i].genXFig(fig, minXclip, minYclip, cmdLineArgs.figScale,
+        shapes[i].genXFig(fig, minXclip, minYclip, figScale,
                           false, {}, false, shapeFiles[i],
                           startShapeLevel + (i * 10), Colors.at(i));
     }

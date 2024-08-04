@@ -33,6 +33,7 @@
 
 #include <numeric>
 #include <chrono>
+#include <sstream>
 #include "Utilities.h"
 #include "WayRiskAnalyzer.h"
 #include "PathFinder.h"
@@ -80,6 +81,8 @@ WayRiskAnalyzer::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.nodeSummaryFile, ArgParser::STRING },
         {"--way-summary", "Set file where way summary is printed.",
          &cmdLineArgs.waySummaryFile, ArgParser::STRING },
+        {"--accident-nodes", "The output TSV from accidents_collator",
+         &cmdLineArgs.accidentNodesTSV, ArgParser::STRING},
         {"", "", NULL, ArgParser::INVALID}
     };
     // Process the command-line arguments.
@@ -154,6 +157,13 @@ int WayRiskAnalyzer::run(int argc, char *argv[]) {
                         toTimestamp(cmdLineArgs.endDate   + " 11:59:59 PM"));
     }
 
+    // Distribute any accident data that may be availale
+    if (!cmdLineArgs.accidentNodesTSV.empty()) {
+        NodeAccidentsMap nodesAccidents =
+            loadAccidentData(cmdLineArgs.accidentNodesTSV);
+        wayAccidents = assignAccidents(nodesAccidents, wayVisits);
+    }
+    
     // Print information about all the ways based on visits
     std::ofstream waysData(cmdLineArgs.waySummaryFile);
     if (!waysData.good() && !cmdLineArgs.waySummaryFile.empty()) {
@@ -284,8 +294,9 @@ WayRiskAnalyzer::processTaxiData(std::istream& taxiData,
 
 #pragma omp critical (processTaxiData_ways)
             {
-                // Copy over all the node visits
+                // Copy over all the way visits
                 for (const auto& entry : localWayVisits) {
+                    ASSERT( entry.second > 0 );
                     wayVisits[entry.first] += entry.second;
                 }
             }
@@ -311,9 +322,10 @@ WayRiskAnalyzer::updateNodes(const Path& path, NodeVisitMap& nodeVisits,
                              WayVisitMap& wayVisits,
                              const int startMinute, const int maxEntries) {
     for (const PathSegment& seg : path) {
-        // Update the visit count for the 'ways'
-        wayVisits[seg.wayID]++;
         if (seg.buildingID == -1) {
+            // Update the visit count for the 'ways'
+            wayVisits[seg.wayID]++;
+            
             // Ensure we have sufficient vector entires in this node.
             nodeVisits[seg.nodeID].resize(maxEntries);
             // Compute the time corresponding to this path
@@ -339,7 +351,7 @@ WayRiskAnalyzer::writeNodeSummary(std::ostream& os) const {
     // First print the fixed part of the header for the file.
     os << "# Node Summary\n"
        << "# Generated using command-line: " << cmdLineArgs.fullCmdLine
-       << "\nNodeID\tOSMid\tLatitude\tLongitude\t#Visits";
+       << "\nNodeID\tOSMid\tLatitude\tLongitude\t#Visits_Mean";
     // Print the times for which we are printing summary info.
     for (int min = cmdLineArgs.startMinute; (min <= cmdLineArgs.endMinute);
          min += 15) {
@@ -353,8 +365,8 @@ WayRiskAnalyzer::writeNodeSummary(std::ostream& os) const {
         const auto& visits = entry.second;
         const Node& node   = osmData.nodeList.at(entry.first);
         // Print information about the node.
-        os << entry.first    << node.osmId << '\t' << node.latitude << '\t'
-           << node.longitude << '\t' << sum(visits);
+        os << entry.first    << '\t' << node.osmId << '\t'
+           << node.latitude  << '\t' << node.longitude << '\t' << sum(visits);
         for (const auto count : visits) {
             os << '\t' << count;
         }
@@ -368,8 +380,8 @@ WayRiskAnalyzer::writeWaysSummary(std::ostream& os) const {
     // First print the fixed part of the header for the file.
     os << "# Ways Summary\n"
        << "# Generated using command-line: " << cmdLineArgs.fullCmdLine
-       << "\nOSM_WayID\tName\tKind\tSpeed\tOneWay\tDeadEnd\t#Nodes\t"
-       << "#VistedNodes\t#Visits";
+       << "\n# OSM_WayID\tName\tKind\tSpeed\tOneWay\tDeadEnd\t#Nodes\t"
+       << "#VistedNodes\t#Visits\t#AccCounts";
     // Print the times for which we are printing summary info.
     for (int min = cmdLineArgs.startMinute; (min <= cmdLineArgs.endMinute);
          min += 15) {
@@ -381,13 +393,9 @@ WayRiskAnalyzer::writeWaysSummary(std::ostream& os) const {
     for (const auto& entry : wayVisits) {
         // Get the way from the model to print its information.
         const Way way = osmData.wayMap.at(entry.first);
-        // Print the basic information about the way first.
-        os << way.id << '\t' << way.name << '\t' << way.getKindStr() << '\t'
-           << way.maxSpeed << '\t' << way.isOneWay << '\t' << way.isDeadEnd
-           << '\t' << way.nodeList.size();
 
-        // Next we have to collate the visits for each node on this
-        // 'way', at different times.
+        // First we have to collate the visits for each node on this
+        // 'way', at different time steps.
         std::vector<int> visits;
         int visitedNodes = 0;
         for (const auto nodeID : way.nodeList) {
@@ -402,10 +410,19 @@ WayRiskAnalyzer::writeWaysSummary(std::ostream& os) const {
             }
         }
 
+        // Print the basic information about the way first.
+        os << way.id << '\t' << way.name << '\t' << way.getKindStr() << '\t'
+           << way.maxSpeed << '\t' << way.isOneWay << '\t' << way.isDeadEnd
+           << '\t' << way.nodeList.size();
+        
         // Print the number of visted nodes
         os << '\t' << visitedNodes;
         // Print the total visits for this node
-        os << '\t' << sum(visits);
+        os << '\t' << (sum(visits) / visits.size());
+        // Print the number of accidents (if any)
+        const int accCount = (wayAccidents.find(way.id) != wayAccidents.end() ?
+                              wayAccidents.at(way.id) : -1);
+        os << '\t' << accCount;
         // Print the visits for this way at different times.
         for (const auto count : visits) {
             os << '\t' << count;
@@ -432,6 +449,82 @@ WayRiskAnalyzer::writeWaysSummary(std::ostream& os) const {
         
         os << '\n';
     }
+}
+
+WayIDAccidentsMap
+WayRiskAnalyzer::assignAccidents(const NodeAccidentsMap& nodesAccidents,
+                                 const WayVisitMap& waysVisited) const {
+    WayIDAccidentsMap wayAcc;
+    NodeAccidentsMap alreadyHandled;
+    // Collate information for each way simulated
+    for (const auto& entry : waysVisited) {
+        // Get the way from the model to print its information.
+        const Way way = osmData.wayMap.at(entry.first);
+        // Check the nodes in each way
+        for (const auto nodeID : way.nodeList) {
+            // Collates the accidents for each node in the way
+            if (nodesAccidents.find(nodeID) != nodesAccidents.end()) {
+                // Nodes information found
+                wayAcc[entry.first] += nodesAccidents.at(nodeID);
+                // Update the list of nodes aready visited
+                alreadyHandled[nodeID] = 1;
+            }
+        }
+    }
+    // Print the number of accident nodes actually assigned
+    std::cout << alreadyHandled.size() << " accident nodes out of "
+              << nodesAccidents.size() << " have been assigned.\n";
+    // Return the ways accounted
+    return wayAcc;
+}
+
+NodeAccidentsMap
+WayRiskAnalyzer::loadAccidentData(const std::string& accidentNodesTSV) const {
+    // Open the TSV file generated by accidents_collator
+    std::ifstream tsv(accidentNodesTSV);
+    if (!tsv) {
+        // Error opening/reading the accidents TSV. Let the user know
+        throw std::runtime_error("Error opening " + accidentNodesTSV);
+    }
+    // The map of nodes and the number of accidents at each node.
+    NodeAccidentsMap accMap;
+    bool headerCheck = true;
+    std::string dummy;
+    long nodeID, osmID;
+    int accCount;
+    // Read and process line-by-line of the TSV file
+    for (std::string line; std::getline(tsv, line);) {
+        if (line.empty()) {
+            continue;  // Ignore empty lines
+        }
+        if (line.at(0) == '#') {
+            // Comment lines are ignored.  However, we still want to
+            // double check the order of columns for the longer-run.
+            if (headerCheck) {
+                const std::vector<std::string> cols = split(line);
+                if ((cols.size() > 4) && (cols.at(0) == "#") &&
+                    (cols.at(1) == "NodeID")) {
+                    if (cols.at(5) != "AccCount") {
+                        throw std::runtime_error("The column headers don't "
+                                                 "match: " + line);
+                    } else {
+                        // We have checked the header and it was valid.
+                        headerCheck = false;
+                    }
+                }
+            }
+            continue;  // Don't skip comment lines
+        }
+        // Add the information from the line to the unordered map;
+        ASSERT(headerCheck == false);
+        std::istringstream(line) >> nodeID >> osmID >> dummy >> dummy
+                                 >> accCount;
+        ASSERT(accMap.find(nodeID) == accMap.end());
+        ASSERT(nodeID < (long) osmData.nodeList.size());
+        accMap[nodeID] = accCount;
+    }
+    // Return all the node information
+    return accMap;
 }
 
 /**

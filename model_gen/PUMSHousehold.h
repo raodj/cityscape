@@ -33,12 +33,20 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include "PUMSPerson.h"
 
-/** Shortcut to refer to PWGTP and user info for each household */
-using PepWtInfo = std::pair<int, std::string>;
+/** Shortcut to refer to PWGTP and person info for each household */
+using PepWtInfo = std::pair<int, PUMSPerson>;
 
 /** A list of occurrence and user information values for each household */
 using PepWtInfoList = std::vector<PepWtInfo>;
+
+/** An alias for a map to quickly look-up person entries via their
+    ID. This map is only used when an already-generated model is being
+    read. See PUMSHousehold::read and OSMData::loadModel
+*/
+using PersonMap = std::unordered_map<int, PUMSPerson>;
 
 /** Class to encapsulate necessary information about a household and
     people living in them.
@@ -93,7 +101,7 @@ public:
         \param[in] peopleInfo The information about the people.
     */
     PUMSHousehold(const PUMSHousehold& hld, int bldId, int people,
-                  const std::string& peopleInfo);
+                  const std::vector<PUMSPerson>& peopleInfo);
     
     /** The destructor.
 
@@ -107,11 +115,11 @@ public:
         \param[in] occurrence The number of occurrences of this
         specific person record.
         
-        \param[in] info The information about the person to be added.
-        This information is in the form of a CSV string. The columns
-        are in the order specified by the user.
+        \param[in] person The information about the person to be
+        added.  This information is encapsulated in the object. The
+        columns are in the order specified by the user.
     */
-    void addPersonInfo(const int occurrence, const std::string& info);
+    void addPersonInfo(const int occurrence, const PUMSPerson& person);
 
     /** Get a size estimate for this household based on apartment
         configuration and number of bedrooms.  This method returns a
@@ -173,7 +181,7 @@ public:
 
         \return The information about the people in the household.
      */
-    std::string getPeopleInfo() const { return peopleInfo; }
+    const std::vector<PUMSPerson>& getPeopleInfo() const { return peopleInfo; }
     
     /** Generate information about the i'th household of this type.
 
@@ -190,16 +198,11 @@ public:
         \param[out] pepCount The number of people in the household
         information returned by this method.
 
-        \param[in] addInfo If this flag is true then full information
-        about the household is returned.  Otherwise only people
-        information is returned.
-        
-        \return A string representing the household information. Note
-        in fractional cases, the returned string can be an empty
-        string and such returns should be ignored.
+        \return A list of people living in the household
+        information. Note in fractional cases, the returned list can
+        be an empty string and such returns should be ignored.
      */
-    std::string getInfo(const int i, int& pepCount,
-                        const bool addInfo = false) const;
+    std::vector<PUMSPerson> getInfo(const int i, int& pepCount) const;
 
     /** Obtain the type of building set for this household.
 
@@ -247,8 +250,11 @@ public:
 
         \param[in,out] is The input stream with 1 line of data from
         where the information for this household is to be read.
+
+        \param[in] personMap The map to be used to look-up a person's
+        information associated with this household.
     */
-    void read(std::istream& is);
+    void read(std::istream& is, const PersonMap& personMap);
 
     /** Write this household information to a given output stream.
 
@@ -348,7 +354,7 @@ private:
      * set when an household is being added to a building.  The
      * information about the people is created in the getInfo method.
      */
-    std::string peopleInfo;
+    std::vector<PUMSPerson> peopleInfo;
     
     /**
        This vector is used to recode the BLD type when estimating
@@ -358,7 +364,13 @@ private:
        method in this class fast.  In summary, the recode enables
        better assignment of buildings to households.
     */
-    static const std::vector<int> BldRecode;    
+    static const std::vector<int> BldRecode;
+
+    /**
+       A counter to assign unique person ID values to each person
+       generated in the getInfo method.
+     */
+    static long perIDcounter;
 };
 
 #endif

@@ -117,7 +117,9 @@ protected:
     */
     int drawShapeFiles(XFigHelper& fig, const StringList& shapeFiles,
                        const StringList& dbfFiles,
+                       int& xClip, int& yClip,
                        const int figScale = 4096, int startShapeLevel = 100);
+                       
 
     /**
        Helper method to get a specific column from a given string
@@ -151,9 +153,10 @@ protected:
     int getInfo(const Building& bld, const std::string& infoKey) const;
     
     void drawBuildings(const OSMData& model, XFigHelper& fig,
-                       const std::string& infoKey);
+                       const std::string& infoKey, int xClip, int yClip);
 
-    Ring getBldRing(int bldId, const Building& bld, const std::string& infoKey) const;
+    Ring getBldRing(int bldId, const Building& bld,
+                    const std::string& infoKey) const;
     
 private:
     /** This is a simple inner class that is used to conveniently
