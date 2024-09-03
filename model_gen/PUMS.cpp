@@ -237,7 +237,7 @@ PUMS::loadHousehold(const std::string& pumsHouPath,
     const std::vector<int> colIndexs = toColIndex(header, pumsColNames);
     // Validate implicit assumptions on column order below.
     constexpr int SERIALNO = 1, PUMA = 3, WGTP = 8, NP = 9, TYPE = 10,
-        BDSP = 15, BLD = 16, HINCP = 71; // HINCP = 67;
+        BDSP = 15, BLD = 16, HINCP = 73; // HINCP = 67;
 
     // Double check order of columns just to play it safe if program
     // is compiled in development mode.
@@ -534,7 +534,7 @@ PUMS::distributePopulation(int pumaID, const double popFrac,
         Building& bld = buildings[bldMainIdx];
         // Add household to building with given people count.
         const PUMSHousehold& hld = households.at(hldId);
-        bld.addHousehold(hld, pepCount, hldInfo);
+        bld.addHousehold(hld, pepCount, hldInfo, true);
         hldsCreated++;
         // Decrease area left in this building
         remainingSqFt -= (hld.getRooms() * sqFtPerRm);
@@ -616,7 +616,7 @@ PUMS::assignSingleFamilies(std::vector<Building>& buildings,
                           << " (puma ID = "   << pumaID << ")\n";
             }
             // Add household to building
-            bld.addHousehold(hld, pepCount, hldInfo);
+            bld.addHousehold(hld, pepCount, hldInfo, true);
             hldsAssigned++;
             // Onto the next building.
             bldIdx++;

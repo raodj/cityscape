@@ -204,7 +204,7 @@ public:
         \see PUMSHousehold::getInfo()
     */
     void addHousehold(const PUMSHousehold& hld, const int people,
-                      const std::vector<PUMSPerson>& peopleInfo);
+                      const std::vector<PUMSPerson>& peopleInfo, const bool addPeopleToPopulation = false);
 
     /** Obtain the total square footage of all levels in this building.
 

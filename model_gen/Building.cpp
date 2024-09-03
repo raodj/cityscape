@@ -152,8 +152,10 @@ Building::writeHouseholds(std::ostream& os, bool writeHeader,
 
 void
 Building::addHousehold(const PUMSHousehold& hld, const int people,
-                       const std::vector<PUMSPerson>& peopleInfo) {
-    population += people;
+                       const std::vector<PUMSPerson>& peopleInfo, const bool addPeopleToPopulation) {
+    if (addPeopleToPopulation) {
+        population += people;
+    }
     households.push_back(PUMSHousehold(hld, id, people, peopleInfo));
 }
 
