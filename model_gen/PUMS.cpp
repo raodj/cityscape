@@ -40,6 +40,7 @@
 
 int
 PUMS::loadPUMA(const std::string& pumaShpPath, const std::string& pumaDbfPath,
+               const std::string& pumaIDColumnName,
                const double minX, const double minY, const double maxX,
                const double maxY, const ShapeFile& communities,
                const double roundUpThreshold) {
@@ -66,8 +67,10 @@ PUMS::loadPUMA(const std::string& pumaShpPath, const std::string& pumaDbfPath,
         const Ring& ring = fullPuma.getRing(rIdx);
         // Get the PUMA area ID to set as the ID for the ring to make
         // future look-up/validation/troubleshooting easier.
-        const std::string label = ring.getInfo("PUMA") +
-            ring.getInfo("PUMACE10"); 
+        const std::string label = ring.getInfo(pumaIDColumnName);
+        if (label.length() == 0) {
+            throw std::runtime_error("Column \"" + pumaIDColumnName + "\" not found in the PUMA DBF file");
+        }
         const int pumaID        = std::stoi(label);
         // Handle 2 cases -- 1: fully contained, 2: partial intersection
         if (bounds.contains(ring)) {
@@ -201,14 +204,15 @@ void
 PUMS::distributePopulation(std::vector<Building>& buildings,
                            const std::string& pumsHouPath,
                            const std::string& pumsPepPath,
+                           const std::string& pumaIDColName,
                            const ArgParser::StringList& pumsHouColNames,
                            const ArgParser::StringList& pumsPepColNames) const {
     // First load the household information for rings of interest into
     // memory.
-    HouseholdMap households = loadHousehold(pumsHouPath, pumsHouColNames);
+    HouseholdMap households = loadHousehold(pumsHouPath, pumaIDColName, pumsHouColNames);
     // Load the people information from the PUMS file into the
     // household hashmap (created in the previous line of code).
-    loadPeopleInfo(households, pumsPepPath, pumsPepColNames);
+    loadPeopleInfo(households, pumsPepPath, pumaIDColName, pumsPepColNames);
     // Now, we have loaded the information into memory, we can
     // distribute households to the different buildings in the
     // different pums regions.
@@ -223,6 +227,7 @@ PUMS::distributePopulation(std::vector<Building>& buildings,
 // Load household information into the map
 HouseholdMap
 PUMS::loadHousehold(const std::string& pumsHouPath,
+                    const std::string& pumaIDColName,
                     const ArgParser::StringList& pumsColNames) const {
     std::ifstream houCsv(pumsHouPath);  // Open the CSV file.
     if (!houCsv.good()) {
@@ -234,23 +239,36 @@ PUMS::loadHousehold(const std::string& pumsHouPath,
     // line of the file.
     std::string header, line;
     std::getline(houCsv, header);
-    const std::vector<int> colIndexs = toColIndex(header, pumsColNames);
+
+    const std::vector<int> colIdxes = toColIndex(header, 
+    { "SERIALNO", pumaIDColName, "WGTP", "NP", "TYPEHUGQ", "BDSP", "BLD", "HINCP" });
+    // Get the index of the columns with the names in pumsColNames in header
+    // header should be a comma-separated list
+
     // Validate implicit assumptions on column order below.
-    constexpr int SERIALNO = 1, PUMA = 3, WGTP = 8, NP = 9, TYPE = 10,
-        BDSP = 15, BLD = 16, HINCP = 73; // HINCP = 67;
+    const int SERIALNO = colIdxes.at(0),
+    PUMA = colIdxes.at(1),
+    WGTP = colIdxes.at(2),
+    NP = colIdxes.at(3),
+    TYPE = colIdxes.at(4),
+    BDSP = colIdxes.at(5),
+    BLD = colIdxes.at(6),
+    HINCP = colIdxes.at(7); // HINCP = 67;
 
     // Double check order of columns just to play it safe if program
     // is compiled in development mode.
 #ifdef DEVELOPER_ASSERTIONS
     const std::vector<std::string> titleCols = split(header, ",");
     ASSERT((titleCols[SERIALNO]  == "SERIALNO") &&
-           (titleCols[PUMA]  == "PUMA")         &&
+           (titleCols[PUMA]  == pumaIDColName)  &&
            (titleCols[WGTP]  == "WGTP")         &&
            (titleCols[NP]    == "NP")           &&
            (titleCols[BDSP]  == "BDSP")         &&
            (titleCols[BLD]   == "BLD")          &&
            (titleCols[HINCP] == "HINCP"));
 #endif
+
+    const std::vector<int> customColIndexs = toColIndex(header, pumsColNames);
     
     // Process each line of the input and retain the necessary
     // household information.
@@ -259,7 +277,7 @@ PUMS::loadHousehold(const std::string& pumsHouPath,
         // Split into individual columns for convenience.
         const std::vector<std::string> info = split(line, ",");
         // Extract some of the specific household information.
-        const std::string houseInfo = toCSV(colIndexs, info);
+        const std::string houseInfo = toCSV(customColIndexs, info);
         // Create the household record to be stored only for homes and
         // not group quarters. Note: We ignore mobile homes.
         if ((info[TYPE] == "1") && (info[BLD] != "01")) {
@@ -322,6 +340,7 @@ PUMS::toCSV(const std::vector<int>& colIndexs,
 void
 PUMS::loadPeopleInfo(HouseholdMap& households,
                      const std::string& pumsPepPath,
+                     const std::string& pumaIDColName,
                      const ArgParser::StringList& pumsColNames) const {
     std::ifstream pepCsv(pumsPepPath);  // Open the CSV file.
     if (!pepCsv.good()) {
@@ -333,20 +352,24 @@ PUMS::loadPeopleInfo(HouseholdMap& households,
     // line of the file.
     std::string header, line;
     std::getline(pepCsv, header);
-    const std::vector<int> colIndexs = toColIndex(header, pumsColNames);
+    const std::vector<int> colIndexs = toColIndex(header, 
+    {"SERIALNO", pumaIDColName, "PWGTP"});
+    const std::vector<int> customColIndexs = toColIndex(header, pumsColNames);
     // Validate implicit assumptions on column order below.
-    constexpr int SERIALNO = 1, PUMA = 4, PWGTP = 8;
+    const int SERIALNO = colIndexs.at(0),
+    PUMA = colIndexs.at(1),
+    PWGTP = colIndexs.at(2);
 
     // Double check order of columns just to play it safe if program
     // is compiled in development mode.
     const std::vector<std::string> titleCols = split(header, ",");    
 #ifdef DEVELOPER_ASSERTIONS
     ASSERT((titleCols[SERIALNO]  == "SERIALNO") &&
-           (titleCols[PUMA]   == "PUMA")        &&
+           (titleCols[PUMA]   == pumaIDColName) &&
            (titleCols[PWGTP]  == "PWGTP"));
 #endif
     // Setup the fixed column names in the person's entry
-    PUMSPerson::setColumnTitles(titleCols, colIndexs);
+    PUMSPerson::setColumnTitles(titleCols, customColIndexs);
     // Process each line of the input and retain the necessary
     // household information.
     while (std::getline(pepCsv, line)) {
@@ -362,7 +385,7 @@ PUMS::loadPeopleInfo(HouseholdMap& households,
         }
         // This serial number we care about. Extract necessary columns
         // of people information.
-        const PUMSPerson personInfo(serialNo, colIndexs, info);
+        const PUMSPerson personInfo(serialNo, customColIndexs, info);
         const int pwgtp = std::stoi(info[PWGTP]);
         // Add the person to the household
         entry->second.addPersonInfo(pwgtp, personInfo);

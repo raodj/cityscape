@@ -40,6 +40,7 @@
 #include <numeric>
 #include <sstream>
 #include <unordered_set>
+#include <limits>
 #include "Utilities.h"
 #include "ModelGenerator.h"
 #include "Options.h"
@@ -92,6 +93,7 @@ ModelGenerator::run(int argc, char *argv[]) {
     if (!cmdLineArgs.pumsHousingPath.empty()) {
         pums.distributePopulation(buildings, cmdLineArgs.pumsHousingPath,
                                   cmdLineArgs.pumsPeoplePath,
+                                  cmdLineArgs.pumaIDColumnNamePUMS,
                                   cmdLineArgs.pumsHouColNames,
                                   cmdLineArgs.pumsPepColNames);
     } else {
@@ -140,7 +142,7 @@ ModelGenerator::distributePopulation() {
             }
         }
         // Print the generated population
-        pop = popRings[popID].getPopulation();        
+        pop = popRings[popID].getPopulation();
         const double error = (popCount - pop) * 100 / pop;
         std::cout << "Ring " << popRingID << " pop: " << pop
                   << " generated: " << popCount << ", error: "
@@ -219,6 +221,10 @@ ModelGenerator::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.pumaShpPath, ArgParser::STRING},
         {"--puma-dbf", "Path to PUMA DBF file",
          &cmdLineArgs.pumaDbfPath, ArgParser::STRING},
+        {"--puma-id-col-dbf", "Name of the column that contains the PUMA ID in the DBF file. If not specified, either the value of --puma-id-col-pums, if it exists, or \"PUMA\" will be used",
+         &cmdLineArgs.pumaIDColumnNameDBF, ArgParser::STRING},
+        {"--puma-id-col-pums", "Name of the column that contains the PUMA ID in the PUMS household and person file. If not specified, either value of --puma-id-col-dbf, if it exists, or \"PUMA\" will be used",
+         &cmdLineArgs.pumaIDColumnNamePUMS, ArgParser::STRING},
         {"--pums-h-cols", "Names of columns in PUMS housing CSV file to retain",
          &cmdLineArgs.pumsHouColNames, ArgParser::STRING_LIST},
         {"--pums-p-cols", "Names of columns in PUMS people CSV file to retain",
@@ -243,6 +249,29 @@ ModelGenerator::processArgs(int argc, char *argv[]) {
     }
     // Setup the header information for use in household
     PUMSHousehold::pumsHouColNames = cmdLineArgs.pumsHouColNames;
+
+    // Check PUMA ID column name in DBF and PUMS Household file
+    if (cmdLineArgs.pumaIDColumnNameDBF.empty()) {
+        std::cerr << "PUMA ID column in DBF not specified, using ";
+        if (!cmdLineArgs.pumaIDColumnNamePUMS.empty()) {
+            cmdLineArgs.pumaIDColumnNameDBF = cmdLineArgs.pumaIDColumnNamePUMS;
+            std::cerr << "PUMA ID column name in PUMA Household file: \"" 
+            << cmdLineArgs.pumaIDColumnNamePUMS << "\"";
+        } else {
+            cmdLineArgs.pumaIDColumnNameDBF = "PUMA";
+            std::cerr << "default value: \"" << cmdLineArgs.pumaIDColumnNameDBF << "\"";
+        }
+
+        std::cerr << std::endl;
+    }
+
+    if (cmdLineArgs.pumaIDColumnNamePUMS.empty()) {
+        cmdLineArgs.pumaIDColumnNamePUMS = cmdLineArgs.pumaIDColumnNameDBF;
+            std::cerr << "PUMA ID column in PUMS Household file not specified, using PUMA ID column name in DBF file: \"" 
+            << cmdLineArgs.pumaIDColumnNameDBF << "\""
+            << std::endl;
+    }
+
     // Things seem fine so far
     return 0;
 }
@@ -399,9 +428,15 @@ ModelGenerator::loadOsmXml() {
                                  cmdLineArgs.osmFilePath);
     }
     // Find out the size of the file to pre-allocate string size.
-    xmlFile.seekg(0, std::ios::end);
-    const int fileSize = xmlFile.tellg();
-    xmlFile.seekg(0);  // Reset file pointer -- important!
+    // xmlFile.seekg(0, std::ios::end);
+    // const int fileSize = xmlFile.tellg();
+    // xmlFile.seekg(0);  // Reset file pointer -- important!
+
+    // Find out the size of the file to pre-allocate string size.
+    xmlFile.ignore(std::numeric_limits<std::streamsize>::max());
+    std::streamsize fileSize = xmlFile.gcount();
+    xmlFile.clear();
+    xmlFile.seekg(0, std::ios_base::beg);
     
     // Allocate memory to read data
     osmData.resize(fileSize);
@@ -1605,6 +1640,7 @@ ModelGenerator::loadPUMA() {
     // accommodate edge cases.
     const int error = 
         pums.loadPUMA(cmdLineArgs.pumaShpPath, cmdLineArgs.pumaDbfPath,
+                      cmdLineArgs.pumaIDColumnNameDBF,
                       minX - 0.01, minY - 0.01, maxX + 0.01, maxY + 0.01,
                       shpFile, cmdLineArgs.roundUpThreshold);
     std::cout << "Done loading PUMA data.\n";

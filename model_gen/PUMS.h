@@ -145,6 +145,7 @@ public:
         returns a non-zero error code.
     */
     int loadPUMA(const std::string& pumaShpPath, const std::string& pumaDbfPath,
+                 const std::string& pumaIDColumnName,
                  const double minX = -180, const double minY = -90,
                  const double maxX = +180, const double maxY = +90,
                  const ShapeFile& communities = {},
@@ -174,6 +175,9 @@ public:
         --pums-p command-line argument and is processed by
         ModelGenerator.
 
+        \param[in] pumaIDColName The name of the column that contains PUMA
+        ID
+
         \param[in] pumsHouColNames The names of columns from the PUMS
         housing CSV file to be included in the housing and people data
         file.
@@ -185,6 +189,7 @@ public:
     void distributePopulation(std::vector<Building>& buildings,
                               const std::string& pumsHouPath,
                               const std::string& pumsPepPath,
+                              const std::string& pumaIDColName,
                               const ArgParser::StringList& pumsHouColNames,
                               const ArgParser::StringList& pumsPepColNames) const;
 
@@ -289,13 +294,16 @@ protected:
         --pums-h command-line argument and is processed by
         ModelGenerator.
 
+        \param[in] pumaIDColName The name of the column that contains
+        PUMA ID
+
         \param[in] pumsColNames The names of columns from the PUMS CSV
         file to be included in the housing and people data file.
 
         \return This method returns an map containing the household
         information loaded from the PUMS CSV files.
     */
-    HouseholdMap loadHousehold(const std::string& pumsHouPath,
+    HouseholdMap loadHousehold(const std::string& pumsHouPath, const std::string& pumaIDColName,
                                const ArgParser::StringList& pumsColNames) const;
 
     /** Internal helper method to load PUMS people data data from
@@ -312,11 +320,15 @@ protected:
         --pums-p command-line argument and is processed by
         ModelGenerator.
 
+        \param[in] pumsIDColName The name of the column that contains
+        PUMA ID
+
         \param[in] pumsColNames The names of columns from the PUMS CSV
         file to be included in the housing and people data file.
     */    
     void loadPeopleInfo(HouseholdMap& households,
                         const std::string& pumsPepPath,
+                        const std::string& pumaIDColName,
                         const ArgParser::StringList& pumsColNames) const;
 
     /** Internal helper method to convert column names to index

@@ -822,6 +822,15 @@ private:
         */
         ArgParser::StringList pumsPepColNames;
 
+        /** The name of the column that contains the PUMA ID in the DBF file
+        */
+       std::string pumaIDColumnNameDBF;
+
+       /** The name of the column that contains the PUMA ID in the PUMS household
+           file
+       */
+       std::string pumaIDColumnNamePUMS;
+
         /** In the 2020 data set the PUMA areas along the edge of the
             lake in Chicago were made larger than the community lines.
             Consequently, the overlap in PUMA is just about 79%

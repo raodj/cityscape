@@ -32,6 +32,7 @@
 //---------------------------------------------------------------------------
 
 #include <sstream>
+#include <stdexcept>
 #include <iomanip>
 #include "PUMSPerson.h"
 #include "Utilities.h"
@@ -128,6 +129,25 @@ PUMSPerson::setColumnTitles(const std::vector<std::string>& colNames,
     for (size_t i = 0; (i < colIndexs.size()); i++) {
         colTitles[i] = colNames[colIndexs[i]];
     }
+}
+
+int
+PUMSPerson::getIntegerInfo(const int infoIdx) const {
+    const auto infoArray = split(this->getInfo(), ",");
+    int ret;
+
+    if ((size_t)infoIdx >= infoArray.size()) {
+        throw std::out_of_range("infoIdx is too large");
+    }
+
+    try {
+        ret = std::stoi(infoArray.at(infoIdx));
+    } catch (const std::invalid_argument& e) {
+        throw;
+    }
+
+    return ret;
+
 }
 
 #endif

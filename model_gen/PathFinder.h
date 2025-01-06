@@ -72,6 +72,9 @@ public:
     /** Find the best path between a given source and destination
         building.
 
+        \note This method is not multi-threading safe. Create a new
+        local PathFinder object for each call
+
         \param[in] startBldId The starting ID of the building.  It is
         assumed that the building ID is valid.
 

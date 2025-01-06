@@ -147,6 +147,8 @@ public:
     static void setColumnTitles(const std::vector<std::string>& colTitles,
                                 const std::vector<int>& colIndexs);
 
+    int getIntegerInfo(const int infoIdx) const;
+
 private:
     /**
      * This variable is used to track a unique ID value assigned for
