@@ -337,6 +337,13 @@ private:
            in a model.
          */
         int jwtrnsIdx = 3;
+
+        /**
+           The average square footage per person in an office building
+           to estimate the number of people who work in an office
+           building.
+         */
+        int offSqFtPer = 350;
         
     } cmdLineArgs;
 

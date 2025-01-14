@@ -112,7 +112,11 @@ ScheduleGenerator::getHomeAndNonHomeBuildings(const BuildingMap& buildingMap) co
         if (item->second.isHome) {
             homeBuildings.push_back(item->second);
         } else {
-            nonHomeBuildings.push_back(item->second);
+            Building bld = item->second;
+            // Initialize capacity of this office building based on
+            // its square footage.
+            bld.population = bld.getArea() / cmdLineArgs.offSqFtPer;
+            nonHomeBuildings.push_back(bld);
         }
     }
     
@@ -199,7 +203,8 @@ ScheduleGenerator::getCandidateWorkBuildings(const Building& srcBld,
 
         // Use only buildings that are within our specified time ranges
         if ((timeInMinutes >= (minTravelTime - timeMargin)) &&
-            (timeInMinutes <= (maxTravelTime + timeMargin))) {
+            (timeInMinutes <= (maxTravelTime + timeMargin)) &&
+            (bld.population > 0)) {
             candidateBlds.push_back(bld);
         }
     }
@@ -270,7 +275,7 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
 
         if (minTravelTime <= 0) {
             // If the travel time is negative, it means there is
-            // nothing to do...
+            // nothing to do for this building.
             continue;
         }
 
@@ -331,9 +336,10 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
             getCandidateWorkBuildings(bld, nonHomeBuildings, minTravelTime,
                                       maxTravelTime, timeMargin);
         std::unordered_map<long, long> workBuildingAssignment;
-        // To speed up the assignment, a building will be assigned to a person
-        // if the travel time to that building is between travelTime - timeMargin
-        // and travelTime for that person
+        
+        // To speed up the assignment, a building will be assigned to
+        // a person if the travel time to that building is between
+        // travelTime - timeMargin and travelTime for that person
 
         for (size_t j = 0; j < possibleWorkBuildingsForCurBuilding.size() && !timePeopleMap.empty(); j++) {
             PathFinder pf(model);
@@ -611,6 +617,8 @@ ScheduleGenerator::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.jwmnpIdx, ArgParser::INTEGER},
         {"--jwtrns-idx", "Index of JWTRNS (means of travel) column in model",
          &cmdLineArgs.jwtrnsIdx, ArgParser::INTEGER},        
+        {"--off-sqFt-pp", "Office sq.ft per person",
+         &cmdLineArgs.offSqFtPer, ArgParser::INTEGER}, 
         {"", "", NULL, ArgParser::INVALID}
     };
     // Process the command-line arguments.
