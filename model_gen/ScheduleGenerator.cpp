@@ -172,10 +172,52 @@ ScheduleGenerator::findLongestShortestToWorkTime(const Building& bld,
             }
         }
     }
-
     return {minTime, maxTime};
 }
 
+
+// Return a list of potential non-home buildings to where people may
+// travel between the specified minTravelTime - timeMargin and
+// maxTravelTime + timeMargin.
+BuildingList
+ScheduleGenerator::getCandidateWorkBuildings(const Building& srcBld,
+                                            const BuildingList& nonHomeBlds,
+                                            const int minTravelTime,
+                                            const int maxTravelTime,
+                                            const int timeMargin) const {
+    BuildingList candidateBlds;
+
+    for (const  Building& bld : nonHomeBlds) {
+        // Get the distance in miles from the source building to an
+        // non-office building.
+        const double dist = getDistance(srcBld.wayLat, srcBld.wayLon,
+                                        bld.wayLat,    bld.wayLon);
+        // Convert distance to time using an "average" estimated time.
+        // This approach is used because computing actual path is
+        // slower.
+        const int timeInMinutes = std::round(dist / cmdLineArgs.avgSpeed);
+
+        // Use only buildings that are within our specified time ranges
+        if ((timeInMinutes >= (minTravelTime - timeMargin)) &&
+            (timeInMinutes <= (maxTravelTime + timeMargin))) {
+            candidateBlds.push_back(bld);
+        }
+    }
+
+    // Sort the candidate non-home buildings based on their distances
+    // to current building (approximating travel time)
+    std::sort(candidateBlds.begin(), candidateBlds.end(),
+              [&srcBld](const Building& b1, const Building& b2) {
+                  return getDistance(srcBld.wayLat, srcBld.wayLon,
+                                     b1.wayLat, b1.wayLon) > 
+                      getDistance(srcBld.wayLat, srcBld.wayLon,
+                                  b2.wayLat, b2.wayLon);
+              });
+    
+    std::cout << "# of candidate work locations: " << candidateBlds.size()
+              << std::endl;
+    return candidateBlds;
+}
 
 /* The genral algorithm implemented within the method below:
     Goal: we are assigning people working buildings 
@@ -232,51 +274,7 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
             continue;
         }
 
-        // Get all potential building IDs people in this building might travel
-        // to for work
-        std::vector<Building> possibleWorkBuildingsForCurBuilding = nonHomeBuildings;
         
-        // How fuzzy the travel time can be.
-        // This is set because the travel time between buildings
-        // cannot always exactly match a person's commute time in
-        // the model
-        const int timeMargin = 3;
-
-        // #pragma omp parallel
-        // {
-        //     #pragma omp for
-        //     for (size_t i = 0; i < nonHomeBuildings.size(); i++) {
-        //         const auto& curNoneHome = nonHomeBuildings.at(i);
-        //         const int speedMilesPerHour = 30;
-
-        //         // PathFinder pf(model);
-        //         // const auto path = pf.findBestPath(bld.id, curNoneHome.id, true, 0.25, 0.1);
-                
-        //         // if (path.size() == 0) continue;
-                
-        //         #pragma omp critical
-        //         {
-        //             const int travelTime = (int)(std::round(
-        //                 getDistance(bld.wayLat, bld.wayLon, curNoneHome.wayLat, curNoneHome.wayLon) / speedMilesPerHour * 60
-        //                 ));
-        //             if (travelTime <= longestShortestTravelTime.second && travelTime + timeMargin >= longestShortestTravelTime.first) {
-        //                 possibleWorkBuildingsForCurBuilding.push_back(curNoneHome);
-        //             }
-        //         }
-        //     }
-        // }
-
-        // Sort non-home buildings based on their distances to current building
-        std::sort(possibleWorkBuildingsForCurBuilding.begin(), possibleWorkBuildingsForCurBuilding.end(),
-        [&bld](const Building& b1, const Building& b2) {
-            return getDistance(bld.wayLat, bld.wayLon, b1.wayLat, b1.wayLon) > 
-            getDistance(bld.wayLat, bld.wayLon, b2.wayLat, b2.wayLon);
-        });
-        
-        std::cout << "Finish sorting possible non-home buildings" << std::endl;
-
-        std::cout << "# of non-home buildings picked as potential work locations: " << possibleWorkBuildingsForCurBuilding.size() << std::endl;
-
         // Get all people info of the current building
         std::unordered_map<int, std::vector<long>> timePeopleMap;
         for (size_t i = 0; i < bld.households.size(); i++) {
@@ -328,7 +326,10 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
             std::cout << "]" << std::endl;
         }
 
-
+        const int timeMargin = 1;  // Wiggle room of 1 minute
+        const BuildingList possibleWorkBuildingsForCurBuilding =
+            getCandidateWorkBuildings(bld, nonHomeBuildings, minTravelTime,
+                                      maxTravelTime, timeMargin);
         std::unordered_map<long, long> workBuildingAssignment;
         // To speed up the assignment, a building will be assigned to a person
         // if the travel time to that building is between travelTime - timeMargin

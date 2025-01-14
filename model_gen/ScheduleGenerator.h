@@ -241,6 +241,31 @@ protected:
                                   int travelTimeIdx = 2,
                                   int meansOfTransportationIdx = 3) const;
 
+    /**
+       Internal helper method to return a sorted list of buildings
+       that are potential candidates to the given building.
+
+       \param[in] bld The source building from which non-home
+       buildings are to be obtained.
+
+       \param[in] nonHomeBlds The list of non-home buildings from
+       where the subset of buildings are to be returned.
+
+       \param[in] minTravelTime The minimum anticipated travel time
+       (in minutes).
+
+       \param[in] maxTravelTime The maximum anticipated travel time
+       (in minutes)
+
+       \param[in] timeMargin Additional fudge factor that is used to
+       find buildings around the specified limit (in minutes).
+     */
+    BuildingList getCandidateWorkBuildings(const Building& bld,
+                                           const BuildingList& nonHomeBlds,
+                                           const int minTravelTime,
+                                           const int maxTravelTime,
+                                           const int timeMargin = 1) const;
+
 private:
     /** This is a simple inner class that is used to conveniently
         encapsulate various command-line arguments that is used by the
