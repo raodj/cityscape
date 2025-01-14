@@ -44,6 +44,12 @@ using KeyValue = std::pair<std::string, std::string>;
 /** An alias to streamline code below */
 using StringList = ArgParser::StringList;
 
+/** An alias to refer to a vector of buildings **/
+using BuildingList = std::vector<Building>;
+
+/** An alias for a map of buildings with the building ID as the key */
+using BuildingMap = std::unordered_map<long, Building>;
+
 /**
  * This top-level class was added to draw buildings based on:
  * <ol>
@@ -150,16 +156,91 @@ protected:
     ShapeFile intersections(const ShapeFile& primary,
                             const ShapeFile& secondary) const;
 
-    int getInfo(const Building& bld, const std::string& infoKey) const;
+    /**
+       Just a convenience method to return the information associated
+       with a building.
+
+       \param[in] bld The building for which information is to be returned.
+
+       \param[in] infoKey The key that is used to identify the
+       information to be returned.  The key can be one of: "people",
+       "households", or "avg_income".
+
+       \return The information associated with the building based on
+       the key.
+     */
+    int getInfo(const Building& bld, const std::string& infoKey) const {
+        return bld.getInfo(infoKey);
+    }
     
     void generateSchedule(const OSMData& model, XFigHelper& fig,
-                       const std::string& infoKey, int xClip, int yClip);
+                       const std::string& infoKey);
                        
     int generateSchedule(const PUMSPerson& person, const std::unordered_map<long, Building> buildingMap);
 
     Ring getBldRing(int bldId, const Building& bld,
                     const std::string& infoKey) const;
-    
+
+    /**
+     * This is just an internal hepler method that is used to draw the
+     * necessary model information to an XFig file for visualization. This
+     * method is invoked from run() only if the the xfigFile path is
+     * secpfied as an command-line argument.
+     */
+    int drawXfig(XFigHelper& xfig);
+
+    /**
+       An internal convenience method to make a list of home and
+       non-home buildings so that we iterate on a smaller subset of
+       lists (and avoid checks) to make things a tad-bit faster.
+
+       \param[in] buildingMap The map of the buildings from the model.
+
+       \return A pair of building lists with the home and non-home
+       buildings (in that order).
+     */
+    std::pair<BuildingList, BuildingList>
+    getHomeAndNonHomeBuildings(const BuildingMap& buildingMap) const;
+
+    /**
+       This is a helper method that is used to compute the shortest
+       and longest work-travel time for all the people in a given
+       building, whose means of transport is 1. See list of
+       transportation means (JWTRNS) from
+       https://www2.census.gov/programs-surveys/acs/tech_docs/pums/data_dict/PUMS_Data_Dictionary_2021.pdf
+       below:
+
+       bb .N/A (not a worker-not in the labor force, including persons
+       .under 16 years; unemployed; employed, with a job but not at
+       .work; Armed Forces, with a job but not at work)
+       01 .Car, truck, or van
+       02 .Bus
+       03 .Subway or elevated rail
+       04 .Long-distance train or commuter rail
+       05 .Light rail, streetcar, or trolley
+       06 .Ferryboat
+       07 .Taxicab
+       08 .Motorcycle
+       09 .Bicycle
+       10 .Walked
+       11 .Worked from home
+       12 .Other method
+       
+       \param[in] bld The building for which which people's shortest
+       and longest work-travel time is to be computed.
+
+       \param[in] travelTimeIdx The index of the JWMNP attribute with
+       travel time.  The default value for this is 2.
+
+       \param[in] meansOfTransportationIdx The index of the JWTRNS
+       attribute of a person that indicates their means of
+       transportation.  The default index is 3.
+     */
+    std::pair<int, int>
+    findLongestShortestToWorkTime(const Building& bld,
+                                  int travelTimeIdx = 2,
+                                  int meansOfTransportationIdx = 3) const;
+
 private:
     /** This is a simple inner class that is used to conveniently
         encapsulate various command-line arguments that is used by the
@@ -208,6 +289,29 @@ private:
             is to be obtained.
          */
         std::string modelFilePath;
+
+        /**
+         * This is the speed value that is used to compute approximate
+         * travel time between a home and an office building.  This is
+         * used to filter out possible locations as finding exact path
+         * between buildings is a lot more time consuming
+         * (i.e. milliseconds vs microseconds)
+         */
+        int avgSpeed = 35;   // miles per hour
+
+        /**
+           The zero-based index of the "travel time to work" (jwmnp)
+           column data in each person's information as embedded in a
+           model.
+         */
+        int jwmnpIdx = 2;
+
+        /**
+           The zero-based index of the "means of transportation to
+           work" (jwtrns)  column data in each person's information as embedded
+           in a model.
+         */
+        int jwtrnsIdx = 3;
         
     } cmdLineArgs;
 

@@ -31,7 +31,7 @@
 
 bin_PROGRAMS = modelgen pathfinder drawshapes riskanalyzer accidents_collator draw_buildings schedule_generator
 
-AM_CXXFLAGS = -g -Wall -std=c++14 -DDEVELOPER_ASSERTIONS -fopenmp
+AM_CXXFLAGS = -g -Wall -std=c++17 -DDEVELOPER_ASSERTIONS -fopenmp
 
 modelgen_LDADD =
 modelgen_DEPENDENCIES=

@@ -58,25 +58,6 @@ ScheduleGenerator::run(int argc, char *argv[]) {
         return error;  // Error processing command-line args.
     }
 
-    // Next open an XFig file for drawing all of the necesssary
-    // information.
-    XFigHelper xfig;
-    if (!xfig.setOutput(cmdLineArgs.xfigFilePath, true)) {
-        std::cerr << "Error writing to fig file: "
-                  << cmdLineArgs.xfigFilePath << std::endl;
-        return 10;
-    }
-    
-    // Next load and draw the shape files
-    int xClip = -1, yClip = -1;
-    if ((error = drawShapeFiles(xfig, cmdLineArgs.shapeFilePaths,
-                                cmdLineArgs.dbfFilePaths,
-                                xClip, yClip,
-                                cmdLineArgs.figScale,
-                                cmdLineArgs.startShapeLevel)) != 0) {
-        return error;  // Error loading community shape file.
-    }
-
     // Next load the model from the specified model file.
     OSMData model;
     if ((error = model.loadModel(cmdLineArgs.modelFilePath)) != 0) {
@@ -85,55 +66,94 @@ ScheduleGenerator::run(int argc, char *argv[]) {
         return error;
     }
 
-    // Generate schedules for every person in the home buildings in the
-    // model
-    generateSchedule(model, xfig, cmdLineArgs.key_info, xClip, yClip);
+    // Generate schedules for every person in the home buildings in
+    // the model
+    XFigHelper xfig;    
+    generateSchedule(model, xfig, cmdLineArgs.key_info);
     
+    // Next open an XFig file for drawing all of the necesssary
+    // information.
+    if (!cmdLineArgs.xfigFilePath.empty()) {
+        if ((error = drawXfig(xfig)) != 0) {
+            std::cerr << "Error writing figure to: " << cmdLineArgs.xfigFilePath
+                      << std::endl;
+            return error;
+        }
+    }
+
     return 0;  // All went well.
 }
 
 int
-ScheduleGenerator::getInfo(const Building& bld, const std::string& infoKey) const {
-    return bld.getInfo(infoKey);
+ScheduleGenerator::drawXfig(XFigHelper& xfig) {
+    if (!xfig.setOutput(cmdLineArgs.xfigFilePath, true)) {
+        std::cerr << "Error writing to fig file: "
+                  << cmdLineArgs.xfigFilePath << std::endl;
+        return 10;
+    }
+    
+    // Next load and draw the shape files
+    int xClip = -1, yClip = -1, error = 0;
+    if ((error = drawShapeFiles(xfig, cmdLineArgs.shapeFilePaths,
+                                cmdLineArgs.dbfFilePaths,
+                                xClip, yClip,
+                                cmdLineArgs.figScale,
+                                cmdLineArgs.startShapeLevel)) != 0) {
+        return error;  // Error loading community shape file.
+    }
+    
+    return 0;  // All went well.
 }
 
-// Given a building, find the longest travel-to-work time among all people whose means of transport is 1
-std::pair<int, int> findLongestShortestToWorkTimeForBuilding(const Building& bld, int travelTimeIdx, int meansOfTransportationIdx) {
+std::pair<BuildingList, BuildingList>
+ScheduleGenerator::getHomeAndNonHomeBuildings(const BuildingMap& buildingMap) const {
+    BuildingList homeBuildings, nonHomeBuildings;
+    for (auto item = buildingMap.begin(); item != buildingMap.end(); item++) {
+        if (item->second.isHome) {
+            homeBuildings.push_back(item->second);
+        } else {
+            nonHomeBuildings.push_back(item->second);
+        }
+    }
+    
+    ASSERT(homeBuildings.size() + nonHomeBuildings.size() ==
+           buildingMap.size());
+    
+    std::cout << "# of non-home buildings: " << nonHomeBuildings.size() << '\n';
+    std::cout << "# of home buildings: " << homeBuildings.size() << std::endl;
+
+    return {homeBuildings, nonHomeBuildings};
+}
+
+// Given a building, find the longest travel-to-work time among all
+// people whose means of transport is 1
+std::pair<int, int>
+ScheduleGenerator::findLongestShortestToWorkTime(const Building& bld,
+                                                 int travelTimeIdx,
+                                                 int meansOfTransportationIdx) const {
     int maxTime = -1;
     int minTime = INT_MAX;
 
-// #pragma omp parallel
-// {
-    // #pragma omp for
     for (size_t i = 0; i < bld.households.size(); i++) {
         const auto& householdPeopleInfo = bld.households.at(i).getPeopleInfo();
         for (size_t j = 0; j < householdPeopleInfo.size(); j++) {
             const auto& curPerson = householdPeopleInfo.at(j);
-            // const auto curPersonInfo = split(curPerson.getInfo(), ",");
 
-            // std::cout << "Person Info str: " << curPerson.getInfo() << std::endl;
-
-            // for (size_t k = 0; k < curPersonInfo.size(); k++) {
-            //     std::cout << curPersonInfo.at(k) << " ";
-            // }
-            // std::cout << std::endl;
-            // exit(0);
-
-            // if (std::max(travelTimeIdx, meansOfTransportationIdx) >= static_cast<int>(curPersonInfo.size())) {
-            //     std::cerr << "Skipping person with ID: " << curPerson.getPerID() << " due to insufficient data" << std::endl;
-            //     continue;
-            // }
-
-            int travelTimeToWork, transportMeans;
+            int travelTimeToWork = -1, transportMeans = -1;
 
             try {
                 travelTimeToWork = curPerson.getIntegerInfo(travelTimeIdx);
                 transportMeans = curPerson.getIntegerInfo(meansOfTransportationIdx);
             } catch (const std::out_of_range& e) {
-                std::cerr << "Skipping person with ID: " << curPerson.getPerID() << " due to insufficient amount of data" << std::endl;
+                std::cerr << "Skipping person with ID: "
+                          << curPerson.getPerID()
+                          << " due to insufficient amount of data\n";
                 continue;
             } catch (const std::invalid_argument& e) {
-                std::cerr << "Skipping person with ID: " << curPerson.getPerID() << " because either travel time to work or transportation means is not an integer" << std::endl;
+                std::cerr << "Skipping person with ID: "
+                          << curPerson.getPerID()
+                          << " because either travel time to work or "
+                          << "transportation means is not an integer\n";
                 continue;
             }
 
@@ -143,21 +163,17 @@ std::pair<int, int> findLongestShortestToWorkTimeForBuilding(const Building& bld
                 continue;
             }
 
-            // #pragma omp critical
-            // {
-                if (travelTimeToWork > maxTime) {
-                    maxTime = travelTimeToWork;
-                }
-
-                if (travelTimeToWork < minTime) {
-                    minTime = travelTimeToWork;
-                }
-            // }
+            if (travelTimeToWork > maxTime) {
+                maxTime = travelTimeToWork;
+            }
+            
+            if (travelTimeToWork < minTime) {
+                minTime = travelTimeToWork;
+            }
         }
     }
-// }
 
-    return std::make_pair(minTime, maxTime);
+    return {minTime, maxTime};
 }
 
 
@@ -168,7 +184,7 @@ std::pair<int, int> findLongestShortestToWorkTimeForBuilding(const Building& bld
     Iterate over all home buildings, and for each building `bld`:
         1. Find the minimum and maximum travel-to-work time among
         all the people living in `bld` using the
-        `findLongestShortestToWorkTimeForBuilding` method
+        `findLongestShortestToWorkTime` method
 
         2. Initialize the list of all potential office buildings that
         can be assigned to people within `bld` with all non-home 
@@ -195,32 +211,24 @@ std::pair<int, int> findLongestShortestToWorkTimeForBuilding(const Building& bld
 
 void
 ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
-                             const std::string& infoKey,
-                             int xClip, int yClip) {
+                                    const std::string& infoKey) {
     std::cout << "Generating Schedule..." << std::endl;
 
-    // Classify buildings by their types
-    std::vector<Building> nonHomeBuildings, homeBuildings;
-    for (auto item = model.buildingMap.begin(); item != model.buildingMap.end(); item++) {
-        if ((item->second).isHome) {
-            homeBuildings.push_back(item->second);
-        } else {
-            nonHomeBuildings.push_back(item->second);
-        }
-    }
-
-    ASSERT(homeBuildings.size() + nonHomeBuildings.size() == model.buildingMap.size());
-
-    std::cout << "# of non-home buildings: " << nonHomeBuildings.size() << std::endl;
-    std::cout << "# of home buildings: " << homeBuildings.size() << std::endl;
-
+    // Classify buildings by their types in order to reduce the number
+    // of buildings we iterate on for different operations.
+    auto [homeBuildings, nonHomeBuildings] =
+        getHomeAndNonHomeBuildings(model.buildingMap);
+    
     for (auto& bld : homeBuildings) {
         std::cout << "Current Building ID: " << bld.id << std::endl;
         const int travelTimeIdx = 2, meansOfTransportationIdx = 3;
-        const auto longestShortestTravelTime = findLongestShortestToWorkTimeForBuilding(bld, travelTimeIdx, meansOfTransportationIdx);
+        const auto [minTravelTime, maxTravelTime] = 
+            findLongestShortestToWorkTime(bld, cmdLineArgs.jwmnpIdx,
+                                          cmdLineArgs.jwtrnsIdx);
 
-        if (longestShortestTravelTime.first <= 0) {
-            // If the travel time is negative, it means there is nothing to do...
+        if (minTravelTime <= 0) {
+            // If the travel time is negative, it means there is
+            // nothing to do...
             continue;
         }
 
@@ -596,6 +604,12 @@ ScheduleGenerator::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.key_info, ArgParser::STRING},
         {"--model", "The model text file for building data",
          &cmdLineArgs.modelFilePath, ArgParser::STRING},
+        {"--avg-speed", "Avg. miles/hr to use for approx. office",
+         &cmdLineArgs.avgSpeed, ArgParser::INTEGER},
+        {"--jwmnp-idx", "Index of JWMNP (work travel time) column in model",
+         &cmdLineArgs.jwmnpIdx, ArgParser::INTEGER},
+        {"--jwtrns-idx", "Index of JWTRNS (means of travel) column in model",
+         &cmdLineArgs.jwtrnsIdx, ArgParser::INTEGER},        
         {"", "", NULL, ArgParser::INVALID}
     };
     // Process the command-line arguments.
