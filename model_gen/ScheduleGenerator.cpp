@@ -85,7 +85,8 @@ ScheduleGenerator::run(int argc, char *argv[]) {
         return error;
     }
 
-    // Draw the buildings based on specified information.
+    // Generate schedules for every person in the home buildings in the
+    // model
     generateSchedule(model, xfig, cmdLineArgs.key_info, xClip, yClip);
     
     return 0;  // All went well.
@@ -136,6 +137,8 @@ std::pair<int, int> findLongestShortestToWorkTimeForBuilding(const Building& bld
                 continue;
             }
 
+            // We only care about transportMeans == 1 with a
+            // valid work travel time
             if (transportMeans != 1 || travelTimeToWork <= 0) {
                 continue;
             }
@@ -157,13 +160,46 @@ std::pair<int, int> findLongestShortestToWorkTimeForBuilding(const Building& bld
     return std::make_pair(minTime, maxTime);
 }
 
+
+/* The genral algorithm implemented within the method below:
+    Goal: we are assigning people working buildings 
+    based on their travel-to-work time in the model
+
+    Iterate over all home buildings, and for each building `bld`:
+        1. Find the minimum and maximum travel-to-work time among
+        all the people living in `bld` using the
+        `findLongestShortestToWorkTimeForBuilding` method
+
+        2. Initialize the list of all potential office buildings that
+        can be assigned to people within `bld` with all non-home 
+        buildings to begin with
+        (pseudo-code: possibleWorkBuildingsForCurBuilding <-- nonHomeBuildings)
+
+        3. Sort vector `possibleWorkBuildingsForCurBuilding` by travel time
+        from `bld` to the building in the list
+
+        4. Create a time-person map with the key being travel-to-work time
+        and the value being the ID of the people within `bld` that has the
+        same time in the key
+
+        5. For every building in `possibleWorkBuildingsForCurBuilding` vector
+        (let's call it `pbld`), find the time from `bld` to `pbld` and
+        see whether there is anyone from the map who fits that time. If
+        so, assign `pbld` to the last person in the map with the time
+        and pop both the building from the vector and the person from the map.
+        Repeat this until everybody gets an assigned building. If not, we add
+        an margin to the time to see if a fuzzy match can be found
+        (This assignment process is likely the performance bottleneck)
+*/
+
+
 void
 ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
                              const std::string& infoKey,
                              int xClip, int yClip) {
     std::cout << "Generating Schedule..." << std::endl;
 
-    // Find all the buildings that are not homes
+    // Classify buildings by their types
     std::vector<Building> nonHomeBuildings, homeBuildings;
     for (auto item = model.buildingMap.begin(); item != model.buildingMap.end(); item++) {
         if ((item->second).isHome) {
@@ -184,13 +220,18 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
         const auto longestShortestTravelTime = findLongestShortestToWorkTimeForBuilding(bld, travelTimeIdx, meansOfTransportationIdx);
 
         if (longestShortestTravelTime.first <= 0) {
+            // If the travel time is negative, it means there is nothing to do...
             continue;
         }
-        // If the travel time is negative, it means there is nothing to do...
 
         // Get all potential building IDs people in this building might travel
         // to for work
         std::vector<Building> possibleWorkBuildingsForCurBuilding = nonHomeBuildings;
+        
+        // How fuzzy the travel time can be.
+        // This is set because the travel time between buildings
+        // cannot always exactly match a person's commute time in
+        // the model
         const int timeMargin = 3;
 
         // #pragma omp parallel
