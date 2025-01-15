@@ -50,6 +50,10 @@ using BuildingList = std::vector<Building>;
 /** An alias for a map of buildings with the building ID as the key */
 using BuildingMap = std::unordered_map<long, Building>;
 
+/** An synonym for a map with travel time (in minutes) as the key and
+    the list of peopleIDs as the values */
+using TrvlTimePeopleMap = std::unordered_map<int, std::vector<long>>;
+    
 /**
  * This top-level class was added to draw buildings based on:
  * <ol>
@@ -199,7 +203,7 @@ protected:
        \return A pair of building lists with the home and non-home
        buildings (in that order).
      */
-    std::pair<BuildingList, BuildingList>
+    std::pair<BuildingMap, BuildingMap>
     getHomeAndNonHomeBuildings(const BuildingMap& buildingMap) const;
 
     /**
@@ -261,10 +265,28 @@ protected:
        find buildings around the specified limit (in minutes).
      */
     BuildingList getCandidateWorkBuildings(const Building& bld,
-                                           const BuildingList& nonHomeBlds,
+                                           const BuildingMap& nonHomeBlds,
                                            const int minTravelTime,
                                            const int maxTravelTime,
                                            const int timeMargin = 1) const;
+
+    /**
+       Obtain a map of people who all have the same travel time
+       (rounded to the nearest minute) to work.
+
+       \param[in] bld The building for which the travel time of all
+       the people in the building are to be returned.
+    */
+    TrvlTimePeopleMap
+    getTimePeopleMap(const Building& bld) const;
+
+    std::unordered_map<long, long>
+    assignWorkBuildings(const OSMData& model,
+                        const Building& bld,
+                        BuildingMap& nonHomeBuildings,
+                        BuildingList& candidateWorkBlds,
+                        TrvlTimePeopleMap& timePeopleMap,
+                        const int timeMargin);
 
 private:
     /** This is a simple inner class that is used to conveniently

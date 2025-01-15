@@ -105,18 +105,18 @@ ScheduleGenerator::drawXfig(XFigHelper& xfig) {
     return 0;  // All went well.
 }
 
-std::pair<BuildingList, BuildingList>
+std::pair<BuildingMap, BuildingMap>
 ScheduleGenerator::getHomeAndNonHomeBuildings(const BuildingMap& buildingMap) const {
-    BuildingList homeBuildings, nonHomeBuildings;
+    BuildingMap homeBuildings, nonHomeBuildings;
     for (auto item = buildingMap.begin(); item != buildingMap.end(); item++) {
         if (item->second.isHome) {
-            homeBuildings.push_back(item->second);
+            homeBuildings[item->first] = item->second;
         } else {
             Building bld = item->second;
             // Initialize capacity of this office building based on
             // its square footage.
             bld.population = bld.getArea() / cmdLineArgs.offSqFtPer;
-            nonHomeBuildings.push_back(bld);
+            nonHomeBuildings[bld.id] = bld;
         }
     }
     
@@ -185,13 +185,13 @@ ScheduleGenerator::findLongestShortestToWorkTime(const Building& bld,
 // maxTravelTime + timeMargin.
 BuildingList
 ScheduleGenerator::getCandidateWorkBuildings(const Building& srcBld,
-                                            const BuildingList& nonHomeBlds,
+                                            const BuildingMap& nonHomeBlds,
                                             const int minTravelTime,
                                             const int maxTravelTime,
                                             const int timeMargin) const {
     BuildingList candidateBlds;
 
-    for (const  Building& bld : nonHomeBlds) {
+    for (const  auto& [bldId, bld] : nonHomeBlds) {
         // Get the distance in miles from the source building to an
         // non-office building.
         const double dist = getDistance(srcBld.wayLat, srcBld.wayLon,
@@ -222,6 +222,50 @@ ScheduleGenerator::getCandidateWorkBuildings(const Building& srcBld,
     std::cout << "# of candidate work locations: " << candidateBlds.size()
               << std::endl;
     return candidateBlds;
+}
+
+TrvlTimePeopleMap
+ScheduleGenerator::getTimePeopleMap(const Building& bld) const {
+    std::unordered_map<int, std::vector<long>> timePeopleMap;
+    for (size_t i = 0; i < bld.households.size(); i++) {
+        const auto& curHousehold = bld.households.at(i);
+        for (const auto& curPer : curHousehold.getPeopleInfo()) {
+            int travelTimeToWork = -1, transportMeans = -1;
+            try {
+                travelTimeToWork = curPer.getIntegerInfo(cmdLineArgs.jwmnpIdx);
+                transportMeans = curPer.getIntegerInfo(cmdLineArgs.jwtrnsIdx);
+            } catch (const std::out_of_range& e) {
+                std::cerr << "Skipping person with ID: "
+                          << curPer.getPerID()
+                          << " due to insufficient amount of data\n";
+                continue;
+            } catch (const std::invalid_argument& e) {
+                std::cerr << "Skipping person with ID: " << curPer.getPerID()
+                          << " because either travel time to work or"
+                          << " transportation means is not an integer\n";
+                continue;
+            }
+            
+            if (transportMeans != 1 || travelTimeToWork <= 0) {
+                continue;
+            }
+
+            timePeopleMap[travelTimeToWork].push_back(curPer.getPerID());
+        }
+    }
+
+    // Print the map for debugging
+    /*
+    for (auto& it : timePeopleMap) {
+        std::cout << it.first << ": " << it.second.size() << " people [ ";
+        for (long l : it.second) {
+            std::cout << l << " ";
+        }
+        std::cout << "]" << std::endl;
+    }
+    */
+
+    return timePeopleMap;
 }
 
 /* The genral algorithm implemented within the method below:
@@ -266,242 +310,81 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
     auto [homeBuildings, nonHomeBuildings] =
         getHomeAndNonHomeBuildings(model.buildingMap);
     
-    for (auto& bld : homeBuildings) {
+    for (auto& [bldId, bld] : homeBuildings) {
         std::cout << "Current Building ID: " << bld.id << std::endl;
-        const int travelTimeIdx = 2, meansOfTransportationIdx = 3;
         const auto [minTravelTime, maxTravelTime] = 
             findLongestShortestToWorkTime(bld, cmdLineArgs.jwmnpIdx,
                                           cmdLineArgs.jwtrnsIdx);
-
         if (minTravelTime <= 0) {
             // If the travel time is negative, it means there is
             // nothing to do for this building.
             continue;
         }
 
-        
-        // Get all people info of the current building
-        std::unordered_map<int, std::vector<long>> timePeopleMap;
-        for (size_t i = 0; i < bld.households.size(); i++) {
-            const auto& curHousehold = bld.households.at(i);
-            const auto& peopleInCurHousehold = curHousehold.getPeopleInfo();
-
-            for (size_t j = 0; j < peopleInCurHousehold.size(); j++) {
-                const PUMSPerson& curPerson = peopleInCurHousehold.at(j);
-
-                int travelTimeToWork, transportMeans;
-
-                try {
-                    travelTimeToWork = curPerson.getIntegerInfo(travelTimeIdx);
-                    transportMeans = curPerson.getIntegerInfo(meansOfTransportationIdx);
-                } catch (const std::out_of_range& e) {
-                    std::cerr << "Skipping person with ID: " << curPerson.getPerID() << " due to insufficient amount of data" << std::endl;
-                    continue;
-                } catch (const std::invalid_argument& e) {
-                    std::cerr << "Skipping person with ID: " << curPerson.getPerID() << " because either travel time to work or transportation means is not an integer" << std::endl;
-                    continue;
-                }
-
-                if (transportMeans != 1 || travelTimeToWork <= 0) {
-                    continue;
-                }
-
-                if (timePeopleMap.find(travelTimeToWork) == timePeopleMap.end()) {
-                    timePeopleMap[travelTimeToWork] = std::vector<long>{};
-                }
-
-                timePeopleMap.at(travelTimeToWork).push_back(curPerson.getPerID());
-            }
-        }
-
-        // // Sort people in current building by travel-to-work time
-        // std::sort(people.begin(), people.end(), 
-        // [travelTimeIdx](const PUMSPerson& p1, const PUMSPerson& p2) {
-        //     // Calls to getIntegerInfo here are guaranteed to not throw any exceptions
-        //     // because otherwise the control would not reach here
-        //     return (p1.getIntegerInfo(travelTimeIdx) < p2.getIntegerInfo(travelTimeIdx)); 
-        // });
-        // std::cout << "Finish sorting people" << std::endl;
-
-        for (auto& it : timePeopleMap) {
-            std::cout << it.first << ": " << it.second.size() << " people [ ";
-            for (long l : it.second) {
-                std::cout << l << " ";
-            }
-            std::cout << "]" << std::endl;
-        }
-
-        const int timeMargin = 1;  // Wiggle room of 1 minute
-        const BuildingList possibleWorkBuildingsForCurBuilding =
+        const int timeMargin = 3;  // Wiggle room of 3 minutes
+        BuildingList candidateWorkBlds =
             getCandidateWorkBuildings(bld, nonHomeBuildings, minTravelTime,
                                       maxTravelTime, timeMargin);
-        std::unordered_map<long, long> workBuildingAssignment;
-        
-        // To speed up the assignment, a building will be assigned to
-        // a person if the travel time to that building is between
-        // travelTime - timeMargin and travelTime for that person
 
-        for (size_t j = 0; j < possibleWorkBuildingsForCurBuilding.size() && !timePeopleMap.empty(); j++) {
-            PathFinder pf(model);
-            const Path path = pf.findBestPath(bld.id, possibleWorkBuildingsForCurBuilding.at(j).id, true, 0.25, 0.1);
-
-            if (path.size() == 0) {
-                continue;
-            }
-
-            int timeInMinutes = (int)(std::round(path.back().distance * 60));
-
-            for (int curMargin = 0; curMargin <= timeMargin; curMargin++) {
-                const int curTime = timeInMinutes + curMargin;
-                if (timePeopleMap.find(curTime) != timePeopleMap.end()) {
-                    // We have found a person to whom we can fuzzily assign this building
-                    workBuildingAssignment[timePeopleMap.at(curTime).back()] = possibleWorkBuildingsForCurBuilding.at(j).id;
-
-                    // Erase the assigned building from the list
-                    for (auto it = nonHomeBuildings.begin(); it != nonHomeBuildings.end(); it++) {
-                        if (it->id == possibleWorkBuildingsForCurBuilding.at(j).id) {
-                            nonHomeBuildings.erase(it);
-                            break;
-                        }
-                    }
-                    std::cout << "Assign Building " << possibleWorkBuildingsForCurBuilding.at(j).id << " to person " << timePeopleMap.at(curTime).back() << std::endl;
-                    std::cout << "Person needs time: " << curTime << " and the assigned building has time: " << timeInMinutes << std::endl;
-                    timePeopleMap.at(curTime).pop_back();
-                    if (timePeopleMap.at(curTime).empty()) {
-                        timePeopleMap.erase(curTime);
-                    }
-                    break;
-                }
-            }
-        }
-
-        ASSERT(timePeopleMap.empty());
-
-        // for (size_t k = 0; k < people.size(); k++) {
-        //     const PUMSPerson& curPerson = people.at(k);
-        //     int prevTime = INT_MAX;
-
-        //     for (size_t bi = 0; bi < possibleWorkBuildingsForCurBuilding.size(); bi++) {
-        //         PathFinder pf(model);
-        //         const Path path = pf.findBestPath(bld.id, possibleWorkBuildingsForCurBuilding.at(bi).id, true, 0.25, 0.1);
-                
-        //         if (path.size() == 0) {
-        //             continue;
-        //         }
-
-        //         const int timeInMinutes = (int)(std::round(path.back().distance * 60));
-        //         std::cout << "Time:" << 
-
-        //         // if (timeInMinutes == curPerson.getIntegerInfo(travelTimeIdx)) {
-        //         //     workBuildingAssignment[curPerson.getPerID()] = possibleWorkBuildingsForCurBuilding.at(bi).id;
-        //         //     std::cout << "Assign Person " << curPerson.getPerID() << " to " << possibleWorkBuildingsForCurBuilding.at(bi).id << std::endl;
-        //         //     break;
-        //         // } else if (timeInMinutes > curPerson.getIntegerInfo(travelTimeIdx)) {
-        //         //     std::cout << "\rTravel time too high: expected = " << curPerson.getIntegerInfo(travelTimeIdx) << ", got = " << timeInMinutes;
-        //         //     // std::cout << "Fail to assign Person with travel time: " << curPerson.getIntegerInfo(travelTimeIdx) << ". The closest one is " << timeInMinutes << " minutes" << std::endl;
-        //         // } else {
-        //         //     std::cout << std::endl;
-        //         //     std::cout << "Fail to assign Person from home ID: " << bld.id << " with travel time: " << curPerson.getIntegerInfo(travelTimeIdx) << ". The closest one is " << timeInMinutes << " minutes with ID: " << possibleWorkBuildingsForCurBuilding.at(bi).id << std::endl;
-        //         //     break;
-        //         // }
-        //     }
-        // }
-
-        // long assignedBuildingID, shortestDistance = LONG_MAX;
-
-        // #pragma omp parallel for
-        // for (size_t k = 0; k < possibleWorkBuildingsForCurBuilding.size(); k++) {
-        //     const Building& curPossibleBuilding = possibleWorkBuildingsForCurBuilding.at(k);
-        //     PathFinder pf(model);
-        //     const Path path = pf.findBestPath(bld.id, curPossibleBuilding.id, true, 0.25, 0.1);
-
-        //     if (path.size() == 0) {
-        //         continue;
-        //     }
-
-        //     const int timeInMinutes = (int)(std::round(path.back().distance * 60));
-        //     // const int distanceInMiles = pf.findBestPath(bld.id, curPossibleBuildingID, false, 0.25, 0.1).back().distance;
-        //     const int distance = getDistance(bld.wayLat, bld.wayLon, curPossibleBuilding.wayLat, curPossibleBuilding.wayLon);
-
-        //     #pragma omp critical
-        //     {
-        //         if (timeInMinutes == travelTimeToWork && shortestDistance > distance ) {
-        //             assignedBuildingID = curPossibleBuilding.id;
-        //             shortestDistance = distance;
-        //         }
-        //     }
-        // }
-
-        // workBuildingAssignment[curPerson.getPerID()] = assignedBuildingID;
-
-        // std::cout << "Person ID: " << curPerson.getPerID() << " Assigned Building: " << assignedBuildingID << std::endl;
+        // Get all people info of the current building
+        TrvlTimePeopleMap timePeopleMap = getTimePeopleMap(bld);
+        std::unordered_map<long, long> workBuildingAssignment =
+            assignWorkBuildings(model, bld, nonHomeBuildings,
+                                candidateWorkBlds, timePeopleMap, timeMargin);
     }
 }
 
-/* generateSchedule(person, listOfBuildings)
-get that person's travel time to work
-add the four colums when generating the model to know the travel type (to work)
-print info for each person to make sure correction
-Find non-home building (isHome == false) 
-whose travel time == the person's travel time to work
-
-Assign the person to work at the building
-
-*/
-
-// int
-// ScheduleGenerator::generateSchedule(const PUMSPerson& person, const std::unordered_map<long, Building> buildingMap) {
+std::unordered_map<long, long>
+ScheduleGenerator::assignWorkBuildings(const OSMData& model,
+                                       const Building& bld,
+                                       BuildingMap& nonHomeBuildings,
+                                       BuildingList& candidateWorkBlds,
+                                       TrvlTimePeopleMap& timePeopleMap,
+                                       const int timeMargin) {
+    std::unordered_map<long, long> workBuildingAssignment;    
+    // To speed up the assignment, a building will be assigned to
+    // a person if the travel time to that building is between
+    // travelTime - timeMargin and travelTime for that person
+    for (Building& wrkBld : candidateWorkBlds) {
+        if (wrkBld.population < 1) {
+            continue;  // No space left in work building
+        }
+        PathFinder pf(model);
+        const Path path = pf.findBestPath(bld.id, wrkBld.id,
+                                          true, 0.25, 0.1);
+        if (path.size() == 0) {
+            continue;
+        }
+        int timeInMinutes = (int)(std::round(path.back().distance * 60));
+        
+        for (int curMargin = 0; curMargin <= timeMargin; curMargin++) {
+            const int curTime = timeInMinutes + curMargin;
+            if (timePeopleMap.find(curTime) != timePeopleMap.end()) {
+                // We have found a person to whom we can fuzzily
+                // assign this building
+                workBuildingAssignment[timePeopleMap.at(curTime).back()] =
+                    wrkBld.id;
+                wrkBld.population--;
+                // Also update the actual building entry
+                nonHomeBuildings[wrkBld.id].population--;
+                std::cout << "Assign Building " << wrkBld.id
+                          << " to person "
+                          << timePeopleMap.at(curTime).back() << std::endl;
+                std::cout << "Person needs time: " << curTime
+                          << " and the assigned building has time: "
+                          << timeInMinutes << std::endl;
+                timePeopleMap.at(curTime).pop_back();
+                if (timePeopleMap.at(curTime).empty()) {
+                    timePeopleMap.erase(curTime);
+                }
+                break;
+            }
+        }
+    }
     
-
-//     // std::cout << "Person ID: " << person.getPerID() << "\n" << "Info string: " << person.getInfo() << std::endl;
-
-
-//     // const auto travelTimeToWorkCol = std::find(PUMSPerson::colTitles.begin(), PUMSPerson::colTitles.end(), "JWMNP");
-//     int travelTimeToWorkIdx = 2;
-//     // if (travelTimeToWorkCol != PUMSPerson::colTitles.end()) {
-//     //     travelTimeToWorkIdx = travelTimeToWorkCol - PUMSPerson::colTitles.begin();
-//     // } else {
-//     //     std::runtime_error("Generating schedule for a person requires the column \"JWMNP\"");
-//     //     return -1;
-//     // }
-
-//     // const auto meansOfTransportationCol = std::find(PUMSPerson::colTitles.begin(), PUMSPerson::colTitles.end(), "JWTRNS");
-//     int meansOfTransportationIdx = 3;
-//     // if (meansOfTransportationCol != PUMSPerson::colTitles.end()) {
-//     //     meansOfTransportationIdx = meansOfTransportationCol - PUMSPerson::colTitles.begin();
-//     // } else {
-//     //     std::runtime_error("Generating schedule for a person requires the column \"JWTRNS\"");
-//     //     return -1;
-//     // }
-
-//     int travelTimeToWork;
-//     int meansOfTransportationID;
-
-//     try {
-//         travelTimeToWork = std::stoi(personInfo.at(travelTimeToWorkIdx));
-//     } catch () {
-//         std::cerr << "Cannot generate schedule for person " << person.getPerID() << " due to non-numerical value for travel time to work" << std::endl;
-//         return -1;
-//     }
-
-//     try {
-//         meansOfTransportationID = std::stoi(personInfo.at(meansOfTransportationIdx));
-//     } catch (const std::invalid_argument& e) {
-//         std::runtime_error("Means of transportation (JWTRNS column) for person " + std::to_string(person.getPerID()) + " is not an integer");
-//         return -1;
-//     }
-
-//     // We are good to do the actual generation now
-//     if (meansOfTransportationID != 1 || travelTimeToWork <= 0) {
-//         // We only care about bus, car, or van as transportation
-//         // means, i.e. JWTRNS == 1
-//         return -1;
-//     }
-
-//     std::cout << "Person ID = " << person.getPerID() << " TimeToWork = " << travelTimeToWork << std::endl;
-
-//     return -1;
-// }
+    ASSERT(timePeopleMap.empty());
+    return workBuildingAssignment;
+}
 
 Ring
 ScheduleGenerator::getBldRing(int bldId, const Building& bld,
