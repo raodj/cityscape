@@ -240,7 +240,9 @@ public:
     */
     int sqFootage;
     
-    /** Any custom attributes associated with this building */
+    /** Any custom attributes associated with this building.
+        Currently, this is set to the population ring ID associated
+        with this building. */
     int attributes;
 
     /** The kind of building. This string is typically read from the

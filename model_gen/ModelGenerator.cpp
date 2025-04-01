@@ -72,8 +72,10 @@ ModelGenerator::run(int argc, char *argv[]) {
 
     // Next load the population data from GIS file and create
     // convenient rings to hold population
-    createPopulationRings();
-
+    if (!cmdLineArgs.popGisFilePath.empty()) {
+        createPopulationRings();
+    }
+    
     // Now that we know the number of population rings, resize the
     // popAreaWayIDs vector to have a list of ways per population ring.
     popAreaWayIDs.resize(popRings.size());
@@ -235,13 +237,12 @@ ModelGenerator::processArgs(int argc, char *argv[]) {
     };
     // Setup default value for PUMS cols
     cmdLineArgs.pumsHouColNames = {"SMARTPHONE"};
-    cmdLineArgs.pumsPepColNames = {"AGEP", "WAGP"};
+    cmdLineArgs.pumsPepColNames = {"AGEP", "WAGP", "JWMNP", "JWTRNS"};
     // Process the command-line arguments.
     ArgParser ap(arg_list);
     ap.parseArguments(argc, argv, true);
     // Ensure at least the shape file is specified.
     if (cmdLineArgs.shapeFilePath.empty()  ||
-        cmdLineArgs.popGisFilePath.empty() ||
         cmdLineArgs.osmFilePath.empty()) {
         std::cerr << "Specify a shape file, population GIS file, and OSM XML "
                   << "files to be processed.\n";
@@ -1005,7 +1006,7 @@ ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
         return invalidBld;
     }
     const int popRingID = getPopRing(ring);
-    if (popRingID == -1) {
+    if (!popRings.empty() && (popRingID == -1)) {
         // Ignore this building as it is not in the community areas we
         // are interested in.
         return invalidBld;
@@ -1173,6 +1174,11 @@ ModelGenerator::loadModelAdjustments() {
 // NOTE: This method is called from multiple threads.
 bool
 ModelGenerator::addWayToPopRings(const Way& way) {
+    // Handle the situation when population rings (i.e., landscan
+    // data) is not specified.
+    if (popRings.empty()) {
+        return true;
+    }
     // Check each node in the way. Note that a long way can belong to
     // many population rings.  So we have to check every point.  NOTE:
     // This approach cannot correctly detect very long (say over 0.57
@@ -1212,6 +1218,24 @@ ModelGenerator::addWayToPopRings(const Way& way) {
     return true;
 }
 
+std::set<long>
+ModelGenerator::getWayIDs() const {
+    ASSERT( popRings.size() == 0 );
+#pragma omp critical
+    {
+        if (popAreaWayIDs.empty()) {
+            // Populate the cache of areaIDs to accelerate the processing.
+            std::set<long> wayIDs;
+            for (const auto& entry : wayMap) {
+                wayIDs.insert(entry.first);
+            }
+            popAreaWayIDs.push_back(wayIDs);
+        }
+    }
+    ASSERT( popAreaWayIDs.size() == 1 );
+    return popAreaWayIDs.at(0);
+}
+
 long
 ModelGenerator::findNearestIntersection(const Ring& bldRing,
                                         const int popRingID,
@@ -1224,9 +1248,12 @@ ModelGenerator::findNearestIntersection(const Ring& bldRing,
     long   nearWayID = -1;
     double minDist   = 1000;
     wayLat = wayLon  = -1;
-    // We only iterate over ways in the population ring as they would
-    // be the nearest and keeps computation to a minimum
-    for (const int wayID : popAreaWayIDs.at(popRingID)) {
+    // If population rings are specified, then we only iterate over
+    // ways in the population ring as they would be the nearest and
+    // keeps computation to a minimum
+    const std::set<long>& wayIDs = popRingID != -1 ?
+        popAreaWayIDs.at(popRingID) : getWayIDs();
+    for (const int wayID : wayIDs) {
         // Find the minimum perpendicular distance to this way.
         const Way& way = wayMap.at(wayID);
         double interWayLat = -1, interWayLon = -1;

@@ -33,15 +33,16 @@
 
 #include <numeric>
 #include <climits>
+#include <sstream>
+#include <algorithm>
+#include <cmath>
+#include <utility>
 #include "Utilities.h"
 #include "ScheduleGenerator.h"
 #include "ShapeFile.h"
 #include "OSMData.h"
 #include "PathFinder.h"
-#include <sstream>
-#include <algorithm>
-#include <cmath>
-#include <utility>
+#include "WorkBuildingSelector.h"
 
 int
 ScheduleGenerator::run(int argc, char *argv[]) {
@@ -189,6 +190,13 @@ ScheduleGenerator::getCandidateWorkBuildings(const Building& srcBld,
                                             const int minTravelTime,
                                             const int maxTravelTime,
                                             const int timeMargin) const {
+    // There are some work travel times that are pretty large which do
+    // not approximate well.  In this situation, we track the building
+    // with maximum distance and use that building as the fall back.
+    Building maxDistBld = srcBld;
+    double maxDist = 0;
+    
+    // The list of potential candidates.
     BuildingList candidateBlds;
 
     for (const  auto& [bldId, bld] : nonHomeBlds) {
@@ -196,10 +204,15 @@ ScheduleGenerator::getCandidateWorkBuildings(const Building& srcBld,
         // non-office building.
         const double dist = getDistance(srcBld.wayLat, srcBld.wayLon,
                                         bld.wayLat,    bld.wayLon);
+        // Track maximum distance building
+        if (dist > maxDist) {
+            maxDistBld = bld;
+            maxDist    = dist;
+        }
         // Convert distance to time using an "average" estimated time.
         // This approach is used because computing actual path is
         // slower.
-        const int timeInMinutes = std::round(dist / cmdLineArgs.avgSpeed);
+        const int timeInMinutes = std::round(dist * 60 / cmdLineArgs.avgSpeed);
 
         // Use only buildings that are within our specified time ranges
         if ((timeInMinutes >= (minTravelTime - timeMargin)) &&
@@ -211,16 +224,38 @@ ScheduleGenerator::getCandidateWorkBuildings(const Building& srcBld,
 
     // Sort the candidate non-home buildings based on their distances
     // to current building (approximating travel time)
-    std::sort(candidateBlds.begin(), candidateBlds.end(),
-              [&srcBld](const Building& b1, const Building& b2) {
-                  return getDistance(srcBld.wayLat, srcBld.wayLon,
-                                     b1.wayLat, b1.wayLon) > 
-                      getDistance(srcBld.wayLat, srcBld.wayLon,
-                                  b2.wayLat, b2.wayLon);
-              });
-    
+    // std::sort(candidateBlds.begin(), candidateBlds.end(),
+    //           [&srcBld](const Building& b1, const Building& b2) {
+    //               return getDistance(srcBld.wayLat, srcBld.wayLon,
+    //                                  b1.wayLat, b1.wayLon) > 
+    //                   getDistance(srcBld.wayLat, srcBld.wayLon,
+    //                               b2.wayLat, b2.wayLon);
+    //           });
+
     std::cout << "# of candidate work locations: " << candidateBlds.size()
               << std::endl;
+    if (candidateBlds.empty()) {
+        std::cout << "Unable to find candidate buildings for time: "
+                  << minTravelTime << " for building: " << srcBld.id
+                  << ". Using max distance building: " << maxDistBld.id
+                  << ", at a distance of: " << maxDist << std::endl;
+        candidateBlds.push_back(maxDistBld);
+        /*
+        for (const  auto& [bldId, bld] : nonHomeBlds) {
+            // Get the distance in miles from the source building to an
+            // non-office building.
+            const double dist = getDistance(srcBld.wayLat, srcBld.wayLon,
+                                            bld.wayLat,    bld.wayLon);
+            // Convert distance to time using an "average" estimated time.
+            // This approach is used because computing actual path is
+            // slower.
+            const int timeInMinutes =
+                std::round(dist * 60 / cmdLineArgs.avgSpeed);
+            std::cout << "    Building: " << bldId << ", dist: " << dist
+                      << ", time: " << timeInMinutes << ".\n";
+        }
+        */
+    }
     return candidateBlds;
 }
 
@@ -299,7 +334,7 @@ ScheduleGenerator::getTimePeopleMap(const Building& bld) const {
         (This assignment process is likely the performance bottleneck)
 */
 
-
+/*
 void
 ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
                                     const std::string& infoKey) {
@@ -311,11 +346,14 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
         getHomeAndNonHomeBuildings(model.buildingMap);
     
     for (auto& [bldId, bld] : homeBuildings) {
+        if (bld.households.empty()) {
+            continue;  // no households in this home
+        }
         std::cout << "Current Building ID: " << bld.id << std::endl;
         const auto [minTravelTime, maxTravelTime] = 
             findLongestShortestToWorkTime(bld, cmdLineArgs.jwmnpIdx,
                                           cmdLineArgs.jwtrnsIdx);
-        if (minTravelTime <= 0) {
+        if (maxTravelTime < 0) {
             // If the travel time is negative, it means there is
             // nothing to do for this building.
             continue;
@@ -324,13 +362,64 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
         const int timeMargin = 3;  // Wiggle room of 3 minutes
         BuildingList candidateWorkBlds =
             getCandidateWorkBuildings(bld, nonHomeBuildings, minTravelTime,
-                                      maxTravelTime, timeMargin);
+                                      maxTravelTime, 0);
+        if (!candidateWorkBlds.empty()) {
+            // Get all people info of the current building
+            TrvlTimePeopleMap timePeopleMap = getTimePeopleMap(bld);
+            std::unordered_map<long, long> workBuildingAssignment =
+                assignWorkBuildings(model, bld, nonHomeBuildings,
+                                    candidateWorkBlds,
+                                    timePeopleMap, timeMargin);
+        } else {
+            std::cerr << "Unable to find office building for people in "
+                      << "building id #" << bldId << std::endl;
+        }
+    }
+}
+*/
 
-        // Get all people info of the current building
-        TrvlTimePeopleMap timePeopleMap = getTimePeopleMap(bld);
-        std::unordered_map<long, long> workBuildingAssignment =
-            assignWorkBuildings(model, bld, nonHomeBuildings,
-                                candidateWorkBlds, timePeopleMap, timeMargin);
+void
+ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
+                                    const std::string& infoKey) {
+    std::cout << "Generating Schedule..." << std::endl;
+    // Create the building selector heler and initialize the object.
+    WorkBuildingSelector wbs(model);
+    wbs.genOrUseTrvlEst(cmdLineArgs.numBldPairs, cmdLineArgs.useTrvlEstFile,
+                        cmdLineArgs.outTrvlEstFile);
+    
+    // Classify buildings by their types in order to reduce the number
+    // of buildings we iterate on for different operations.
+    auto [homeBuildings, nonHomeBuildings] =
+        getHomeAndNonHomeBuildings(model.buildingMap);
+    
+    for (auto& [bldId, bld] : homeBuildings) {
+        if (bld.households.empty()) {
+            continue;  // no households in this home
+        }
+        // For each person in each household assign work building
+        for (auto& hld : bld.households) {
+            for (auto& ppl : hld.getPeopleInfo()) {
+                if (ppl.getIntegerInfo(cmdLineArgs.jwtrnsIdx) != 1) {
+                    continue;  // This person doesn't drive to work.
+                }
+                const int travelTime = ppl.getIntegerInfo(cmdLineArgs.jwmnpIdx);
+                if (travelTime < 0) {
+                    continue;  // This person doesn't travel for work
+                }
+                // Find buildings in the
+                const int timeMargin = 3;  // Wiggle room of 3 minutes
+                for (int slack = 0; slack < timeMargin; slack++) {
+                    BuildingList candidateWorkBlds =
+                        getCandidateWorkBuildings(bld, nonHomeBuildings,
+                                                  travelTime, travelTime, slack);
+                    if (!candidateWorkBlds.empty()) {
+                        assignWorkBuildings(model, bld, nonHomeBuildings,
+                                            candidateWorkBlds,
+                                            ppl, timeMargin);
+                    }
+                }
+            } // for each household
+        }
     }
 }
 
@@ -345,10 +434,12 @@ ScheduleGenerator::assignWorkBuildings(const OSMData& model,
     // To speed up the assignment, a building will be assigned to
     // a person if the travel time to that building is between
     // travelTime - timeMargin and travelTime for that person
+    int bldCount = 0;
     for (Building& wrkBld : candidateWorkBlds) {
         if (wrkBld.population < 1) {
             continue;  // No space left in work building
         }
+        bldCount++;
         PathFinder pf(model);
         const Path path = pf.findBestPath(bld.id, wrkBld.id,
                                           true, 0.25, 0.1);
@@ -356,7 +447,6 @@ ScheduleGenerator::assignWorkBuildings(const OSMData& model,
             continue;
         }
         int timeInMinutes = (int)(std::round(path.back().distance * 60));
-        
         for (int curMargin = 0; curMargin <= timeMargin; curMargin++) {
             const int curTime = timeInMinutes + curMargin;
             if (timePeopleMap.find(curTime) != timePeopleMap.end()) {
@@ -367,24 +457,77 @@ ScheduleGenerator::assignWorkBuildings(const OSMData& model,
                 wrkBld.population--;
                 // Also update the actual building entry
                 nonHomeBuildings[wrkBld.id].population--;
-                std::cout << "Assign Building " << wrkBld.id
+                std::cout << "    Assign Building " << wrkBld.id
                           << " to person "
-                          << timePeopleMap.at(curTime).back() << std::endl;
-                std::cout << "Person needs time: " << curTime
+                          << timePeopleMap.at(curTime).back()
+                          << " after checking " << bldCount << " buildings\n";
+                std::cout << "    Person needs time: " << curTime
                           << " and the assigned building has time: "
                           << timeInMinutes << std::endl;
                 timePeopleMap.at(curTime).pop_back();
                 if (timePeopleMap.at(curTime).empty()) {
                     timePeopleMap.erase(curTime);
                 }
-                break;
             }
+        }
+        if (timePeopleMap.empty()) {
+            break;
         }
     }
     
     ASSERT(timePeopleMap.empty());
     return workBuildingAssignment;
 }
+
+
+std::unordered_map<long, long>
+ScheduleGenerator::assignWorkBuildings(const OSMData& model,
+                                       const Building& bld,
+                                       BuildingMap& nonHomeBuildings,
+                                       BuildingList& candidateWorkBlds,
+                                       const PUMSPerson& person,
+                                       const int timeMargin) {
+    // To speed up the assignment, a building will be assigned to
+    // a person if the travel time to that building is between
+    // travelTime - timeMargin and travelTime for that person
+    int bldCount = 0;
+    const int travelTime = person.getIntegerInfo(cmdLineArgs.jwmnpIdx);
+    for (Building& wrkBld : candidateWorkBlds) {
+        if (wrkBld.population < 1) {
+            continue;  // No space left in work building
+        }
+        bldCount++;
+        PathFinder pf(model);
+        const Path path = pf.findBestPath(bld.id, wrkBld.id,
+                                          true, 0.25, 0.1);
+        if (path.size() == 0) {
+            continue;
+        }
+        int timeInMinutes = (int)(std::round(path.back().distance * 60));
+        if (std::abs(travelTime - timeInMinutes) > timeMargin) {
+            std::cout << "    Path time is " << timeInMinutes << ", expected: "
+                      << travelTime << std::endl;
+            continue;  // This building is not acceptable
+        }
+
+        // Found a matching building
+        wrkBld.population--;
+        // Also update the actual building entry
+        nonHomeBuildings[wrkBld.id].population--;
+        std::cout << "    Assign Building " << wrkBld.id << "(in ring: "
+                  << wrkBld.attributes << ") to person " << person.getPerID()
+                  << " in building " << bld.id << "(in ring: " << bld.attributes
+                  << ") after checking " << bldCount << " buildings\n";
+        std::cout << "    Person needs time: " << travelTime
+                  << " and the assigned building has time: "
+                  << timeInMinutes << std::endl;
+        return {{person.getPerID(), wrkBld.id}};
+    }
+    std::cerr << "Unable to find suitable work building for person ";
+    person.write(std::cerr);
+    return {};
+}
+
 
 Ring
 ScheduleGenerator::getBldRing(int bldId, const Building& bld,
@@ -501,15 +644,21 @@ ScheduleGenerator::processArgs(int argc, char *argv[]) {
         {"--jwtrns-idx", "Index of JWTRNS (means of travel) column in model",
          &cmdLineArgs.jwtrnsIdx, ArgParser::INTEGER},        
         {"--off-sqFt-pp", "Office sq.ft per person",
-         &cmdLineArgs.offSqFtPer, ArgParser::INTEGER}, 
+         &cmdLineArgs.offSqFtPer, ArgParser::INTEGER},
+        {"--num-bld-pairs", "Number of building-paris to estimate travel time",
+         &cmdLineArgs.numBldPairs, ArgParser::INTEGER},
+        {"--out-trvl-est", "Output file to store travel estimate matrix",
+         &cmdLineArgs.outTrvlEstFile, ArgParser::STRING},
+        {"--use-trvl-est", "Input file to read travel estimate matrix",
+         &cmdLineArgs.useTrvlEstFile, ArgParser::STRING},
         {"", "", NULL, ArgParser::INVALID}
     };
     // Process the command-line arguments.
     ArgParser ap(arg_list);
     ap.parseArguments(argc, argv, true);
     // Ensure at least the model file and XFig files are specified.
-    if (cmdLineArgs.modelFilePath.empty() || cmdLineArgs.xfigFilePath.empty()) {
-        std::cerr << "Specify a model file and a xfig file.\n";
+    if (cmdLineArgs.modelFilePath.empty()) {
+        std::cerr << "Must specify an input model file file.\n";
         return 1;
     }
 

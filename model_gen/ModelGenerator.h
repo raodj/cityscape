@@ -638,6 +638,19 @@ protected:
                       const bool writeHeader = false,
                       const std::string& delim = " ") const;
 
+    /**
+       This is an internal helper method that is used to obtain a set
+       of way IDs.  This method is used if popAreaWayIDs is empty --
+       that is the user has not specified an population grid (or
+       LandScan data) via the \c --pop-gis command-line argument.
+
+       \note This method re-uses the popAreaWayIDs as a cache to
+       shortcircuit recomputing the set.
+       
+       \return This method returns the way IDs from the wayMap.
+    */
+    std::set<long> getWayIDs() const;
+
 private:
     /** The shape file containing rings loaded from community
         boundaries specified associated with the model.  For example,
@@ -887,8 +900,11 @@ private:
 
     /** A look-up table that includes a list of way-IDs for each
         population area.
+
+        \note The getWayIDs() method re-uses this vector as a cache to
+        short-circuit recomputing the set.
     */
-    std::vector<std::set<long>> popAreaWayIDs;
+    mutable std::vector<std::set<long>> popAreaWayIDs;
 
     /** This is just a copy of the command-line arguments supplied to
         the run method.  This vector is used to write the command-line

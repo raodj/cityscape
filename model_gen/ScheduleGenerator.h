@@ -288,6 +288,13 @@ protected:
                         TrvlTimePeopleMap& timePeopleMap,
                         const int timeMargin);
 
+    std::unordered_map<long, long>
+    assignWorkBuildings(const OSMData& model,
+                        const Building& bld,
+                        BuildingMap& nonHomeBuildings,
+                        BuildingList& candidateWorkBlds,
+                        const PUMSPerson& person,
+                        const int timeMargin);
 private:
     /** This is a simple inner class that is used to conveniently
         encapsulate various command-line arguments that is used by the
@@ -366,6 +373,28 @@ private:
            building.
          */
         int offSqFtPer = 350;
+
+        /**
+           The number of building pairs to be used to estimate travel
+           times between each pair of population rings.
+        */
+        int numBldPairs = 5;
+
+        /**
+           The path to the output txt file to where generated travel
+           estimates are to be written.  The generated file can be
+           used in the future via the --use-trvl-est command-line
+           argument.
+        */
+        std::string outTrvlEstFile;
+
+        /**
+           The path to the input text file from where travel estimates
+           are to be read and used.  This file must be generated for
+           exactly the same model using the --out-trvl-est
+           command-line argument.
+        */
+        std::string useTrvlEstFile;
         
     } cmdLineArgs;
 

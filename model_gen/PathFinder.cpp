@@ -258,21 +258,26 @@ PathFinder::addAdjacentNodes(const PathSegment& seg, const PathSegment& dest,
         // next node for exploration.
         const Point srcPt  = getLatLon(seg);
         int nearNode       = findNearestNode(way, srcPt.second, srcPt.first);
-        ASSERT(nearNode != -1);
-        if (way.isOneWay) {
-            nearNode++;  // For 1-way we want to start with next node
-                         // in the direction of traffic flow.
-        }
-        const long nodeID  = way.nodeList.at(nearNode);
-        ASSERT(nodeID < (long) osmData.nodeList.size());
-        ASSERT(exploredNodes.find(nodeID) == exploredNodes.end());
-        PathSegment newSeg{seg.wayID, nodeID, -1, 0, segIdCounter++, seg.segID};
-        newSeg.distance = seg.distance + getDistance(seg, newSeg);
-        exploring.push(newSeg);
-        // If this way has loops, then check and add any adjacent
-        // nodes, if the nodeID is the repeated one.
-        if (way.hasLoop) {
-            checkAddLoopNodes(way, nearNode, newSeg);
+        if (nearNode != -1) {
+            ASSERT(nearNode != -1);
+            if (way.isOneWay) {
+                nearNode++;  // For 1-way we want to start with next node
+                // in the direction of traffic flow.
+            }
+            const long nodeID  = way.nodeList.at(nearNode);
+            ASSERT(nodeID < (long) osmData.nodeList.size());
+            ASSERT(exploredNodes.find(nodeID) == exploredNodes.end());
+            PathSegment newSeg{seg.wayID, nodeID, -1, 0, segIdCounter++, seg.segID};
+            newSeg.distance = seg.distance + getDistance(seg, newSeg);
+            exploring.push(newSeg);
+            // If this way has loops, then check and add any adjacent
+            // nodes, if the nodeID is the repeated one.
+            if (way.hasLoop) {
+                checkAddLoopNodes(way, nearNode, newSeg);
+            }
+        } else {
+            std::cerr << "PathFinder::addAdjacentNodes() -- Unable to find "
+                      << "nearest node for " << seg << std::endl;
         }
     }
     // Check and add destination path if it is on this way.

@@ -81,7 +81,8 @@ PUMSPerson::write(std::ostream& os, const bool writeHeader,
     }
 
     // Write the actual data for this person
-    os << "per" << delim << perID << delim << householdID;
+    os << "per" << delim << perID << delim << householdID
+       << delim << info.size();
     for (const auto& i : info) {
         os << delim << i;
     }

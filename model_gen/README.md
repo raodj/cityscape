@@ -1,5 +1,17 @@
 # CityScape Model Generator
 
+## Compiling
+
+The source code uses GNU autoconf
+(https://www.gnu.org/software/autoconf/) to detect the GNU/Linux
+distribution settings and generate a Makefile.  Accordingly, the
+source code can be built via the following procedure:
+
+* $ cd model_gen
+* $ autoreconf -i -v
+* $ ./configure
+* $ make
+
 ## Test data
 ### General info
 1. Location: All test files are located in `tests/[City Name]`
