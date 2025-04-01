@@ -16,6 +16,7 @@ config.status
 configure
 depcomp
 stamp-h1
+compile
 
 # binaries
 accidents_collator
@@ -35,3 +36,4 @@ COPYING
 INSTALL
 install-sh
 missing
+README

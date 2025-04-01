@@ -307,7 +307,9 @@ schedule_generator_SOURCES = \
 	PathFinder.h \
 	PathFinder.cpp \
 	PathSegment.h \
-	PathSegment.cpp 
+	PathSegment.cpp \
+	WorkBuildingSelector.h \
+	WorkBuildingSelector.cpp
 
 schedule_generator_LDADD =
 
