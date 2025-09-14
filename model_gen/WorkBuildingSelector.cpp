@@ -156,8 +156,12 @@ WorkBuildingSelector::estimateTime(const size_t ringIdx1, const size_t ringIdx2,
     std::vector<double> travelTimes;
     for (int pairCnt = 0; pairCnt < numPairs; pairCnt++) {
         const int bldIdx1 = rng1Bld(rndGen), bldIdx2 = rng2Bld(rndGen);
-        const auto trvlTime = getTime(popRingWrkBld.at(ringIdx1).at(bldIdx1),
-                                      popRingWrkBld.at(ringIdx2).at(bldIdx2));
+        const long bldId1 = popRingWrkBld.at(ringIdx1).at(bldIdx1); 
+        const long bldId2 = popRingWrkBld.at(ringIdx2).at(bldIdx2); 
+        const auto trvlTime = getTime(bldId1, bldId2);
+        std::cout << "Travel time from bulding " << bldId1 << " in ring "
+                  << ringIdx1 << " to building " << bldId2 << " in ring " 
+                  << ringIdx2 << " is " << trvlTime << " minutes\n";
         if (trvlTime != -1) {
             travelTimes.push_back(trvlTime);
         }

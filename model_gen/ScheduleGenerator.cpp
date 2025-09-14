@@ -43,6 +43,7 @@
 #include "OSMData.h"
 #include "PathFinder.h"
 #include "WorkBuildingSelector.h"
+#include "Stopwatch.h"
 
 int
 ScheduleGenerator::run(int argc, char *argv[]) {
@@ -106,9 +107,10 @@ ScheduleGenerator::drawXfig(XFigHelper& xfig) {
     return 0;  // All went well.
 }
 
-std::pair<BuildingMap, BuildingMap>
+std::tuple<BuildingMap, BuildingMap, BuildingList>
 ScheduleGenerator::getHomeAndNonHomeBuildings(const BuildingMap& buildingMap) const {
     BuildingMap homeBuildings, nonHomeBuildings;
+    BuildingList nonHomeBldList;
     for (auto item = buildingMap.begin(); item != buildingMap.end(); item++) {
         if (item->second.isHome) {
             homeBuildings[item->first] = item->second;
@@ -118,6 +120,7 @@ ScheduleGenerator::getHomeAndNonHomeBuildings(const BuildingMap& buildingMap) co
             // its square footage.
             bld.population = bld.getArea() / cmdLineArgs.offSqFtPer;
             nonHomeBuildings[bld.id] = bld;
+            nonHomeBldList.push_back(bld);
         }
     }
     
@@ -127,7 +130,7 @@ ScheduleGenerator::getHomeAndNonHomeBuildings(const BuildingMap& buildingMap) co
     std::cout << "# of non-home buildings: " << nonHomeBuildings.size() << '\n';
     std::cout << "# of home buildings: " << homeBuildings.size() << std::endl;
 
-    return {homeBuildings, nonHomeBuildings};
+    return {homeBuildings, nonHomeBuildings, nonHomeBldList};
 }
 
 // Given a building, find the longest travel-to-work time among all
@@ -186,27 +189,32 @@ ScheduleGenerator::findLongestShortestToWorkTime(const Building& bld,
 // maxTravelTime + timeMargin.
 BuildingList
 ScheduleGenerator::getCandidateWorkBuildings(const Building& srcBld,
-                                            const BuildingMap& nonHomeBlds,
-                                            const int minTravelTime,
-                                            const int maxTravelTime,
-                                            const int timeMargin) const {
+                                             const BuildingMap& nonHomeBlds,
+                                             const BuildingList& nonHomeBldsList,
+                                             const int minTravelTime,
+                                             const int maxTravelTime,
+                                             const int timeMargin) const {
     // There are some work travel times that are pretty large which do
     // not approximate well.  In this situation, we track the building
     // with maximum distance and use that building as the fall back.
-    Building maxDistBld = srcBld;
+    const Building* maxDistBld = &srcBld;
     double maxDist = 0;
     
     // The list of potential candidates.
     BuildingList candidateBlds;
 
-    for (const  auto& [bldId, bld] : nonHomeBlds) {
+#pragma omp parallel for schedule(guided)
+    for (size_t i = 0; (i < nonHomeBldsList.size()); i++) {
+        const auto& bld  = nonHomeBldsList.at(i);
+        // const auto bldId = bld.id;
+        // for (const  auto& [bldId, bld] : nonHomeBlds) {
         // Get the distance in miles from the source building to an
         // non-office building.
         const double dist = getDistance(srcBld.wayLat, srcBld.wayLon,
                                         bld.wayLat,    bld.wayLon);
         // Track maximum distance building
         if (dist > maxDist) {
-            maxDistBld = bld;
+            maxDistBld = &nonHomeBldsList.at(i);
             maxDist    = dist;
         }
         // Convert distance to time using an "average" estimated time.
@@ -218,6 +226,8 @@ ScheduleGenerator::getCandidateWorkBuildings(const Building& srcBld,
         if ((timeInMinutes >= (minTravelTime - timeMargin)) &&
             (timeInMinutes <= (maxTravelTime + timeMargin)) &&
             (bld.population > 0)) {
+            // Multi-threading issue.
+#pragma omp critical
             candidateBlds.push_back(bld);
         }
     }
@@ -232,14 +242,14 @@ ScheduleGenerator::getCandidateWorkBuildings(const Building& srcBld,
     //                               b2.wayLat, b2.wayLon);
     //           });
 
-    std::cout << "# of candidate work locations: " << candidateBlds.size()
-              << std::endl;
+    // std::cout << "# of candidate work locations: " << candidateBlds.size()
+    //           << std::endl;
     if (candidateBlds.empty()) {
         std::cout << "Unable to find candidate buildings for time: "
                   << minTravelTime << " for building: " << srcBld.id
-                  << ". Using max distance building: " << maxDistBld.id
+                  << ". Using max distance building: " << maxDistBld->id
                   << ", at a distance of: " << maxDist << std::endl;
-        candidateBlds.push_back(maxDistBld);
+        candidateBlds.push_back(*maxDistBld);
         /*
         for (const  auto& [bldId, bld] : nonHomeBlds) {
             // Get the distance in miles from the source building to an
@@ -383,16 +393,19 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
                                     const std::string& infoKey) {
     std::cout << "Generating Schedule..." << std::endl;
     // Create the building selector heler and initialize the object.
-    WorkBuildingSelector wbs(model);
-    wbs.genOrUseTrvlEst(cmdLineArgs.numBldPairs, cmdLineArgs.useTrvlEstFile,
-                        cmdLineArgs.outTrvlEstFile);
-    
+    // WorkBuildingSelector wbs(model);
+    // wbs.genOrUseTrvlEst(cmdLineArgs.numBldPairs, cmdLineArgs.useTrvlEstFile,
+    //                     cmdLineArgs.outTrvlEstFile);
+    // Temporarily returning from here to assess travel estimation timings
+    // return;
+ 
     // Classify buildings by their types in order to reduce the number
     // of buildings we iterate on for different operations.
-    auto [homeBuildings, nonHomeBuildings] =
+    auto [homeBuildings, nonHomeBuildings, nonHomeBldList] =
         getHomeAndNonHomeBuildings(model.buildingMap);
-    
+    Stopwatch timer;
     for (auto& [bldId, bld] : homeBuildings) {
+        timer.start();
         if (bld.households.empty()) {
             continue;  // no households in this home
         }
@@ -411,7 +424,9 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
                 for (int slack = 0; slack < timeMargin; slack++) {
                     BuildingList candidateWorkBlds =
                         getCandidateWorkBuildings(bld, nonHomeBuildings,
-                                                  travelTime, travelTime, slack);
+                                                  nonHomeBldList,
+                                                  travelTime, travelTime,
+                                                  slack);
                     if (!candidateWorkBlds.empty()) {
                         assignWorkBuildings(model, bld, nonHomeBuildings,
                                             candidateWorkBlds,
@@ -419,7 +434,11 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
                     }
                 }
             } // for each household
-        }
+        }  // for each building
+        std::cout << "Processing time for building " << bldId
+                  << " with " << bld.households.size() << " households = "
+                  << timer.elapsed().count() << " milliseconds.\n";
+        
     }
 }
 
@@ -457,11 +476,12 @@ ScheduleGenerator::assignWorkBuildings(const OSMData& model,
                 wrkBld.population--;
                 // Also update the actual building entry
                 nonHomeBuildings[wrkBld.id].population--;
-                std::cout << "    Assign Building " << wrkBld.id
+                std::cout << "Assign Building " << wrkBld.id
                           << " to person "
                           << timePeopleMap.at(curTime).back()
-                          << " after checking " << bldCount << " buildings\n";
-                std::cout << "    Person needs time: " << curTime
+                          << " after checking " << bldCount << " out of "
+                          << candidateWorkBlds.size() << " buildings. ";
+                std::cout << "Person needs time: " << curTime
                           << " and the assigned building has time: "
                           << timeInMinutes << std::endl;
                 timePeopleMap.at(curTime).pop_back();
@@ -505,8 +525,8 @@ ScheduleGenerator::assignWorkBuildings(const OSMData& model,
         }
         int timeInMinutes = (int)(std::round(path.back().distance * 60));
         if (std::abs(travelTime - timeInMinutes) > timeMargin) {
-            std::cout << "    Path time is " << timeInMinutes << ", expected: "
-                      << travelTime << std::endl;
+            // std::cout << "    Path time is " << timeInMinutes << ", expected: "
+            //           << travelTime << std::endl;
             continue;  // This building is not acceptable
         }
 
@@ -514,16 +534,19 @@ ScheduleGenerator::assignWorkBuildings(const OSMData& model,
         wrkBld.population--;
         // Also update the actual building entry
         nonHomeBuildings[wrkBld.id].population--;
-        std::cout << "    Assign Building " << wrkBld.id << "(in ring: "
+        std::cout << "Assign Building " << wrkBld.id << "(in ring: "
                   << wrkBld.attributes << ") to person " << person.getPerID()
                   << " in building " << bld.id << "(in ring: " << bld.attributes
-                  << ") after checking " << bldCount << " buildings\n";
-        std::cout << "    Person needs time: " << travelTime
+                  << ") after checking " << bldCount << " out of "
+                  << candidateWorkBlds.size() << " buildings. ";
+        std::cout << "Person needs time: " << travelTime
                   << " and the assigned building has time: "
                   << timeInMinutes << std::endl;
         return {{person.getPerID(), wrkBld.id}};
     }
-    std::cerr << "Unable to find suitable work building for person ";
+    std::cerr << "Unable to find suitable work building from "
+              << candidateWorkBlds.size()
+              << " candidate buildings for person ";
     person.write(std::cerr);
     return {};
 }

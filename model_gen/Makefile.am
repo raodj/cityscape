@@ -309,7 +309,9 @@ schedule_generator_SOURCES = \
 	PathSegment.h \
 	PathSegment.cpp \
 	WorkBuildingSelector.h \
-	WorkBuildingSelector.cpp
+	WorkBuildingSelector.cpp \
+	Stopwatch.h \
+	Stopwatch.cpp
 
 schedule_generator_LDADD =
 

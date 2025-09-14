@@ -60,7 +60,15 @@ ModelGenerator::run(int argc, char *argv[]) {
         return error;  // Error processing command-line args.
     }
 
-    // Next load the community shape file
+    // Load the OSM XML file. This just loads the data but does not
+    // start processing yet. We load this file first so that if a more
+    // precise city boundary shape file is not sepcified, then we use
+    // the bounds in the OSM XML file as approximate (rectangular)
+    // bounds
+    loadOsmXml();
+    
+    // Next load the community shape file if specified. Otherwise, the
+    // following loadShpeFile method adds a dummy bounds from the OSM
     if ((error = loadShapeFile()) != 0) {
         return error;  // Error loading community shape file.
     }
@@ -79,9 +87,8 @@ ModelGenerator::run(int argc, char *argv[]) {
     // Now that we know the number of population rings, resize the
     // popAreaWayIDs vector to have a list of ways per population ring.
     popAreaWayIDs.resize(popRings.size());
-    
-    // Load the OSM file and collate nodes and generate buildings.
-    loadOsmXml();
+
+    // Now start processing the OSM XML file to extract various features.
     extractNodes();
     extractWays();
     // Create homes on the test way
@@ -242,8 +249,7 @@ ModelGenerator::processArgs(int argc, char *argv[]) {
     ArgParser ap(arg_list);
     ap.parseArguments(argc, argv, true);
     // Ensure at least the shape file is specified.
-    if (cmdLineArgs.shapeFilePath.empty()  ||
-        cmdLineArgs.osmFilePath.empty()) {
+    if (cmdLineArgs.osmFilePath.empty()) {
         std::cerr << "Specify a shape file, population GIS file, and OSM XML "
                   << "files to be processed.\n";
         return 1;
@@ -279,6 +285,15 @@ ModelGenerator::processArgs(int argc, char *argv[]) {
 
 int
 ModelGenerator::loadShapeFile() {
+    if (cmdLineArgs.shapeFilePath.empty()) {
+        // No shapefile specified. So we use the bounds in the
+        // OSM file instead.
+        const Ring bounds = getOsmBounds();
+        std::cout << "Precise boundaries not specified. So using bounds from "
+                  << "OSM file: " << bounds << std::endl;
+        shpFile.addRing(bounds);
+        return 0;
+    }
     // Load data from the shapefile and dbf file.
     if (!shpFile.loadShapes(cmdLineArgs.shapeFilePath,
                             cmdLineArgs.dbfFilePath)) {
@@ -416,6 +431,24 @@ ModelGenerator::getRing(const Way& way) const {
     // Create and return ring.
     return Ring(way.id, -1, Ring::ARC_RING, latList.size(), &lonList[0],
                 &latList[0], info);
+}
+
+Ring
+ModelGenerator::getOsmBounds() const {
+    // Ensure an OSM has been successfully loaded.
+    ASSERT( osmXML.type() == rapidxml::node_document );
+    const rapidxml::xml_node<> *osm    = osmXML.first_node("osm");
+    ASSERT( osm != nullptr );
+    const rapidxml::xml_node<> *bounds = osm->first_node("bounds");
+    ASSERT( bounds != nullptr );
+    // Extract the bounds from the various attributes
+    const double minLat = getAttribute(bounds, "minlat"),
+        minLon = getAttribute(bounds, "minlon"),
+        maxLat = getAttribute(bounds, "maxlat"),
+        maxLon = getAttribute(bounds, "maxlon");
+    // Create points to build a ring and return it.
+    const Point topLeft(minLon, minLat), botRight(maxLon, maxLat);
+    return Ring(topLeft, botRight, 0);
 }
 
 void
@@ -582,8 +615,13 @@ ModelGenerator::extractWays() {
                     if (kv.first == "maxspeed") {
                         // Parse out speed limit in the form "45 mph"
                         const std::string& speed = kv.second;
-                        wayEntry.maxSpeed =
-                            std::stoi(speed.substr(0, speed.find(' ')));
+                        try {
+                            wayEntry.maxSpeed =
+                                std::stoi(speed.substr(0, speed.find(' ')));
+                        } catch (const std::invalid_argument& arg) {
+                            std::cerr << "Invalid maxspeed value in OSM: "
+                                      << speed << std::endl;
+                        }
                     } else if ((kv.first == "building") ||
                                (kv.first == "amenity")  ||
                                (kv.first == "building:use")) {
@@ -746,6 +784,29 @@ ModelGenerator::getKeyValue(const rapidxml::xml_node<>* node,
     return retVal;
 }
 
+double
+ModelGenerator::getAttribute(const rapidxml::xml_node<>* node,
+                             const std::string& name,
+                             const bool throwExcept) const {
+    ASSERT( node != nullptr );
+    ASSERT( !name.empty() );
+    // Use helper method to extract the attriute
+    const std::string attrVal = getKeyValue(node, name, "").first;
+    if (!attrVal.empty()) {
+        std::size_t pos;
+        const double val = std::stod(attrVal, &pos);
+        if (throwExcept && (pos != attrVal.length())) {
+            throw std::runtime_error("Value for attribute " + name +
+                                     " was not a double " + attrVal);
+        }
+        return val;
+    } else if (throwExcept) {
+        throw std::runtime_error("Attribute " + name +
+                                 " was not a found in node " + node->name());
+    }
+    return -1;
+}
+    
 int
 ModelGenerator::getPopRing(const Ring& ring) const {
     // Get the centroid for searching.
@@ -1659,7 +1720,7 @@ ModelGenerator::loadPUMA() {
 
     // Find the bounds of the region we care about to limit the amount
     // of PUMS and PUMA data that we are going to hold.
-    double minX, minY, maxX, maxY;
+    double minX = -180, minY = -90, maxX = 180, maxY = 90;
     shpFile.getBounds(minX, minY, maxX, maxY);
     std::cout << "Loading PUMA data...\n";
     // Have the PUMS class load the necessary PUMA rings that fit

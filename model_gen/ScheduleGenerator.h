@@ -33,6 +33,7 @@
 
 #include <unordered_map>
 #include <set>
+#include <tuple>
 #include "XFigHelper.h"
 #include "ArgParser.h"
 #include "ShapeFile.h"
@@ -203,7 +204,7 @@ protected:
        \return A pair of building lists with the home and non-home
        buildings (in that order).
      */
-    std::pair<BuildingMap, BuildingMap>
+    std::tuple<BuildingMap, BuildingMap, BuildingList>
     getHomeAndNonHomeBuildings(const BuildingMap& buildingMap) const;
 
     /**
@@ -266,6 +267,7 @@ protected:
      */
     BuildingList getCandidateWorkBuildings(const Building& bld,
                                            const BuildingMap& nonHomeBlds,
+                                           const BuildingList& nonHomeBldsList,
                                            const int minTravelTime,
                                            const int maxTravelTime,
                                            const int timeMargin = 1) const;

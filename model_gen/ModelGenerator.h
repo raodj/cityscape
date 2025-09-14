@@ -149,6 +149,21 @@ protected:
     */
     void loadOsmXml();
 
+    /**
+       This is an internal helper method that is used to obtain the
+       bounds set in the OSM xml file. This method essentially uses
+       the <bounds/> node in the OSM to determine the rectanglar
+       bounds of the OSM.  This bounds is used if a more precise city
+       boundary shape file is not sepcified, then we use the bounds
+       in the OSM XML file as approximate (rectangular) bounds.
+
+       \note Ensure that the OSM is loaded first.
+
+       \return Returns the bounds on the OSM. This method throws
+       exceptions on errors.
+    */
+    Ring getOsmBounds() const;
+    
     /** Extract node IDs with latitude and longitude values from the
         parsed XML data. The nodes are stored in an hash-map to enable
         rapid look-up when processing building and roadway entries.
@@ -175,6 +190,22 @@ protected:
                          const std::string& key,
                          const std::string& value) const;
 
+    /**
+       Convenience method to obtain a given attribute of an XML node
+       as a double value.  If the attribute is not a double, then this
+       method throws an exception.
+
+       \param[in] node The XML node whose attributes are to be searched.
+
+       \param[in] name The name of the attribute to be converted to double.
+
+       \return The value as a double or exception if the attribute is not
+       found.
+    */
+    double getAttribute(const rapidxml::xml_node<>* node,
+                        const std::string& name,
+                        const bool throwExcept = true) const;
+    
     /* Get the population ring associated with a given building.
 
        \param[in] building The ring corresponding to the polygon for
