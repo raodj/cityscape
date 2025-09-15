@@ -311,7 +311,9 @@ schedule_generator_SOURCES = \
 	WorkBuildingSelector.h \
 	WorkBuildingSelector.cpp \
 	Stopwatch.h \
-	Stopwatch.cpp
+	Stopwatch.cpp \
+	RadiusFilterWorkBuildingAssigner.h \
+	RadiusFilterWorkBuildingAssigner.cpp
 
 schedule_generator_LDADD =
 

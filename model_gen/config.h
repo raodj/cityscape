@@ -16,6 +16,9 @@
 /* Define to 1 if you have the `hdf5_hl' library (-lhdf5_hl). */
 /* #undef HAVE_LIBHDF5_HL */
 
+/* Using MPI to compile MUSE */
+#define HAVE_LIBMPI 1
+
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
 

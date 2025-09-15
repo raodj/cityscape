@@ -59,10 +59,22 @@ public:
     */
     ~RadiusFilterWorkBuildingAssigner() {}
 
-    void assignWorkBuilding();
+    void assignWorkBuilding(int argc, char *argv[]);
 
 
 protected:
+    /**
+       This is an internal helper method that is used to get the range
+       of buildings that this MPI-process should operate on.
+
+       \param[in] bldCount The number of buildings to be processed by
+       all the different ranks.
+
+       \return A tuple with the starting and ending index of the
+       buildings to be processed by the caller.
+    */
+    std::tuple<int, int> getBldRange(const int bldCount) const;
+    
     /**
        An internal convenience method to make a list of home and
        non-home buildings so that we iterate on a smaller subset of
@@ -73,7 +85,7 @@ protected:
        \return A pair of building lists with the home and non-home
        buildings (in that order).
      */
-    std::pair<BuildingMap, BuildingMap>
+    std::tuple<BuildingMap, BuildingMap, std::vector<size_t>>
     getHomeAndNonHomeBuildings(const BuildingMap& buildingMap) const;
 
     /**

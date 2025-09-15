@@ -73,7 +73,110 @@ AC_DEFUN([AC_LIB_GDAL],
      AM_CONDITIONAL([GDAL], [test "x$GDAL" != "xno"])     
 ])
 
+# The macros above automatically fill in some CXXFLAGS so we'll undo it.
+# CXX=mpicxx
+CFLAGS=""
+CXXFLAGS=""
+CPPFLAGS=""
+
+# Define MPI library (http://www.open-mpi.org)
+AC_DEFUN([AC_PROG_MPI],
+[
+    AC_ARG_WITH(mpi, AC_HELP_STRING(--with-mpi=PATH,path to mpicc),
+        [ if test "$withval" != "yes"; then
+              AC_MSG_CHECKING([for MPI])
+	      if test -x "$withval" ; then
+	          MPI="$withval"
+	          AC_MSG_RESULT([$MPI])
+	      else
+	          MPI="no"
+	          AC_MSG_RESULT(no)
+	      fi
+          fi
+     ])
+     
+     if test -z "$MPI"; then
+         AC_PATH_PROG([MPI], [mpicxx], [notFound])
+     fi
+     
+     # have_mpi is set here and used in AC_CHECK_MPICC
+     have_mpi=0
+
+     if test $MPI = notFound; then
+        AC_MSG_ERROR([MPI could no be found on your system.
+                      To compile without MPI use --without-mpi option.
+		      You can download MPI for free from
+		      http://www.open-mpi.org
+                      Please check that MPI is installed on your system
+		      and your path includes the top-level install directory
+		      (example: /usr/include/openmpi), or specify
+		      --with-mpi=PATH option when running configure.])
+     elif test $MPI = no; then
+          AC_MSG_WARN([You have chosen to compile MUSE without MPI.
+                       This is OK and MUSE will run in single-process mode
+                       (MPI is needed to run in parallel using multiple
+                       processes to fully utilize computational power of
+                       supercomputing clusters). You can download MPI for
+                       free from http://www.open-mpi.org])
+     else
+        CXX=mpicxx
+        have_mpi=1
+        AC_SUBST(MPI)
+        AC_DEFINE([HAVE_LIBMPI], [1], [Using MPI to compile MUSE])
+     fi
+])
+
+# A custom helper to check to ensure C++ version of MPI is operational
+# Call AC_PROG_MPI before calling this check
+AC_DEFUN([AC_CHECK_MPICC],
+[
+    if test -n "$have_mpi" && test $have_mpi = 1; then
+        AC_MSG_CHECKING([whether $CXX is operational])
+	AC_LANG([C++])
+     
+	AC_LINK_IFELSE(
+            [AC_LANG_PROGRAM([[#include "mpi.h"
+                               #include <cstdlib>
+                             ]],
+                             [[int argc=0; char **argv = 0;
+                               MPI_Init(&argc, &argv); MPI_Finalize();
+                             ]])],
+	    [AC_MSG_RESULT([yes])],
+            [AC_MSG_RESULT([no])
+  	        AC_MSG_ERROR([
+	            There is a serious configuration issue on this
+	            machine.  It claims MPI is installed and mpicc is
+	            your path. However, mpicc is not operational and
+	            can't even compile a simple MPI program. This is
+	            not a problem with MUSE. Most likely no MPI
+	            program will compile on this machine.  Ensure you
+	            are loading the correct version of MPI (possibly
+	            using the 'module' command (example: module load
+	            openmpi-x86_64) in ~/.bashrc])
+        ])
+    fi
+])
+
+# Check if mpicxx requires -lstdc++ option (needed on redhawk)
+AC_DEFUN([AC_LINK_STDCPP],
+[
+     AC_MSG_CHECKING([if $CXX needs stdc++])
+     AC_LANG([C++])
+     
+     AC_LINK_IFELSE(
+         [AC_LANG_PROGRAM([[#include "mpi.h"]],[[std::cout << "Hello";]])],
+         [AC_MSG_RESULT([no])
+	 ],
+	 [AC_MSG_RESULT([yes])
+	     LDFLAGS="-lstdc++ $LDFLAGS"
+	 ])
+
+])
+
 # Setup default programming language
+AC_PROG_MPI
+AC_CHECK_MPICC
+
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_CXXCPP

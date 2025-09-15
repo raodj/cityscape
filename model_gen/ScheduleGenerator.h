@@ -179,12 +179,12 @@ protected:
     }
     
     void generateSchedule(const OSMData& model, XFigHelper& fig,
-                       const std::string& infoKey);
+                          const std::string& infoKey, int argc, char *argv[]);
                        
-    int generateSchedule(const PUMSPerson& person, const std::unordered_map<long, Building> buildingMap);
+    int generateSchedule(const PUMSPerson& person,
+                         const std::unordered_map<long, Building> buildingMap);
 
-    Ring getBldRing(int bldId, const Building& bld,
-                    const std::string& infoKey) const;
+    Ring getBldRing(int bldId, const Building& bld, const std::string& infoKey) const;
 
     /**
      * This is just an internal hepler method that is used to draw the

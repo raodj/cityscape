@@ -34,17 +34,36 @@
 #include "Utilities.h"
 #include "OSMData.h"
 #include "PathFinder.h"
+#include "MPIHelper.h"
 #include "RadiusFilterWorkBuildingAssigner.h"
 
+std::tuple<int, int>
+RadiusFilterWorkBuildingAssigner::getBldRange(const int bldCount) const {
+    const int bldPerRank = bldCount / MPI_GET_SIZE();
+    const int startIdx   = bldPerRank * MPI_GET_RANK();
+    const int endIdx     = (MPI_GET_RANK() == MPI_GET_SIZE() - 1 ?
+                            bldCount : startIdx + bldPerRank);
+    return {startIdx, endIdx};
+}
+
 void
-RadiusFilterWorkBuildingAssigner::assignWorkBuilding() {
+RadiusFilterWorkBuildingAssigner::assignWorkBuilding(int argc, char *argv[]) {
     std::cout << "Generating Schedule..." << std::endl;
+    MPI_INIT(argc, argv);  // Initialize mpi
+
     // Classify buildings by their types in order to reduce the number
     // of buildings we iterate on for different operations.
-    auto [homeBuildings, nonHomeBuildings] =
+    auto [homeBuildings, nonHomeBuildings, homeBldIdList] =
         getHomeAndNonHomeBuildings(model.buildingMap);
-    
-    for (auto& [bldId, bld] : homeBuildings) {
+
+    // Work on the subset of the buildings based on this process's rank
+    // We use an helper method to streamline this method.
+    const auto [startBldIdx, endBldIdx] = getBldRange(homeBldIdList.size());
+
+#pragma omp parallel for schedule(guided)
+    for (int idx = startBldIdx; idx < endBldIdx; idx++) {
+        const auto bldId = homeBldIdList.at(idx);
+        const auto& bld  = homeBuildings.at(bldId);
         if (bld.households.empty()) {
             continue;  // no households in this home
         }
@@ -70,17 +89,22 @@ RadiusFilterWorkBuildingAssigner::assignWorkBuilding() {
                                             ppl, timeMargin);
                     }
                 }
-            } // for each household
-        }
-    }
+            } 
+        } // for each household
+        
+    }  // OpenMP for-loop
+
+    MPI_FINALIZE();
 }
 
-std::pair<BuildingMap, BuildingMap>
+std::tuple<BuildingMap, BuildingMap, std::vector<size_t>>
 RadiusFilterWorkBuildingAssigner::getHomeAndNonHomeBuildings(const BuildingMap& buildingMap) const {
     BuildingMap homeBuildings, nonHomeBuildings;
+    std::vector<size_t> homeBldIdList;
     for (auto item = buildingMap.begin(); item != buildingMap.end(); item++) {
         if (item->second.isHome) {
             homeBuildings[item->first] = item->second;
+            homeBldIdList.push_back(item->first);
         } else {
             Building bld = item->second;
             // Initialize capacity of this office building based on
@@ -96,7 +120,7 @@ RadiusFilterWorkBuildingAssigner::getHomeAndNonHomeBuildings(const BuildingMap& 
     std::cout << "# of non-home buildings: " << nonHomeBuildings.size() << '\n';
     std::cout << "# of home buildings: " << homeBuildings.size() << std::endl;
 
-    return {homeBuildings, nonHomeBuildings};
+    return {homeBuildings, nonHomeBuildings, homeBldIdList};
 }
 
 // Return a list of potential non-home buildings to where people may
