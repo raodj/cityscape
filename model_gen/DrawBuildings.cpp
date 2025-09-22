@@ -95,26 +95,58 @@ void
 DrawBuildings::drawBuildings(const OSMData& model, XFigHelper& fig,
                              const std::string& infoKey,
                              int xClip, int yClip) {
-    // In order to repurpose the features of drawing scale etc, we
-    // just create a shape file object and add buildings to it as
-    // rings.
-    ShapeFile bldsSF;   // buildings shape file
-    for (const auto bldEntry : model.buildingMap) {
-        const Building& bld = bldEntry.second;  // Reference to building
-        // Create a ring for this building if the info is non-zero
-        // Get info to use as population for the building
-        int info = bld.getInfo(infoKey);
-        // To keep the average income figure clearly visible, we truncate
-        // everything below 10k to 0.
-        info = ((infoKey == "avg_income" && (info < 10'000)) ? 0 : info);
-        if (bld.isHome && info > 0) {
-            bldsSF.addRing(getBldRing(bldEntry.first, bld, infoKey));
+    ShapeFile combined;   // holds both buildings + grids + population rings
+
+     // Draw buildings if requested 
+    if (cmdLineArgs.drawBuildings) {
+        for (const auto& bldEntry : model.buildingMap) {
+            const Building& bld = bldEntry.second;
+            int info = bld.getInfo(infoKey);
+            info = ((infoKey == "avg_income" && (info < 10'000)) ? 0 : info);
+            if (bld.isHome && info > 0) {
+                combined.addRing(getBldRing(bldEntry.first, bld, infoKey));
+            }
         }
     }
 
-    bldsSF.genXFig(fig, xClip, yClip, cmdLineArgs.figScale, false, {}, true,
-                   cmdLineArgs.modelFilePath, 50, -1);
+    // Draw communities if requested 
+    if (cmdLineArgs.drawCommunities) {
+        for (size_t i = 0; i < cmdLineArgs.shapeFilePaths.size(); i++) {
+            ShapeFile shpFile;
+            if (shpFile.loadShapes(cmdLineArgs.shapeFilePaths[i],
+                                   cmdLineArgs.dbfFilePaths[i])) {
+                combined.addRings(shpFile.getRings());
+            }
+        }
+    }
+
+    // Draw population rings if requested 
+    if (cmdLineArgs.drawPopulations) {
+        for (const Ring& pr : model.popRings) {
+            Ring ring = pr;
+            std::string idLabel = std::to_string(pr.getRingID());
+
+            // Add the ring geometry to the combined shape
+            combined.addRing(ring);
+
+            // Drawing ID text explicitly at ring centroid
+            Point center = ring.getCentroid();
+            int xfigX, xfigY;
+            getXYValues(center.second, center.first, xfigX, xfigY,
+                        cmdLineArgs.figScale * XFIG_SCALE, false);
+            xfigX -= xClip;
+            xfigY -= yClip;
+            fig.drawText(idLabel, xfigX, xfigY, CENTER_JUSTIFIED, 4, 10, 0, 28);
+        }
+    }
+
+    //  Generate XFig with everything 
+    combined.genXFig(fig, xClip, yClip, cmdLineArgs.figScale,
+                     false, {}, true, cmdLineArgs.modelFilePath,
+                     50, -1);
 }
+
+
 
 Ring
 DrawBuildings::getBldRing(int bldId, const Building& bld,
@@ -224,6 +256,13 @@ DrawBuildings::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.key_info, ArgParser::STRING},
         {"--model", "The model text file for building data",
          &cmdLineArgs.modelFilePath, ArgParser::STRING},
+         {"--draw-buildings", "Draw building rings from the model",
+         &cmdLineArgs.drawBuildings, ArgParser::BOOLEAN},
+        {"--draw-communities", "Draw community shapes from shapefiles",
+         &cmdLineArgs.drawCommunities, ArgParser::BOOLEAN},
+        {"--draw-populations", "Draw population rings from the model",
+         &cmdLineArgs.drawPopulations, ArgParser::BOOLEAN},
+
         {"", "", NULL, ArgParser::INVALID}
     };
     // Process the command-line arguments.
