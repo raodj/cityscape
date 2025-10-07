@@ -35,7 +35,8 @@
 
 int main(int argc, char *argv[]) {
     ModelGenerator modelGen;
-    return modelGen.run(argc, argv);
+    const int exitCode = modelGen.run(argc, argv);
+    return exitCode;
 }
 
 #endif

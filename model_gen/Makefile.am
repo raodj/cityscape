@@ -75,7 +75,9 @@ modelgen_SOURCES = \
 	PUMSHousehold.h \
 	PUMSHousehold.cpp \
 	PUMSPerson.h \
-	PUMSPerson.cpp
+	PUMSPerson.cpp \
+	ScheduleEntry.h \
+	ScheduleEntry.cpp
 
 pathfinder_SOURCES = \
 	shapefil.h \
@@ -114,7 +116,9 @@ pathfinder_SOURCES = \
 	PathFinderTester.h \
 	PathFinderTester.cpp \
 	ShpBldCatalog.h \
-	ShpBldCatalog.cpp
+	ShpBldCatalog.cpp \
+	ScheduleEntry.h \
+	ScheduleEntry.cpp
 
 pathfinder_LDADD =
 
@@ -189,7 +193,9 @@ riskanalyzer_SOURCES = \
 	WayRiskAnalyzer.h \
 	WayRiskAnalyzer.cpp \
 	Stopwatch.h \
-	Stopwatch.cpp
+	Stopwatch.cpp \
+	ScheduleEntry.h \
+	ScheduleEntry.cpp
 
 riskanalyzer_LDADD =
 if GDAL
@@ -226,7 +232,9 @@ accidents_collator_SOURCES = \
 	ShapeFile.h \
 	ShapeFile.cpp \
 	AccidentsCollator.h \
-	AccidentsCollator.cpp
+	AccidentsCollator.cpp \
+	ScheduleEntry.h \
+	ScheduleEntry.cpp
 
 accidents_collator_LDADD =
 if GDAL
@@ -264,7 +272,9 @@ draw_buildings_SOURCES = \
 	OSMData.h \
 	OSMData.cpp \
 	DrawBuildings.h\
-	DrawBuildings.cpp
+	DrawBuildings.cpp \
+	ScheduleEntry.h \
+	ScheduleEntry.cpp
 
 draw_buildings_LDADD =
 
@@ -313,7 +323,9 @@ schedule_generator_SOURCES = \
 	Stopwatch.h \
 	Stopwatch.cpp \
 	RadiusFilterWorkBuildingAssigner.h \
-	RadiusFilterWorkBuildingAssigner.cpp
+	RadiusFilterWorkBuildingAssigner.cpp \
+	ScheduleEntry.h \
+	ScheduleEntry.cpp
 
 schedule_generator_LDADD =
 

@@ -271,7 +271,8 @@ protected:
 
         \return The distance between ps1 and ps2 in miles.
      */
-    double getDistance(const PathSegment& ps1, const PathSegment& ps2) const;
+    std::pair<double, double>
+    getDistance(const PathSegment& ps1, const PathSegment& ps2) const;
     
     /** Adds adjacent, unexplored nodes to the heap of exploring path
         segements.

@@ -47,4 +47,8 @@ milliseconds Stopwatch::elapsed() {
     return elapsedTime;
 }
 
+long Stopwatch::elapsedTime() {
+    return elapsed().count();
+}
+
 #endif

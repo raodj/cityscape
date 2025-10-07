@@ -57,10 +57,15 @@ public:
     */
     long buildingID;
 
-    /** The distance (in miles) from the previous path segments (if
-        any) associated with this path segment. */
+    /** The distance (in miles) or time (in minutes) from the previous
+        path segments (if any) associated with this path segment. */
     double distance;
 
+    /** This alternative metric is used to track the opposite metric
+        from distance -- that is, if distance is used as time, then
+        this instance variable tracks distance (in miles) */
+    double altMetric;
+    
     /** A unique ID associated with this path segment */
     long segID;
 
@@ -85,7 +90,7 @@ public:
         \param[in] dist The newly updated distance to be udpated.
      */
     void update(const long parentSegID, const long wayID,
-                const double distance);
+                const double distance, const double altMetric);
 
     /** Functor used by IndexedPriorityQueue to extract the key for a
         given segement.

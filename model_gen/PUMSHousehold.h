@@ -182,6 +182,12 @@ public:
         \return The information about the people in the household.
      */
     const std::vector<PUMSPerson>& getPeopleInfo() const { return peopleInfo; }
+
+    /** Obtain information about the people in this household.
+
+        \return The information about the people in the household.
+     */
+    std::vector<PUMSPerson>& getPeopleInfo() { return peopleInfo; }
     
     /** Generate information about the i'th household of this type.
 

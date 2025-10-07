@@ -234,6 +234,21 @@ private:
         stdout.
     */
     void processStdIO();
+
+    /**
+       Helper metod to compute the straight line distance between two
+       buildings.  This information is used to determine the
+       correlations.  This method internally uses the getDistance
+       method defined in Utilities class.
+
+       \param[in] startBldId The starting building ID.
+
+       \param[in] ebdBldId The ending building ID.
+
+       \return The distance between the buildings computed using
+       Haversine's formula.
+     */
+    double getDistance(const long startBldID, const long endBldID) const;
 };
 
 #endif

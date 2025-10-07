@@ -146,7 +146,7 @@ PUMSHousehold::write(std::ostream& os, const bool writeHeader,
        << delim  << wgtp     << delim      << hincp << delim << people;
 
     // Write the IDs of each person record 
-    for (const auto person : peopleInfo) {
+    for (const auto& person : peopleInfo) {
         os << delim << person.getPerID();
     }
     os << '\n';

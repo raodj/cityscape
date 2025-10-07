@@ -149,6 +149,29 @@ public:
 
     int getIntegerInfo(const int infoIdx) const;
 
+    /** This is a helper method that generates a schedule to associate
+        a work building with this person. The schedule is generated
+        for 5 days a week with this person going to work at 8 am and
+        returning back home at 5 pm.
+
+        \param[in] homeBldId The ID of the home building.
+        
+        \param[in] bldId The ID of the work building for this person.
+
+        \param[in] leave2workTime The time when this person is
+        scheduled to leave from the home building to the work
+        building. This time is in seconds after midnight. The default
+        is is 8 am (8 * 3600 = 28800).
+
+        \param[in] leaveFromworkTime The time when this person is
+        scheduled to leave from the work building and return back to
+        the home building. This time is in seconds after midnight. The
+        default is is 5 pm (17 * 3600 = 61200).
+    */
+    void setWorkBuilding(const long homeBldId, const long bldId,
+                         const long leave2workTime = 28800,
+                         const long leaveFromWorkTime = 61200);
+    
 private:
     /**
      * This variable is used to track a unique ID value assigned for

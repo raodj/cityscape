@@ -44,6 +44,7 @@
 #include "PathFinder.h"
 #include "WorkBuildingSelector.h"
 #include "RadiusFilterWorkBuildingAssigner.h"
+#include "MPIHelper.h"
 
 int
 ScheduleGenerator::run(int argc, char *argv[]) {
@@ -150,6 +151,7 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
                                          cmdLineArgs.jwmnpIdx,
                                          cmdLineArgs.offSqFtPer,
                                          cmdLineArgs.avgSpeed);
+    std::cout << wbs.getJwtrnsIdx() << std::endl;
     wbs.assignWorkBuilding(argc, argv);
 }
 
@@ -323,8 +325,11 @@ ScheduleGenerator::intersections(const ShapeFile& primary,
 }
 
 int main(int argc, char *argv[]) {
+    MPI_INIT(argc, argv);
     ScheduleGenerator drawer;
-    return drawer.run(argc, argv);
+    const int exitCode = drawer.run(argc, argv);
+    MPI_FINALIZE();
+    return exitCode;
 }
 
 #endif

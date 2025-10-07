@@ -36,6 +36,7 @@
 #include <iomanip>
 #include "PUMSPerson.h"
 #include "Utilities.h"
+#include "ScheduleEntry.h"
 
 // The static instance variable to hold column names
 std::vector<std::string> PUMSPerson::colTitles;
@@ -149,6 +150,16 @@ PUMSPerson::getIntegerInfo(const int infoIdx) const {
 
     return ret;
 
+}
+
+void
+PUMSPerson::setWorkBuilding(const long homeBldId, const long bldId,
+                            const long leave2workTime,
+                            const long leaveFromWorkTime) {
+    const ScheduleEntry toWork(1, 5, leave2workTime, bldId);
+    const ScheduleEntry toHome(1, 5, leaveFromWorkTime, leaveFromWorkTime);
+    schedule += toWork.to_string();
+    schedule += toHome.to_string();
 }
 
 #endif

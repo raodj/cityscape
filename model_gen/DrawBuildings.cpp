@@ -95,13 +95,18 @@ void
 DrawBuildings::drawBuildings(const OSMData& model, XFigHelper& fig,
                              const std::string& infoKey,
                              int xClip, int yClip) {
+    // In order to repurpose the features of drawing scale etc, we
+    // just create a shape file object and add buildings to it as
+    // rings.
     ShapeFile combined;   // holds both buildings + grids + population rings
-
-     // Draw buildings if requested 
     if (cmdLineArgs.drawBuildings) {
         for (const auto& bldEntry : model.buildingMap) {
-            const Building& bld = bldEntry.second;
+            const Building& bld = bldEntry.second;  // Reference to building
+            // Create a ring for this building if the info is non-zero
+            // Get info to use as population for the building
             int info = bld.getInfo(infoKey);
+            // To keep the average income figure clearly visible, we truncate
+            // everything below 10k to 0.
             info = ((infoKey == "avg_income" && (info < 10'000)) ? 0 : info);
             if (bld.isHome && info > 0) {
                 combined.addRing(getBldRing(bldEntry.first, bld, infoKey));

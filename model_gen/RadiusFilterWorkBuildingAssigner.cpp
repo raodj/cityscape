@@ -31,11 +31,42 @@
 //
 //---------------------------------------------------------------------------
 
+#include <omp.h>
+#include <ctime>
+#include <unistd.h>
 #include "Utilities.h"
 #include "OSMData.h"
 #include "PathFinder.h"
 #include "MPIHelper.h"
+#include "Stopwatch.h"
 #include "RadiusFilterWorkBuildingAssigner.h"
+
+// Definition for the static instance variable
+MPI_Win RadiusFilterWorkBuildingAssigner::bldIdxWin;
+
+// Just a named constant to keep some of the MPI calls more readable
+constexpr int RANK_0 = 0;
+
+std::string getCurrentTimestamp() {
+    std::time_t now = std::time(nullptr);
+    std::tm* localTime = std::localtime(&now);
+    char buffer[80];
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localTime);
+    return buffer;
+}
+
+RadiusFilterWorkBuildingAssigner::RadiusFilterWorkBuildingAssigner(const OSMData& model,
+                                                                   const int jwtrnsIdx,
+                                                                   const int jwmnpIdx,
+                                                                   const int offSqFtPer,
+                                                                   const int avgSpeed) :
+    model(model), jwtrnsIdx(jwtrnsIdx), jwmnpIdx(jwmnpIdx),
+    offSqFtPer(offSqFtPer), avgSpeed(avgSpeed), nextBldIndex(0) {
+    std::string slurmID = getenv("SLURM_JOB_ID") != nullptr ? getenv("SLURM_JOB_ID") : "";
+    std::string mpiRank = std::to_string(MPI_GET_RANK());
+    std::string statsFileName = "stats_job" + slurmID + "_rank" + mpiRank + ".txt";
+    stats.open(statsFileName);
+}
 
 std::tuple<int, int>
 RadiusFilterWorkBuildingAssigner::getBldRange(const int bldCount) const {
@@ -46,55 +77,117 @@ RadiusFilterWorkBuildingAssigner::getBldRange(const int bldCount) const {
     return {startIdx, endIdx};
 }
 
+long
+RadiusFilterWorkBuildingAssigner::getNextBldIndex() {
+    long nextIndex = -1;
+#pragma omp critical (bldCS)
+    {  // start critical section
+#ifdef HAVE_LIBMPI
+        const long increment_value = 1;
+        // Lock the window on the root process
+        MPI_Win_lock(MPI_LOCK_SHARED, RANK_0, 0, bldIdxWin);
+        MPI_Fetch_and_op(&increment_value, &nextIndex, MPI_LONG, RANK_0, 0,
+                         MPI_SUM, bldIdxWin);
+        MPI_Win_unlock(RANK_0, bldIdxWin); // Unlock the window
+#else
+        nextIndex = nextBldIndex;
+        nextBldIndex++;
+#endif
+    }  // end critical section
+    // std::cout << "Returning nextIndex = " << nextIndex << std::endl;
+    return nextIndex;
+}
+
+void
+RadiusFilterWorkBuildingAssigner::
+processBuilding(const long idx, const long bldId, Building& bld,
+                BuildingMap& nonHomeBuildings) {
+    UNUSED_PARAM(idx);
+    // std::cout << "Processing building #" << bldId
+    //           << "(index: " << idx << ") Rank #" 
+    //           << MPI_GET_RANK() << ", thread #" << omp_get_thread_num()
+    //           << std::endl;
+
+    // For each person in each household assign work building
+    for (auto& hld : bld.households) {
+        for (auto& ppl : hld.getPeopleInfo()) {
+            if (ppl.getIntegerInfo(jwtrnsIdx) != 1) {
+                continue;  // This person doesn't drive to work.
+            }
+            const int travelTime = ppl.getIntegerInfo(jwmnpIdx);
+            if (travelTime < 0) {
+                continue;  // This person doesn't travel for work
+            }
+            // Find buildings in the
+            const int timeMargin = 3;  // Wiggle room of 3 minutes
+            for (int slack = 0; slack < timeMargin; slack++) {
+                BuildingList candidateWorkBlds =
+                    getCandidateWorkBuildings(bld, nonHomeBuildings,
+                                              travelTime, travelTime, slack);
+                if (!candidateWorkBlds.empty()) {
+                    const long wrkBldId = 
+                        assignWorkBuilding(model, bld, nonHomeBuildings, candidateWorkBlds,
+                                           ppl, timeMargin);
+                    if (wrkBldId != -1) {
+                        ppl.setWorkBuilding(bldId, wrkBldId);
+                    }
+                }
+            }
+        }
+    }
+}
+
 void
 RadiusFilterWorkBuildingAssigner::assignWorkBuilding(int argc, char *argv[]) {
+    UNUSED_PARAM(argc);
+    UNUSED_PARAM(argv);
     std::cout << "Generating Schedule..." << std::endl;
-    MPI_INIT(argc, argv);  // Initialize mpi
+#ifdef HAVE_LIBMPI
+    // Create the window to handle our global building index counter
+    nextBldIndex = 0;
+    MPI_Win_create(&nextBldIndex, sizeof(long), sizeof(long), MPI_INFO_NULL,
+                   MPI_COMM_WORLD, &bldIdxWin);
+#endif
 
     // Classify buildings by their types in order to reduce the number
     // of buildings we iterate on for different operations.
     auto [homeBuildings, nonHomeBuildings, homeBldIdList] =
         getHomeAndNonHomeBuildings(model.buildingMap);
 
-    // Work on the subset of the buildings based on this process's rank
-    // We use an helper method to streamline this method.
-    const auto [startBldIdx, endBldIdx] = getBldRange(homeBldIdList.size());
-
-#pragma omp parallel for schedule(guided)
-    for (int idx = startBldIdx; idx < endBldIdx; idx++) {
-        const auto bldId = homeBldIdList.at(idx);
-        const auto& bld  = homeBuildings.at(bldId);
-        if (bld.households.empty()) {
-            continue;  // no households in this home
-        }
-        // For each person in each household assign work building
-        for (auto& hld : bld.households) {
-            for (auto& ppl : hld.getPeopleInfo()) {
-                if (ppl.getIntegerInfo(jwtrnsIdx) != 1) {
-                    continue;  // This person doesn't drive to work.
-                }
-                const int travelTime = ppl.getIntegerInfo(jwmnpIdx);
-                if (travelTime < 0) {
-                    continue;  // This person doesn't travel for work
-                }
-                // Find buildings in the
-                const int timeMargin = 3;  // Wiggle room of 3 minutes
-                for (int slack = 0; slack < timeMargin; slack++) {
-                    BuildingList candidateWorkBlds =
-                        getCandidateWorkBuildings(bld, nonHomeBuildings,
-                                                  travelTime, travelTime, slack);
-                    if (!candidateWorkBlds.empty()) {
-                        assignWorkBuildings(model, bld, nonHomeBuildings,
-                                            candidateWorkBlds,
-                                            ppl, timeMargin);
-                    }
-                }
-            } 
-        } // for each household
+    // Process buildings using multiple threads
+#pragma omp parallel
+    {
+        // Process building by building using a global counter
+        const long MaxBldIdx = homeBldIdList.size();
+        for (long idx = getNextBldIndex(); idx < MaxBldIdx;
+             idx = getNextBldIndex()) {
+            const auto bldId = homeBldIdList.at(idx);
+            auto& bld  = homeBuildings.at(bldId);
+            if (bld.households.empty()) {
+                continue;  // no households in this home
+            }
+            // Have helper method process this building
+            processBuilding(idx, bldId, bld, nonHomeBuildings);
         
-    }  // OpenMP for-loop
+            if (idx % 1000 == 0) {
+                const double percent = idx * 100 / homeBldIdList.size();
+                std::cout << "Progress: curr building index " << idx 
+                          << " (" << percent << "% completed)" << std::endl;
+            }
+        }  // per-thread for-loop
 
-    MPI_FINALIZE();
+        std::cout << "Thread #" << omp_get_thread_num() << " on MPI Rank #"
+                  << MPI_GET_RANK() << " has finished at time " 
+		  << getCurrentTimestamp() << std::endl;
+    }  // OMP parallel section
+    std::cout << "MPI process with Rank " << MPI_GET_RANK()
+	      << " has completed processing at time " 
+	      << getCurrentTimestamp() << std::endl;
+
+#ifdef HAVE_LIBMPI    
+    // Create the window to handle our global building index counter
+    MPI_Win_free(&bldIdxWin);
+#endif
 }
 
 std::tuple<BuildingMap, BuildingMap, std::vector<size_t>>
@@ -103,8 +196,10 @@ RadiusFilterWorkBuildingAssigner::getHomeAndNonHomeBuildings(const BuildingMap& 
     std::vector<size_t> homeBldIdList;
     for (auto item = buildingMap.begin(); item != buildingMap.end(); item++) {
         if (item->second.isHome) {
-            homeBuildings[item->first] = item->second;
-            homeBldIdList.push_back(item->first);
+	    if (!item->second.households.empty()) {
+                homeBuildings[item->first] = item->second;
+                homeBldIdList.push_back(item->first);
+	    }
         } else {
             Building bld = item->second;
             // Initialize capacity of this office building based on
@@ -113,9 +208,11 @@ RadiusFilterWorkBuildingAssigner::getHomeAndNonHomeBuildings(const BuildingMap& 
             nonHomeBuildings[bld.id] = bld;
         }
     }
-    
-    ASSERT(homeBuildings.size() + nonHomeBuildings.size() ==
-           buildingMap.size());
+   
+    // Since we are filtering out buildings with no households above
+    // the following assert no longer holds and hence is commented out
+    // ASSERT(homeBuildings.size() + nonHomeBuildings.size() ==
+    //        buildingMap.size());
     
     std::cout << "# of non-home buildings: " << nonHomeBuildings.size() << '\n';
     std::cout << "# of home buildings: " << homeBuildings.size() << std::endl;
@@ -175,9 +272,10 @@ getCandidateWorkBuildings(const Building& srcBld,
     //                               b2.wayLat, b2.wayLon);
     //           });
 
-    std::cout << "# of candidate work locations: " << candidateBlds.size()
-              << std::endl;
+    // std::cout << "# of candidate work locations: " << candidateBlds.size()
+    //           << std::endl;
     if (candidateBlds.empty()) {
+#pragma omp critical (cout)        
         std::cout << "Unable to find candidate buildings for time: "
                   << minTravelTime << " for building: " << srcBld.id
                   << ". Using max distance building: " << maxDistBld.id
@@ -202,13 +300,15 @@ getCandidateWorkBuildings(const Building& srcBld,
     return candidateBlds;
 }
 
-std::unordered_map<long, long>
-RadiusFilterWorkBuildingAssigner::assignWorkBuildings(const OSMData& model,
-                                       const Building& bld,
-                                       BuildingMap& nonHomeBuildings,
-                                       BuildingList& candidateWorkBlds,
-                                       const PUMSPerson& person,
-                                       const int timeMargin) {
+long
+RadiusFilterWorkBuildingAssigner::assignWorkBuilding(const OSMData& model,
+                                                     const Building& bld,
+                                                     BuildingMap& nonHomeBuildings,
+                                                     BuildingList& candidateWorkBlds,
+                                                     const PUMSPerson& person,
+                                                     const int timeMargin) {
+    Stopwatch timer;
+    timer.start();
     // To speed up the assignment, a building will be assigned to
     // a person if the travel time to that building is between
     // travelTime - timeMargin and travelTime for that person
@@ -227,8 +327,8 @@ RadiusFilterWorkBuildingAssigner::assignWorkBuildings(const OSMData& model,
         }
         int timeInMinutes = (int)(std::round(path.back().distance * 60));
         if (std::abs(travelTime - timeInMinutes) > timeMargin) {
-            std::cout << "    Path time is " << timeInMinutes << ", expected: "
-                      << travelTime << std::endl;
+            // std::cout << "    Path time is " << timeInMinutes << ", expected: "
+            //           << travelTime << std::endl;
             continue;  // This building is not acceptable
         }
 
@@ -236,18 +336,31 @@ RadiusFilterWorkBuildingAssigner::assignWorkBuildings(const OSMData& model,
         wrkBld.population--;
         // Also update the actual building entry
         nonHomeBuildings[wrkBld.id].population--;
-        std::cout << "    Assign Building " << wrkBld.id << "(in ring: "
-                  << wrkBld.attributes << ") to person " << person.getPerID()
-                  << " in building " << bld.id << "(in ring: " << bld.attributes
-                  << ") after checking " << bldCount << " buildings\n";
-        std::cout << "    Person needs time: " << travelTime
-                  << " and the assigned building has time: "
-                  << timeInMinutes << std::endl;
-        return {{person.getPerID(), wrkBld.id}};
+
+#pragma omp critical (cout)
+        stats << "    Assign Building " << wrkBld.id << "(in ring: "
+              << wrkBld.attributes << ") to person " << person.getPerID()
+              << " in building " << bld.id << "(in ring: " << bld.attributes
+              << ") after checking " << bldCount << " out of " 
+              << candidateWorkBlds.size() << " buildings. "
+              << "Person needs time: " << travelTime
+              << " and the assigned building has time: "
+              << timeInMinutes << ".  Compute time: "
+              << timer.elapsedTime() << " milliseconds" << std::endl;
+        return wrkBld.id;
     }
-    std::cerr << "Unable to find suitable work building for person ";
-    person.write(std::cerr);
-    return {};
+
+#pragma omp critical (cout)
+    {
+        stats << "    Unable to find building for person " << person.getPerID()
+              << " in building " << bld.id << "(in ring: " << bld.attributes
+              << ") after checking " << candidateWorkBlds.size()
+              << " buildings. Person needs time: " << travelTime
+              << ".  Compute time: "
+              << timer.elapsedTime() << " milliseconds" << std::endl;
+        person.write(std::cerr);
+    }
+    return -1;
 }
 
 #endif
