@@ -202,6 +202,25 @@ private:
         */
         std::string key_info = "avg_income";
 
+        
+        /** Flag to indicate if building rings from the model are to
+            be drawn.  This flag is enabled by the --draw-buildings
+            command-line option.
+        */
+        bool drawBuildings = false;
+
+        /** Flag to indicate if community shapes (from shapefiles) are
+            to be drawn.  This flag is enabled by the --draw-communities
+            command-line option.
+        */
+        bool drawCommunities = false;
+
+        /** Flag to indicate if population rings from the model are to
+            be drawn.  This flag is enabled by the --draw-populations
+            command-line option.
+        */
+        bool drawPopulations = false;
+
         /** The path to the model text file from where building data
             is to be obtained.
          */
