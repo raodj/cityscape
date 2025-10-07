@@ -99,7 +99,7 @@ DrawBuildings::drawBuildings(const OSMData& model, XFigHelper& fig,
     // just create a shape file object and add buildings to it as
     // rings.
     ShapeFile bldsSF;   // buildings shape file
-    for (const auto bldEntry : model.buildingMap) {
+    for (const auto& bldEntry : model.buildingMap) {
         const Building& bld = bldEntry.second;  // Reference to building
         // Create a ring for this building if the info is non-zero
         // Get info to use as population for the building

@@ -35,15 +35,17 @@
 
 void
 PathSegment::update(const long parentSegID, const long wayID,
-                    const double distance) {
+                    const double distance, const double altMetric) {
     this->wayID       = wayID;
     this->parentSegID = parentSegID;
     this->distance    = distance;
+    this->altMetric   = altMetric;
 }
 
 std::ostream& operator<<(std::ostream& os, const PathSegment& pSeg) {
     os << "Way: "     << pSeg.wayID      << ", nodeID: " << pSeg.nodeID
-       << ", bldID: " << pSeg.buildingID << ", dist: "   << pSeg.distance;
+       << ", bldID: " << pSeg.buildingID << ", dist: "   << pSeg.distance
+       << ", altMetric: " << pSeg.altMetric;
     return os;
 }
 

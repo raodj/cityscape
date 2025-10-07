@@ -1,5 +1,5 @@
-#ifndef STOPWATCH_H
-#define STOPWATCH_H
+#ifndef SCHEDULE_ENTRY_CPP
+#define SCHEDULE_ENTRY_CPP
 
 //---------------------------------------------------------------------------
 //
@@ -31,39 +31,32 @@
 //
 //---------------------------------------------------------------------------
 
-#include <chrono>
+#include <sstream>
+#include <string>
+#include "ScheduleEntry.h"
 
-/**
- * A simple stopwatch class to track elsapsed time for different
- * operations.  Each instance of this class is MT-safe.
- */
-class Stopwatch {
-public:
-    /**
-     * Start/restart the stopwatch.  This basically sets the startTime
-     * for this stopwatch.
-     */
-    void start();
+std::string
+ScheduleEntry::to_string() const {
+    std::ostringstream os;
+    os << dowStart << ' ' << dowEnd << ' ' << time << ' ' << destBldId << '\n';
+    return os.str();
+}
 
-    /**
-     * Returns the current elapsed time in milliseconds
-     *
-     * \return The elapsed time since start was last called.
-     */
-    std::chrono::milliseconds elapsed();
+ScheduleEntry
+ScheduleEntry::parse(const std::string& schedEntry) {
+    std::istringstream is(schedEntry);
+    return parse(is);
+}
 
-    /**
-     * Returns the current elapsed time in milliseconds
-     *
-     * \return The elapsed time since start was last called.
-     */
-    long elapsedTime();
-    
-private:
-    /**
-     * The time when this stopwatch was started.
-     */
-    std::chrono::time_point<std::chrono::high_resolution_clock> stTime;
-};
+ScheduleEntry
+ScheduleEntry::parse(std::istream& is) {
+    ScheduleEntry entry;
+    short dowStart, dowEnd;
+    is >> dowStart >> dowEnd >> entry.time >> entry.destBldId;
+    entry.dowStart = dowStart;
+    entry.dowEnd   = dowEnd;
+    return entry;
+}
+
 
 #endif

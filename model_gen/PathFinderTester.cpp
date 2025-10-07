@@ -34,6 +34,7 @@
 #include <set>
 #include <chrono>
 #include <numeric>
+#include "Utilities.h"
 #include "PathFinder.h"
 #include "PathFinderTester.h"
 
@@ -98,6 +99,15 @@ PathFinderTester::processArgs(int argc, char *argv[]) {
     return 0;
 }
 
+double
+PathFinderTester::getDistance(const long startBldID, const long endBldID) const {
+    const Building& stBld  = osmData.buildingMap.at(startBldID);
+    const Building& endBld = osmData.buildingMap.at(endBldID);
+    return ::getDistance(stBld.wayLat, stBld.wayLon,
+                         endBld.wayLat, endBld.wayLon);
+}
+
+
 void
 PathFinderTester::runRndTest(const long startBldID, const long endBldID) const {
     std::cout << startBldID << " -- " << endBldID << " : ";
@@ -121,12 +131,26 @@ PathFinderTester::runRndTest(const long startBldID, const long endBldID) const {
     const duration<double> computeTime =
         duration_cast<duration<double>>(end - start);
     std::cout << (path.empty() ? "Failed" : "Success")
-              << " ("     << path.size() << ", time: " << computeTime.count()
+              << " ("     << path.size() << " nodes, time: "
+              << computeTime.count()
               << " secs)";
     if (!path.empty()) {
-        std::cout << ", dist: " << path.back().distance;
+        if (cmdLineArgs.useTime) {
+            // The primary unit is time and altMetric is distance
+            std::cout << ", dist: " << (path.back().distance * 60)
+                      << " mins, altMetric: " << path.back().altMetric
+                      << " miles";
+        } else {
+            // The primary unit is distance and altMetric is time
+            std::cout << ", dist: " << path.back().distance
+                      << " miles, altMetric: "
+                      << (path.back().altMetric * 60)
+                      << " mins";            
+        }
     }
-    std::cout << ", explored: " << pf.getExploredNodeCount() << " nodes\n";
+    std::cout << ", explored: " << pf.getExploredNodeCount() << " nodes, "
+              << "straight line distance: "
+              << getDistance(startBldID, endBldID) << " miles\n";
 }
 
 std::vector<long>
@@ -185,7 +209,7 @@ PathFinderTester::printDisconnectedWays() {
     // Process each way in the model. For each way check to see if
     // there is at least one node that was 2 way-IDs in it. If not, it
     // is a disconnected way.
-    for (const auto wayEntry : osmData.wayMap) {
+    for (const auto& wayEntry : osmData.wayMap) {
         // Get the way we are working with.
         const Way& way = wayEntry.second;
         // For each node in the way check to see if it has two other

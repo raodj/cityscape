@@ -48,9 +48,7 @@ public:
                                      const int jwtrnsIdx,
                                      const int jwmnpIdx,
                                      const int offSqFtPer,
-                                     const int avgSpeed) :
-        model(model), jwtrnsIdx(jwtrnsIdx), jwmnpIdx(jwmnpIdx),
-        offSqFtPer(offSqFtPer), avgSpeed(avgSpeed) {}
+                                     const int avgSpeed);
 
     /** A destructor.
 
@@ -61,7 +59,8 @@ public:
 
     void assignWorkBuilding(int argc, char *argv[]);
 
-
+    int getJwtrnsIdx() const { return nextBldIndex; }
+    
 protected:
     /**
        This is an internal helper method that is used to get the range
@@ -113,14 +112,56 @@ protected:
                                            const int maxTravelTime,
                                            const int timeMargin = 1) const;
 
-    std::unordered_map<long, long>
-    assignWorkBuildings(const OSMData& model,
-                        const Building& bld,
-                        BuildingMap& nonHomeBuildings,
-                        BuildingList& candidateWorkBlds,
-                        const PUMSPerson& person,
-                        const int timeMargin);    
 
+    /**
+       Internal helper method to assign a work building to a given person.
+
+       \return This method returns the work building assigned to the
+       person. If a valid work building was not found, then this
+       method returns -1.
+    */
+    long assignWorkBuilding(const OSMData& model, const Building& bld, BuildingMap& nonHomeBuildings,
+                            BuildingList& candidateWorkBlds, const PUMSPerson& person,
+                            const int timeMargin);
+
+    /** Internal helper method to process households and people
+        associated with a given building.
+
+        This method iterates over each household and each person in
+        the household to assign work-buildings to each person.
+
+        \note This method is called from multiple threads and must be
+        implemented in an MT-safe manner.
+
+        \param[in] idx   The index of the building being processed.
+        
+        \param[in] bldId The ID of the building to be processed.
+
+        \param[in] bld The building object to be processed by this
+        method.
+    */
+    void processBuilding(const long idx, const long bldIdx,
+                         Building& bld,
+                         BuildingMap& nonHomeBuildings);
+    
+    /** Internal helper method to get the start and end index of the
+        next set building to be processed by a thread on this process.
+
+        This method locks the \c bldIdxWin window, updates the
+        globally shared \c nextBldIndex counter with the number of
+        threads and returns the value.
+
+        \note This method is called from multiple OpenMP threads. So
+        this method uses an OpenMP-critical section internally to
+        ensure it is MT-safe.
+        
+        \return A the index (not the building ID) of the next building
+        to be processed.  Note that this index could be beyond the
+        range of valid indexs. It is the responsibility of the caller
+        to suitably check and use this value.
+    */
+    long getNextBldIndex();
+    
 private:
     /**
        Reference to the model to be used for identifying work-buildings.
@@ -149,6 +190,39 @@ private:
        estimate of travel time.
      */
     const int avgSpeed;
+
+    /**
+       This is a globally shared counter that tracks the index (not
+       the actual building Id) of the next set of buildings to be
+       processed by an MPI process.  This value is incremented based
+       on the number of threads assigned for each MPI process.
+
+       @see getNextBldIndexs;
+    */
+    long nextBldIndex = 0L;
+
+
+    /**
+       This is an MPI ver 5.0 Window data structure representing a
+       memory window that provides access to a region of memory for
+       one-sided Remote Memory Access (RMA) operations. It acts as a
+       handle that allows processes to interact with each other's
+       memory without explicit send and receive calls, enabling one
+       process to directly read or write data in another process's
+       allocated memory.  This object is used to manage the building
+       counter in this class.
+    */
+#ifdef HAVE_LIBMPI
+    static MPI_Win bldIdxWin;
+#endif
+
+    /**
+       A per-process output stream to write the stats for computing.
+       This approach is taken to keep the stats printed consistently
+       without the output appearing garbled when multiple processes
+       print to std::cout.
+     */
+    std::ofstream stats;
 };
 
 #endif

@@ -1521,7 +1521,7 @@ ModelGenerator::writeModel(const std::string& filePath) {
     // Next write the ways in the model
     model << "\n# Ways in model: " << wayMap.size() << std::endl;
     const long firstWayID = wayMap.cbegin()->first;
-    for (const auto entry : wayMap) {
+    for (const auto& entry : wayMap) {
         entry.second.write(model, entry.first == firstWayID);
     }
     // Next write the buildings in the model

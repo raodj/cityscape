@@ -54,9 +54,9 @@ PathFinder::findBestPath(long startBldId, long endBldId, bool useTime,
     const Building endBld = osmData.buildingMap.at(endBldId);    
     // Setup the beginning and destination path segments for further
     // processing.
-    PathSegment begSeg{begBld.wayID, StartNodeID, begBld.id,    0,
+    PathSegment begSeg{begBld.wayID, StartNodeID, begBld.id,    0, 0,
             segIdCounter++, -1};
-    PathSegment endSeg{endBld.wayID, EndNodeID,   endBld.id, 1000,
+    PathSegment endSeg{endBld.wayID, EndNodeID,   endBld.id, 1000, 1000,
             segIdCounter++, -1};
     // Get the helper method to find the path
     Path path = findBestPath(begSeg, endSeg, useTime, minDist, scale);
@@ -70,7 +70,8 @@ PathFinder::findBestPath(const PathSegment& src, const PathSegment& dest,
                          bool useTime, const double minDist,
                          const double scale) {
     // Setup a limiting ring if specified by the user.
-    if ((minDist != -1) && (getDistance(src, dest) > 0.01)) {
+    const std::pair<double, double> distInfo = getDistance(src, dest);
+    if ((minDist != -1) && (distInfo.first > 0.01)) {
         setLimits(src, dest, minDist, scale);
     }
     // Setup flag to indicate if distance or time is to be used
@@ -146,8 +147,10 @@ PathFinder::checkAddNode(const PathSegment& parent, const Way& way,
         return false;  // not out of bounds
     }
     // Create a temporary segement based on parent.
-    PathSegment seg{way.id, nodeID, -1, 0, 0, parent.segID};
-    const double dist = parent.distance + getDistance(parent, seg);
+    PathSegment seg{way.id, nodeID, -1, 0., 0., 0, parent.segID};
+    const std::pair<double, double> distInfo = getDistance(parent, seg);
+    const double dist = parent.distance + distInfo.first;
+    const double altMetric = parent.altMetric + distInfo.second;
     // Check to see if the node is currently in the exploring set.  If
     // so, we will need to update it if the new distance is better.
     if (exploring.contains(nodeID)) {
@@ -156,13 +159,14 @@ PathFinder::checkAddNode(const PathSegment& parent, const Way& way,
         // Check and update if we have a better path
         if (dist < seg.distance) {
             // Yes we have a shorter path. Update path segement.
-            seg.update(parent.segID, way.id, dist);
+            seg.update(parent.segID, way.id, dist, altMetric);
         }
     } else {
         // Add a new path segement entry s this
         seg.segID = segIdCounter++;
         // Update distance information in the new segement
-        seg.distance = dist;
+        seg.distance  = dist;
+        seg.altMetric = altMetric;
     }
     // Add/update the segment information in the heap.
     exploring.push(seg);
@@ -246,7 +250,7 @@ PathFinder::addAdjacentNodes(const PathSegment& seg, const PathSegment& dest,
                 
                 // Create a temporary segement on the
                 const PathSegment interSeg{wayID, seg.nodeID, -1,
-                        seg.distance, seg.segID, seg.segID};
+                    seg.distance, seg.altMetric, seg.segID, seg.segID};
                 // Add adjacent nodes on the intersecting way, if
                 // applicable (but don't further explore ways)
                 addAdjacentNodes(interSeg, dest, false);
@@ -267,8 +271,11 @@ PathFinder::addAdjacentNodes(const PathSegment& seg, const PathSegment& dest,
             const long nodeID  = way.nodeList.at(nearNode);
             ASSERT(nodeID < (long) osmData.nodeList.size());
             ASSERT(exploredNodes.find(nodeID) == exploredNodes.end());
-            PathSegment newSeg{seg.wayID, nodeID, -1, 0, segIdCounter++, seg.segID};
-            newSeg.distance = seg.distance + getDistance(seg, newSeg);
+            PathSegment newSeg{seg.wayID, nodeID, -1, 0., 0.,
+                segIdCounter++, seg.segID};
+            const std::pair<double, double> distInfo = getDistance(seg, newSeg);
+            newSeg.distance  = seg.distance  + distInfo.first;
+            newSeg.altMetric = seg.altMetric + distInfo.second;
             exploring.push(newSeg);
             // If this way has loops, then check and add any adjacent
             // nodes, if the nodeID is the repeated one.
@@ -306,10 +313,13 @@ PathFinder::addAdjacentNodes(const PathSegment& seg, const PathSegment& dest,
             // destination.
             ASSERT(exploring.contains(dest.nodeID));
             PathSegment expDest = exploring.at(dest.nodeID);
-            const double dist   = seg.distance + getDistance(seg, expDest);
+            const std::pair<double, double> distInfo =
+                getDistance(seg, expDest);
+            const double dist      = seg.distance  + distInfo.first;
+            const double altMetric = seg.altMetric + distInfo.second;
             if (dist < expDest.distance) {
                 // Found a shorter route to destination!
-                expDest.update(seg.segID, seg.wayID, dist);
+                expDest.update(seg.segID, seg.wayID, dist, altMetric);
                 exploring.update(expDest);
             }
         }
@@ -382,13 +392,18 @@ PathFinder::getPathOnSameWay(const PathSegment& src, const PathSegment& dest) {
     for (int idx = startIdx; (idx < endIdx); idx++) {
         const long segID  = segIdCounter++;
         const long nodeID = way.nodeList[idx];        
-        PathSegment seg{way.id, nodeID, -1, 0, segID, path.back().segID};
-        seg.distance = getDistance(path.back(), seg);
+        PathSegment seg{way.id, nodeID, -1, 0., 0., segID, path.back().segID};
+        const std::pair<double, double> distInfo =
+            getDistance(path.back(), seg);
+        seg.distance = distInfo.first;
+        seg.altMetric = distInfo.second;
         path.push_back(seg);
     }
-    PathSegment seg{dest.wayID, dest.nodeID, dest.buildingID, 0,
+    PathSegment seg{dest.wayID, dest.nodeID, dest.buildingID, 0., 0.,
             segIdCounter++, path.back().segID};
-    seg.distance    = getDistance(path.back(), seg);
+    const std::pair<double, double> distInfo = getDistance(path.back(), seg);
+    seg.distance  = distInfo.first;
+    seg.altMetric = distInfo.second;
     path.push_back(seg);
     // Return the path segement with distance setup
     return path;
@@ -478,16 +493,20 @@ PathFinder::findNearestNode(const Way& way, const double latitude,
 }
 
 // Return distance (in miles) between 2 path segements.
-double
+std::pair<double, double>
 PathFinder::getDistance(const PathSegment& ps1, const PathSegment& ps2) const {
     // Get the latitude and longitude associated with the path segements
-    const Point pt1    = getLatLon(ps1);
-    const Point pt2    = getLatLon(ps2);
-    const double speed = (distIsTime ? osmData.wayMap.at(ps2.wayID).maxSpeed
-                          : 1);
+    const Point pt1        = getLatLon(ps1);
+    const Point pt2        = getLatLon(ps2);
+    const double maxSpeed  = osmData.wayMap.at(ps2.wayID).maxSpeed;
+    const double speed     = (distIsTime ? maxSpeed : 1);
+    const double altMetric = (distIsTime ? 1 : maxSpeed);
+                          
     ASSERT(speed > 0);
     // Return the distance between the two
-    return ::getDistance(pt1.second, pt1.first, pt2.second, pt2.first) / speed;
+    const double dist = ::getDistance(pt1.second, pt1.first,
+                                      pt2.second, pt2.first);
+    return  {dist / speed, dist / altMetric};
 }
 
 // Print a path -- an array of PathSegement objects

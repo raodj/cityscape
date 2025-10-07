@@ -163,7 +163,7 @@ getDistance(double latitude1, double longitude1,
 }
 
 // A simple method to detect if val3 is between val1 and val2
-constexpr double epsilon = 0.0001;
+constexpr double epsilon = 0.001;
 bool inBetween(const double val1, const double val2,
                const double val3) {
     const double min = std::min(val1, val2) - epsilon;

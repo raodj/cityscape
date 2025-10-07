@@ -75,9 +75,9 @@ AC_DEFUN([AC_LIB_GDAL],
 
 # The macros above automatically fill in some CXXFLAGS so we'll undo it.
 # CXX=mpicxx
-CFLAGS=""
-CXXFLAGS=""
-CPPFLAGS=""
+#CFLAGS=""
+# CXXFLAGS=""
+#CPPFLAGS=""
 
 # Define MPI library (http://www.open-mpi.org)
 AC_DEFUN([AC_PROG_MPI],
