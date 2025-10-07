@@ -35,6 +35,8 @@
 #include "PathSegment.h"
 #include "PathFinder.h"
 #include "Utilities.h"
+#include "XFigHelper.h"
+#include <cmath>
 
 #ifndef NO_XFIG
 // Selectively compile-in support for generating XFig
@@ -396,47 +398,122 @@ PathFinder::getPathOnSameWay(const PathSegment& src, const PathSegment& dest) {
 
 void
 PathFinder::generateFig(const Path& path, const std::string& xfigFilePath,
-                        const int figScale) const {
-    // Print some stats about the path
-    std::cout << "Exploring: " << exploring.size() << ", explored paths: "
-              << exploredPaths.size() << ", explored nodes: "
-              << exploredNodes.size() << std::endl;
-#ifndef NO_XFIG        
-    // The file to which the xfig file is to be written
-    if (xfigFilePath.empty()) {
-        return;  // Nothing else to be done.
-    }
-    // The list of vertex coordinates to be drawn
-    std::vector<double> xCoords, yCoords;
-    std::vector<Ring::Info> vertInfo;
-    // Add each path segment to the shape file
-    for (size_t i = 0; (i < path.size()); i++) {
-        // Get the segement to be processed
-        const PathSegment& seg = path[i];
-        // Get the lat, lon for the path segement
-        const Point lonLat = getLatLon(seg);
-        xCoords.push_back(lonLat.first);   // Make list of x and y
-        yCoords.push_back(lonLat.second);  // coordinates
-        // Create an informational string for the node -- currrently
-        // it causes some issue when the fig file is viewed. So it is
-        // commented out.
-        /* std::ostringstream os;
-           os << seg;
-           vertInfo.push_back(Ring::Info{0, std::to_string(i), os.str()});
-        */
-    }
-    // Create a ring with the coordinates and the information we have
-    // built
-    Ring route(0, 0, Ring::ARC_RING, xCoords.size(), &xCoords[0],
-               &yCoords[0], vertInfo);
-    // Add route to a shape file to make drawing easier
+                        const int figScale, 
+                        const std::string& drawOption) const {
+#ifndef NO_XFIG
+    if (xfigFilePath.empty()) return;
+
     ShapeFile shpFile;
-    shpFile.addRing(route);
+
+    // Draw the path itself
+    if (!path.empty()) {
+        std::vector<double> xCoords, yCoords;
+        std::vector<Ring::Info> vertInfo;
+
+        for (const PathSegment& seg : path) {
+            Point lonLat = getLatLon(seg);
+            xCoords.push_back(lonLat.first);
+            yCoords.push_back(lonLat.second);
+        }
+
+        Ring route(0, 0, Ring::ARC_RING, static_cast<int>(xCoords.size()),
+                   xCoords.data(), yCoords.data(), vertInfo);
+        shpFile.addRing(route);
+    }
+
+    // Parameters for "nearby" filtering
+    const double maxDistMiles = 0.06;  // buildings
+    const double maxDistWayMiles = 2.0; // ways
+    const double fallbackHalfDeg = 0.000125;
+
+    // Buildings
+    for (const auto& pair : osmData.buildingMap) {
+        const Building& b = pair.second;
+        Point topLeft, botRight;
+
+        if ((b.topLat != 0.0) || (b.topLon != 0.0) ||
+            (b.botLat != 0.0) || (b.botLon != 0.0)) {
+            topLeft  = Point(b.topLon, b.topLat);
+            botRight = Point(b.botLon,  b.botLat);
+        } else {
+            topLeft  = Point(b.wayLon - fallbackHalfDeg, 
+                             b.wayLat + fallbackHalfDeg);
+            botRight = Point(b.wayLon + fallbackHalfDeg, 
+                             b.wayLat - fallbackHalfDeg);
+        }
+
+        if (drawOption == "all") {
+            Ring bRing(topLeft, botRight, 0.0, static_cast<long>(b.id), -1, {});
+            bRing.setKind(Ring::BUILDING_RING);
+            shpFile.addRing(bRing);
+        } else if (drawOption == "nearby") {
+            bool near = false;
+            for (const PathSegment& seg : path) {
+                Point segPt = getLatLon(seg);
+                double d = ::getDistance((topLeft.second + botRight.second)/2,
+                                         (topLeft.first + botRight.first)/2,
+                                         segPt.second, segPt.first);
+                if (d <= maxDistMiles) {
+                    near = true;
+                    break;
+                }
+            }
+            if (near) {
+                Ring bRing(topLeft, botRight, 0.0, 
+                           static_cast<long>(b.id), -1, {});
+                bRing.setKind(Ring::BUILDING_RING);
+                shpFile.addRing(bRing);
+            }
+        }
+    }
+
+    // Ways
+    for (const auto& wPair : osmData.wayMap) {
+        const Way& way = wPair.second;
+        if (way.nodeList.empty()) continue;
+
+        std::vector<double> wx, wy;
+        for (long nodeID : way.nodeList) {
+            if (nodeID < 0 || nodeID >= (long)osmData.nodeList.size()) continue;
+            const Node& n = osmData.nodeList[nodeID];
+            wx.push_back(n.longitude);
+            wy.push_back(n.latitude);
+        }
+        if (wx.size() < 2) continue;
+
+        if (drawOption == "all") {
+            Ring wRing(0, 0, Ring::ARC_RING, 
+                       static_cast<int>(wx.size()), wx.data(), wy.data(), {});
+            shpFile.addRing(wRing);
+        } else if (drawOption == "nearby") {
+            // Check if path segment is within 
+            // maxDistWayMiles of the way midpoint
+            long midIndex = wx.size()/2;
+            Point midPoint(wx[midIndex], wy[midIndex]);
+            bool near = false;
+            for (const PathSegment& seg : path) {
+                Point segPt = getLatLon(seg);
+                double d = ::getDistance(midPoint.second, midPoint.first,
+                                         segPt.second, segPt.first);
+                if (d <= maxDistWayMiles) {
+                    near = true;
+                    break;
+                }
+            }
+            if (near) {
+                Ring wRing(0, 0, Ring::ARC_RING, static_cast<int>(wx.size()), 
+                           wx.data(), wy.data(), {});
+                shpFile.addRing(wRing);
+            }
+        }
+    }
+
     shpFile.genXFig(xfigFilePath, figScale, false, {});
 #else
-    throw std::runtime_error("generateFig is not complied-in");
+    throw std::runtime_error("generateFig is not compiled-in");
 #endif
 }
+
 
 // Return index of node with the same ID
 int

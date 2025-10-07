@@ -124,14 +124,20 @@ public:
 
         \param[in] path The path to be drawn.
 
-        \param[in] figFilePath The path to the xfig file to where the
+        \param[in] figFilePath The path to the xfig file where the
         path is to be drawn.
 
         \param[in] figScale The scale for the output XFIG figure so
         that various shapes and information are readable.
+
+        \param[in] drawOption Specifies what to draw:
+        "all" to draw all buildings/ways,
+        "nearby" to draw only those near the path.
+
     */
     void generateFig(const Path& path, const std::string& figFilePath,
-                     const int figScale = 16384000) const;
+                 const int figScale = 16384000,
+                 const std::string& drawOption = "all") const;
 
     /** Helper method to find the nearest node in a given way that
         contains the given coordinate.

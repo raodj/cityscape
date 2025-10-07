@@ -52,7 +52,11 @@ PathFinderTester::processArgs(int argc, char *argv[]) {
         {"--end-bld", "The ID of the destination building",
          &cmdLineArgs.endBldID, ArgParser::LONG},
         {"--xfig", "Optional output XFig file",
-         &cmdLineArgs.xfigFilePath, ArgParser::STRING},        
+         &cmdLineArgs.xfigFilePath, ArgParser::STRING},  
+        {"--append", "Optional output XFig file (after appending)",
+         &cmdLineArgs.baseFigPath, ArgParser::STRING},   
+        {"--draw", "Specify drawing mode: all or nearby (default: all)",
+         &cmdLineArgs.drawMode, ArgParser::STRING},      
         {"--scale", "The size of the output map",
          &cmdLineArgs.figScale, ArgParser::INTEGER},
         {"--search-dist", "Minimum search distance (in miles) to find nodes",
@@ -288,7 +292,8 @@ PathFinderTester::run(int argc, char *argv[]) {
                                     cmdLineArgs.distScale);
         // Draw the path as xfig
         std::cout << path;    
-        pf.generateFig(path, cmdLineArgs.xfigFilePath, cmdLineArgs.figScale);
+        pf.generateFig(path, cmdLineArgs.xfigFilePath, cmdLineArgs.figScale,
+                       cmdLineArgs.drawMode);
     } else {
         // Run random tests
         runRndTests(cmdLineArgs.rndTestCount);

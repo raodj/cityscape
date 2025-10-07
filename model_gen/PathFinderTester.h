@@ -82,6 +82,11 @@ protected:
         */
         std::string xfigFilePath;
 
+        /** New output xfig file to which the info is to be
+            appended.
+        */
+        std::string baseFigPath;
+
         /** The scale for the output XFIG figure so that various
             shapes and information are readable.
         */
@@ -133,6 +138,13 @@ protected:
             print the route between the pairs of building IDs.
         */
         bool useStdIO = false;
+
+        /** This string specifies the drawing mode for XFig output.
+            It can be "all" to draw all buildings/ways, or "nearby" 
+            to draw only those near the path. This is convenient 
+            for controlling visualization in tests.
+        */
+        std::string drawMode;
 
         /** This string contains the full command-line as specified to
             the program. This string is created before any
