@@ -419,7 +419,7 @@ PathFinder::generateFig(const Path& path, const std::string& xfigFilePath,
 
     ShapeFile shpFile;
 
-    Draw the path itself
+    // Draw the path itself
     if (!path.empty()) {
         std::vector<double> xCoords, yCoords;
         // The constant "4" below is for RED color
@@ -440,7 +440,7 @@ PathFinder::generateFig(const Path& path, const std::string& xfigFilePath,
     // Delegate buildings and ways
     if (drawOption != "none") {
         addBuildingsToFig(shpFile, path, drawOption);
-        // addWaysToFig(shpFile, path, drawOption);
+        addWaysToFig(shpFile, path, drawOption);
     }
 
     shpFile.genXFig(xfigFilePath, figScale, false, {});
