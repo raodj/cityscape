@@ -56,7 +56,8 @@ PathFinderTester::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.xfigFilePath, ArgParser::STRING},  
         {"--append", "Optional output XFig file (after appending)",
          &cmdLineArgs.baseFigPath, ArgParser::STRING},   
-        {"--draw", "Specify drawing mode: all or nearby (default: all)",
+        {"--draw", "structure drawing mode: all, nearby, "
+                    "or none (default: none)",
          &cmdLineArgs.drawMode, ArgParser::STRING},      
         {"--scale", "The size of the output map",
          &cmdLineArgs.figScale, ArgParser::INTEGER},

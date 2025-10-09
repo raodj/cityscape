@@ -413,17 +413,17 @@ PathFinder::getPathOnSameWay(const PathSegment& src, const PathSegment& dest) {
 
 void
 PathFinder::generateFig(const Path& path, const std::string& xfigFilePath,
-                        const int figScale, 
-                        const std::string& drawOption) const {
+                        const int figScale, const std::string& drawOption) const {
 #ifndef NO_XFIG
     if (xfigFilePath.empty()) return;
 
     ShapeFile shpFile;
 
-    // Draw the path itself
+    Draw the path itself
     if (!path.empty()) {
         std::vector<double> xCoords, yCoords;
-        std::vector<Ring::Info> vertInfo;
+        // The constant "4" below is for RED color
+        std::vector<Ring::Info> vertInfo = {{1, "color", "4"}}; 
 
         for (const PathSegment& seg : path) {
             Point lonLat = getLatLon(seg);
@@ -431,96 +431,16 @@ PathFinder::generateFig(const Path& path, const std::string& xfigFilePath,
             yCoords.push_back(lonLat.second);
         }
 
-        Ring route(0, 0, Ring::ARC_RING, static_cast<int>(xCoords.size()),
+        Ring route(0, 0, Ring::PATH_RING, static_cast<int>(xCoords.size()),
                    xCoords.data(), yCoords.data(), vertInfo);
         shpFile.addRing(route);
     }
 
-    // Parameters for "nearby" filtering
-    const double maxDistMiles = 0.06;  // buildings
-    const double maxDistWayMiles = 2.0; // ways
-    const double fallbackHalfDeg = 0.000125;
-
-    // Buildings
-    for (const auto& pair : osmData.buildingMap) {
-        const Building& b = pair.second;
-        Point topLeft, botRight;
-
-        if ((b.topLat != 0.0) || (b.topLon != 0.0) ||
-            (b.botLat != 0.0) || (b.botLon != 0.0)) {
-            topLeft  = Point(b.topLon, b.topLat);
-            botRight = Point(b.botLon,  b.botLat);
-        } else {
-            topLeft  = Point(b.wayLon - fallbackHalfDeg, 
-                             b.wayLat + fallbackHalfDeg);
-            botRight = Point(b.wayLon + fallbackHalfDeg, 
-                             b.wayLat - fallbackHalfDeg);
-        }
-
-        if (drawOption == "all") {
-            Ring bRing(topLeft, botRight, 0.0, static_cast<long>(b.id), -1, {});
-            bRing.setKind(Ring::BUILDING_RING);
-            shpFile.addRing(bRing);
-        } else if (drawOption == "nearby") {
-            bool near = false;
-            for (const PathSegment& seg : path) {
-                Point segPt = getLatLon(seg);
-                double d = ::getDistance((topLeft.second + botRight.second)/2,
-                                         (topLeft.first + botRight.first)/2,
-                                         segPt.second, segPt.first);
-                if (d <= maxDistMiles) {
-                    near = true;
-                    break;
-                }
-            }
-            if (near) {
-                Ring bRing(topLeft, botRight, 0.0, 
-                           static_cast<long>(b.id), -1, {});
-                bRing.setKind(Ring::BUILDING_RING);
-                shpFile.addRing(bRing);
-            }
-        }
-    }
-
-    // Ways
-    for (const auto& wPair : osmData.wayMap) {
-        const Way& way = wPair.second;
-        if (way.nodeList.empty()) continue;
-
-        std::vector<double> wx, wy;
-        for (long nodeID : way.nodeList) {
-            if (nodeID < 0 || nodeID >= (long)osmData.nodeList.size()) continue;
-            const Node& n = osmData.nodeList[nodeID];
-            wx.push_back(n.longitude);
-            wy.push_back(n.latitude);
-        }
-        if (wx.size() < 2) continue;
-
-        if (drawOption == "all") {
-            Ring wRing(0, 0, Ring::ARC_RING, 
-                       static_cast<int>(wx.size()), wx.data(), wy.data(), {});
-            shpFile.addRing(wRing);
-        } else if (drawOption == "nearby") {
-            // Check if path segment is within 
-            // maxDistWayMiles of the way midpoint
-            long midIndex = wx.size()/2;
-            Point midPoint(wx[midIndex], wy[midIndex]);
-            bool near = false;
-            for (const PathSegment& seg : path) {
-                Point segPt = getLatLon(seg);
-                double d = ::getDistance(midPoint.second, midPoint.first,
-                                         segPt.second, segPt.first);
-                if (d <= maxDistWayMiles) {
-                    near = true;
-                    break;
-                }
-            }
-            if (near) {
-                Ring wRing(0, 0, Ring::ARC_RING, static_cast<int>(wx.size()), 
-                           wx.data(), wy.data(), {});
-                shpFile.addRing(wRing);
-            }
-        }
+    // Skip extra drawing if user requested "none"
+    // Delegate buildings and ways
+    if (drawOption != "none") {
+        addBuildingsToFig(shpFile, path, drawOption);
+        // addWaysToFig(shpFile, path, drawOption);
     }
 
     shpFile.genXFig(xfigFilePath, figScale, false, {});
@@ -652,6 +572,98 @@ PathFinder::printDetailedPath(const Path& path, std::ostream& os) const {
 long
 PathFinder::getExploredNodeCount() const {
     return exploring.size () + exploredNodes.size();
+}
+
+void
+PathFinder::addWaysToFig(ShapeFile& shpFile, const Path& path,
+                         const std::string& drawOption) const {
+    const double maxDistWayMiles = 2.0;
+
+    for (const auto& wPair : osmData.wayMap) {
+        const Way& way = wPair.second;
+        if (way.nodeList.empty()) continue;
+
+        std::vector<double> wx, wy;
+        for (long nodeID : way.nodeList) {
+            if (nodeID < 0 || nodeID >= static_cast<long>(osmData.nodeList.size())) continue;
+            const Node& n = osmData.nodeList[nodeID];
+            wx.push_back(n.longitude);
+            wy.push_back(n.latitude);
+        }
+        if (wx.size() < 2) continue;
+
+        if (drawOption == "all") {
+            Ring wRing(0, 0, Ring::ARC_RING,
+                       static_cast<int>(wx.size()), wx.data(), wy.data(), {});
+            shpFile.addRing(wRing);
+        } else if (drawOption == "nearby") {
+            long midIndex = wx.size() / 2;
+            Point midPoint(wx[midIndex], wy[midIndex]);
+            bool near = false;
+
+            for (const PathSegment& seg : path) {
+                Point segPt = getLatLon(seg);
+                double d = ::getDistance(midPoint.second, midPoint.first,
+                                         segPt.second, segPt.first);
+                if (d <= maxDistWayMiles) {
+                    near = true;
+                    break;
+                }
+            }
+            if (near) {
+                Ring wRing(0, 0, Ring::ARC_RING,
+                           static_cast<int>(wx.size()), wx.data(), wy.data(), {});
+                shpFile.addRing(wRing);
+            }
+        }
+    }
+}
+
+void
+PathFinder::addBuildingsToFig(ShapeFile& shpFile, const Path& path,
+                              const std::string& drawOption) const {
+    const double maxDistMiles = 0.06;
+    const double fallbackHalfDeg = 0.000125;
+
+    for (const auto& pair : osmData.buildingMap) {
+        const Building& b = pair.second;
+        Point topLeft, botRight;
+
+        if ((b.topLat != 0.0) || (b.topLon != 0.0) ||
+            (b.botLat != 0.0) || (b.botLon != 0.0)) {
+            topLeft  = Point(b.topLon, b.topLat);
+            botRight = Point(b.botLon, b.botLat);
+        } else {
+            topLeft  = Point(b.wayLon - fallbackHalfDeg, 
+                             b.wayLat + fallbackHalfDeg);
+            botRight = Point(b.wayLon + fallbackHalfDeg, 
+                             b.wayLat - fallbackHalfDeg);
+        }
+
+        if (drawOption == "all") {
+            Ring bRing(topLeft, botRight, 0.0, static_cast<long>(b.id), -1, {});
+            bRing.setKind(Ring::BUILDING_RING);
+            shpFile.addRing(bRing);
+        } else if (drawOption == "nearby") {
+            bool near = false;
+            for (const PathSegment& seg : path) {
+                Point segPt = getLatLon(seg);
+                double d = ::getDistance((topLeft.second + botRight.second) / 2,
+                                         (topLeft.first + botRight.first) / 2,
+                                         segPt.second, segPt.first);
+                if (d <= maxDistMiles) {
+                    near = true;
+                    break;
+                }
+            }
+            if (near) {
+                Ring bRing(topLeft, botRight, 0.0, static_cast<long>(b.id), 
+                           -1, {});
+                bRing.setKind(Ring::BUILDING_RING);
+                shpFile.addRing(bRing);
+            }
+        }
+    }
 }
 
 #endif

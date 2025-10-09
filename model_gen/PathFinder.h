@@ -39,6 +39,7 @@
 #include "IndexedPriorityQueue.h"
 #include "PathSegment.h"
 #include "OSMData.h"
+#include "ShapeFile.h"
 
 /** A path consists of a sequence of path segements.  This is a
     shortcut to refer to a vector of path segments.
@@ -133,11 +134,11 @@ public:
         \param[in] drawOption Specifies what to draw:
         "all" to draw all buildings/ways,
         "nearby" to draw only those near the path.
-
+        "none" draws only the path.
     */
     void generateFig(const Path& path, const std::string& figFilePath,
                  const int figScale = 16384000,
-                 const std::string& drawOption = "all") const;
+                 const std::string& drawOption = "none") const;
 
     /** Helper method to find the nearest node in a given way that
         contains the given coordinate.
@@ -331,7 +332,36 @@ protected:
     */
     void checkAddLoopNodes(const Way& way, const int nodeIndex,
                            const PathSegment& curr);
+    /**
+    * Add buildings to the XFig shape file, either all or those near the path,
+    * depending on the draw option.
+    *
+    * @param[in,out] shpFile   The ShapeFile object to which building rings will be added.
+    * @param[in] path          The path used to determine proximity when filtering buildings.
+    * @param[in] drawOption    Determines which buildings to add:
+    *                          - "all" adds all buildings.
+    *                          - "nearby" adds only buildings within a distance threshold of the path.
+    *                          - if the option was "none", this method is skipped entirely
+    */
+    void addBuildingsToFig(ShapeFile& shpFile, const Path& path,
+                           const std::string& drawOption) const;
     
+    
+    /**
+    * Add ways (e.g., roads, paths) to the XFig shape file, either all or those near
+    * the given path, depending on the draw option.
+    *
+    * @param[in,out] shpFile   The ShapeFile object to which way rings will be added.
+    * @param[in] path          The path used to determine proximity when filtering ways.
+    * @param[in] drawOption    Determines which ways to add:
+    *                          - "all" adds all ways.
+    *                          - "nearby" adds only ways within a distance threshold of the path.
+    *                          - if the option was "none", this method is skipped entirely
+    */
+    void addWaysToFig(ShapeFile& shpFile, const Path& path,
+                      const std::string& drawOption) const;
+
+
 private:
     /**
        The OSM data object that contains the building, ways, and nodes

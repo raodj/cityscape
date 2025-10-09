@@ -363,6 +363,15 @@ Ring::printXFig(XFigHelper& xfig, const int figSize, const int xClip,
         const int polyLyr = layer + 2 + getKind();
         xfig.startPolygon(getVertexCount(), lineColor, fillColor, polyLyr,
                           SOLID_FILL);
+    } else if (getKind() == Ring::PATH_RING) {
+        // This is a path and is drawn as a series of lines with color
+        // specified in the information associated with this ring.
+        xfig.addComment("Path " + std::to_string(ringID));
+        // xfig.startPolyLine(ring.getVertexCount(), ringIdx % 7, 20);
+        const int level = 15;
+        const std::string colorInfo = getInfo("color");
+        const int color = (colorInfo.empty() ? RED : std::stoi(colorInfo));
+        xfig.startPolyLine(getVertexCount(), color, level);
     } else {
         // This ring is an ARC so draw it as a series of lines instead.
         xfig.addComment("Arc " + std::to_string(ringID));
@@ -383,7 +392,8 @@ Ring::printXFig(XFigHelper& xfig, const int figSize, const int xClip,
         xfig.addVertex(xfigX, xfigY);
     }
     // Done with one ring and on to the next one.
-    if ((getKind() != Ring::ARC_RING) && (getKind() != Ring::ENTRY_RING)) {
+    if ((getKind() != Ring::ARC_RING) && (getKind() != Ring::ENTRY_RING) &&
+        (getKind() != Ring::PATH_RING)) {
         xfig.endPolygon();
     } else {
         xfig.endPolyLine();

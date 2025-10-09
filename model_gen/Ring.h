@@ -69,7 +69,8 @@ public:
         types of shapes that can be loaded from a given shape file.
     */
     enum Kind {UNKNOWN_RING, CLOSED_RING, ARC_RING, POPULATION_RING,
-               BUILDING_RING, ENTRY_RING, PUMA_RING, SYNTH_BUILDING_RING};
+               BUILDING_RING, ENTRY_RING, PUMA_RING, SYNTH_BUILDING_RING, 
+               PATH_RING};
 
     /** A convenience wrapper sub-class to hold a metadata about the
         ring.  These entries are typically loaded from a separate DBF
@@ -579,7 +580,8 @@ public:
      * \param[in] colName The column for which the information is to
      * be returned.
      *
-     * \return The value associated with this column.
+     * \return The value associated with this column. If the column isnt found,
+     * then this method just returns an empty string.
      */
     std::string getInfo(const std::string& colName) const;
 
