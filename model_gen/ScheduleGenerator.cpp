@@ -150,7 +150,8 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
     RadiusFilterWorkBuildingAssigner wbs(model, cmdLineArgs.jwtrnsIdx,
                                          cmdLineArgs.jwmnpIdx,
                                          cmdLineArgs.offSqFtPer,
-                                         cmdLineArgs.avgSpeed);
+                                         cmdLineArgs.avgSpeed,
+                                         cmdLineArgs.lmNumSamples);
     std::cout << wbs.getJwtrnsIdx() << std::endl;
     wbs.assignWorkBuilding(argc, argv);
 }
@@ -273,6 +274,8 @@ ScheduleGenerator::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.offSqFtPer, ArgParser::INTEGER},
         {"--num-bld-pairs", "Number of building-paris to estimate travel time",
          &cmdLineArgs.numBldPairs, ArgParser::INTEGER},
+        {"--lm-num-samples", "Number of samples for linear model",
+        &cmdLineArgs.lmNumSamples, ArgParser::INTEGER},
         {"--out-trvl-est", "Output file to store travel estimate matrix",
          &cmdLineArgs.outTrvlEstFile, ArgParser::STRING},
         {"--use-trvl-est", "Input file to read travel estimate matrix",

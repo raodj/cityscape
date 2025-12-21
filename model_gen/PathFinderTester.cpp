@@ -54,7 +54,7 @@ PathFinderTester::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.endBldID, ArgParser::LONG},
         {"--xfig", "Optional output XFig file",
          &cmdLineArgs.xfigFilePath, ArgParser::STRING},  
-        {"--append", "Optional output XFig file (after appending)",
+        {"--append", "Optional input XFig file (for appending)",
          &cmdLineArgs.baseFigPath, ArgParser::STRING},   
         {"--draw", "structure drawing mode: all, nearby, "
                     "or none (default: none)",
@@ -317,8 +317,17 @@ PathFinderTester::run(int argc, char *argv[]) {
                                     cmdLineArgs.distScale);
         // Draw the path as xfig
         std::cout << path;    
-        pf.generateFig(path, cmdLineArgs.xfigFilePath, cmdLineArgs.figScale,
+        
+        if (!cmdLineArgs.baseFigPath.empty() && !cmdLineArgs.xfigFilePath.empty()) {
+            pf.appendPathToXFig(path, cmdLineArgs.baseFigPath, 
+                               cmdLineArgs.xfigFilePath, cmdLineArgs.figScale);     
+        } else if (!cmdLineArgs.xfigFilePath.empty()) {
+            // Regular generation if no base XFig
+            pf.generateFig(path, cmdLineArgs.xfigFilePath, cmdLineArgs.figScale,
                        cmdLineArgs.drawMode);
+        }
+
+        
     } else {
         // Run random tests
         runRndTests(cmdLineArgs.rndTestCount);

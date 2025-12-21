@@ -82,7 +82,7 @@ protected:
         */
         std::string xfigFilePath;
 
-        /** New output xfig file to which the info is to be
+        /** Optional input xfig file to which the info is to be
             appended.
         */
         std::string baseFigPath;

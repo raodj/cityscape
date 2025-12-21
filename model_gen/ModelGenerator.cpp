@@ -905,15 +905,26 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
                                         bool& isHome) const {
     const std::string BldNode = "nd", Tag = "tag", Ref = "ref";
     const std::string KeyAttr = "k", ValAttr = "v", IDAttr = "id";
+    
+    // Extract building ID for debugging
+    const KeyValue id = getKeyValue(node, IDAttr, "version");
+    const int bldID   = std::stol(id.first);
+    bool debug = (bldID == 295875953);
+    
+    if (debug) {
+        std::cout << "DEBUG processBuildingElements: Starting for building " << bldID << "\n";
+    }
+    
     // Lots of homes in Chicago have just 'building=yes'
     // attributes. For example, see home at "1250 South State Street"
     const std::string HomeTypes =
         Options::get("HomeBuildingTypes", "yes house residential apartments "
-                     "condominium bungalow detached semidetached_house");
+                     "condominium bungalow detached semidetached_house  "
+                     "dormitory condominium flat terrace"); 
     // The following types of buildings are ignored and not
     // included.
     const std::string IgnoreTypes =
-        Options::get("IgnoreBuildingTypes", "industrial terrace garages "
+        Options::get("IgnoreBuildingTypes", " terrace garages "
                      "warehouse shed root construction manufacture");
     // Set out variables to default initial values.
     vertexLat.clear();
@@ -925,6 +936,7 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
     // Local flags updated in the for-loop below.
     bool isBuilding = false, isAmenity = false, hasAddress = false;
     std::string amenityType = "";
+    
     // Iterate over all the child nodes.
     for (rapidxml::xml_node<> *child = node->first_node();
          (child != nullptr); child = child->next_sibling()) {
@@ -940,9 +952,15 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
             vertexLon.push_back(vertex.longitude);
         } else if (child->name() == Tag) {
             const KeyValue kv = getKeyValue(child, KeyAttr, ValAttr);
+            if (debug) {
+                std::cout << "DEBUG: Tag: " << kv.first << " = " << kv.second << "\n";
+            }
             if ((kv.first == "building") && (kv.second != "no")) {
                 type = kv.second;
                 isBuilding = true;
+                if (debug) {
+                    std::cout << "DEBUG: Found building type: " << type << "\n";
+                }
             } else if (kv.first == "amenity") {
                 isAmenity  = true;
                 amenityType = kv.second;                
@@ -970,11 +988,15 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
             } else if (kv.first == "man_made") {
                 isAmenity = true;
                 type = kv.second;
-            } else if (kv.first.find("addr:") == 0) {
-                hasAddress = true;
             } else if (kv.first == "power") {
                 isAmenity = true;
                 type = kv.second;
+            } else if (kv.first.find("addr:") == 0) {
+                // Consider any addr:* tag as having an address
+                hasAddress = true;
+                if (debug) {
+                    std::cout << "DEBUG: Found address tag: " << kv.first << "\n";
+                }
             }
         }
     }
@@ -984,17 +1006,103 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
     // conditions are met and the building is a closed polygon
     if (!isBuilding || (vertexLat.size() < 3) ||
         (vertexLat.front() != vertexLat.back())) {
+        if (debug) {
+            std::cout << "DEBUG: Failed basic building checks - isBuilding=" << isBuilding 
+                      << ", vertexCount=" << vertexLat.size() 
+                      << ", isClosed=" << (vertexLat.size() >= 3 ? (vertexLat.front() == vertexLat.back()) : false) << "\n";
+        }
         return false;  // This is not a valid buliding at all.
     }
     // We replace all blank spaces in building type with underscore to
     // ease further processing
     std::replace(type.begin(), type.end(), ' ', '_');
-    // Check and ignore industrial buildings
-    if (IgnoreTypes.find(type) != std::string::npos) {
+    
+    // FIX: Use exact string matching for ignore types instead of substring search
+    bool shouldIgnore = false;
+    std::istringstream ignoreStream(IgnoreTypes);
+    std::string ignoreType;
+
+    if (debug) {
+        std::cout << "DEBUG: Checking ignore types for '" << type << "'\n";
+    }
+
+    while (ignoreStream >> ignoreType) {
+        if (debug) {
+            std::cout << "DEBUG:   Comparing with '" << ignoreType << "' - match: " << (type == ignoreType) << "\n";
+        }
+        if (type == ignoreType) {
+            shouldIgnore = true;
+            break;
+        }
+    }
+    
+    if (shouldIgnore) {
+        if (debug) {
+            std::cout << "DEBUG: Building type '" << type << "' is in ignore list\n";
+        }
         return false;  // This type of building is to be ignored
     }
+
     // Check to see if this is a valid residential building.
     isHome = (HomeTypes.find(type) != std::string::npos) && !isAmenity;
+    
+    if (debug) {
+        std::cout << "DEBUG: Initial isHome=" << isHome 
+                  << ", hasAddress=" << hasAddress 
+                  << ", isAmenity=" << isAmenity << "\n";
+    }
+    
+    // If the building type is explicitly residential (like "house"),
+    // include it even without address information.
+    //if (isHome && !hasAddress) {
+    if (isHome) {
+        // Check if this is an explicitly residential building type
+        const std::string ExplicitHomeTypes = 
+            Options::get("ExplicitHomeBuildingTypes", "house residential apartments "
+                         "condominium bungalow detached semidetached_house");
+        
+        bool isExplicitHome = false;
+        std::istringstream explicitStream(ExplicitHomeTypes);
+        std::string explicitType;
+
+        if (debug) {
+            std::cout << "DEBUG: Checking explicit home types for '" << type << "'\n";
+        }
+
+        while (explicitStream >> explicitType) {
+            if (debug) {
+                std::cout << "DEBUG:   Comparing with '" << explicitType << "' - match: " << (type == explicitType) << "\n";
+            }
+            if (type == explicitType) {
+                isExplicitHome = true;
+                break;
+            }
+        }
+        
+        if (debug) {
+            std::cout << "DEBUG: isExplicitHome=" << isExplicitHome 
+                      << ", type=" << type << "\n";
+        }
+        
+        if (isExplicitHome) {
+            // Building is explicitly marked as residential type, include it
+            isHome = true;
+            if (debug) {
+                std::cout << "DEBUG: Building " << type << " included as home (explicit residential type)\n";
+            }
+        } else {
+            // For non-explicit home types without addresses, be conservative and exclude them
+            isHome = false;
+            if (debug) {
+                std::cout << "DEBUG: Building NOT classified as home - no address and not explicit residential type\n";
+            }
+        }
+    }
+
+    if (debug) {
+        std::cout << "DEBUG: Final isHome=" << isHome << "\n";
+    }
+
     // For apartments we override unspecified levels with a default
     // number of levels specified in the configuration file.
     const std::string AptTypes = Options::get("ApartmentBuildingTypes",
@@ -1005,15 +1113,6 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
         // user-specified default.
         levels = Options::get("DefaultApartmentLevels", 2);
     }
-    // Ignore buildings that do not have a street address in them.    
-    if (isHome && !hasAddress) {
-        // This is a building but does not have an address. This could
-        // be a garage building. See houses around "4255 West 82nd
-        // Place, Chicago"
-        // (https://www.openstreetmap.org/way/162245731) for examples
-        // where this check is needed.
-        isHome = false;
-    }
 
     // We finally combine the home and amenity
     type += ':';
@@ -1023,6 +1122,7 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
     return true;
 }
                                              
+// NOTE: This method is called from multiple threads.
 // NOTE: This method is called from multiple threads.
 Building
 ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
@@ -1041,7 +1141,16 @@ ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
     // Extract the unique IDs for the building
     const KeyValue id = getKeyValue(node, IDAttr, VerAttr);
     const int bldID   = std::stol(id.first);
+    
+    // DEBUG: Check for the specific building we're looking for
+    if (bldID == 295875953) {
+        std::cout << "DEBUG: Found building 295875953 - checking if it's ignored\n";
+    }
+    
     if (bldIgnoreIDs.find(bldID) != bldIgnoreIDs.end()) {
+        if (bldID == 295875953) {
+            std::cout << "DEBUG: Building 295875953 is in ignore list!\n";
+        }
         return invalidBld;  // This building is to be ignored.
     }
     // Get a helper method to process the building data first.
@@ -1051,26 +1160,46 @@ ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
     std::vector<long> nodes;
     if (!processBuildingElements(node, vertexLat, vertexLon,
                                  buildingType, levels, nodes, isHome)) {
+        if (bldID == 295875953) {
+            std::cout << "DEBUG: Building 295875953 failed processBuildingElements check\n";
+        }
         return invalidBld;  // Invalid building
     }
+    
+    if (bldID == 295875953) {
+        std::cout << "DEBUG: Building 295875953 passed processBuildingElements, isHome=" << isHome << "\n";
+    }
+    
     // This is a valid building.  For convenience we create a
     // building using a static helper method.
     ASSERT(vertexLat.size() > 2);
     Ring ring(bldID, -1, Ring::BUILDING_RING, vertexLat.size(),
               &vertexLon[0], &vertexLat[0], {
                   {0, "bldID", std::to_string(bldID)}});
+    
+    if (bldID == 295875953) {
+        std::cout << "DEBUG: Building 295875953 ring area: " << ring.getArea() << "\n";
+    }
+    
     if (ring.getArea() < 9e-06) {
-        // Area is less than 250 sq.foot. Ignore this building.  With
-        // 500 sq.foot threshold we generate 602393 building for
-        // Chicago metro area.  With 100 sq. foot threshold we
-        // generate 806201 buildings with many tiny buildings.
+        // Area is less than 250 sq.foot. Ignore this building.
+        if (bldID == 295875953) {
+            std::cout << "DEBUG: Building 295875953 area too small: " << ring.getArea() << "\n";
+        }
         return invalidBld;
     }
     const int popRingID = getPopRing(ring);
     if (!popRings.empty() && (popRingID == -1)) {
         // Ignore this building as it is not in the community areas we
         // are interested in.
+        if (bldID == 295875953) {
+            std::cout << "DEBUG: Building 295875953 not in any population ring\n";
+        }
         return invalidBld;
+    }
+
+    if (bldID == 295875953) {
+        std::cout << "DEBUG: Building 295875953 passed all checks, creating building object\n";
     }
 
     // Compute the nearest way and intersection for the building.
@@ -1081,13 +1210,22 @@ ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
                                         bld.wayLat, bld.wayLon);
     if (bld.wayID == -1) {
         // Could not find an entrace to a given building.
+        if (bldID == 295875953) {
+            std::cout << "DEBUG: Building 295875953 - no nearest intersection found\n";
+        }
         return invalidBld;
     }
+    
+    if (bldID == 295875953) {
+        std::cout << "DEBUG: Building 295875953 successfully created!\n";
+    }
+    
     // Setup the PUMA ID (if any for this building)
     pumaIndex = pums.findPUMAIndex(ring.getCentroid(), pumaIndex);
     if (pumaIndex == -1) {
-        std::cerr << "Warning: Unable to find PUMA ID for building ";
-        bld.write(std::cerr, true);   // print information about the building
+        if (bldID == 295875953) {
+            std::cerr << "DEBUG: Warning: Unable to find PUMA ID for building 295875953\n";
+        }
         bld.pumaID = -1;
     } else {
         // Set the ID of the PUMA ring rather than index to ease cross
@@ -1116,6 +1254,13 @@ ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
     }
     // Return a valid building entry for further use.
     return bld;
+
+    // (https://www.openstreetmap.org/api/0.6/way/295875953)
+    // This house does not have an address set in the xml,
+    // So this situation must be handled in an efficient manner
+
+    // Based on some distance (user parameter), decide if the building is
+    // reasonably a home, or simply an adjacent structure. Include structures that are reasonably a building
 }
 
 void

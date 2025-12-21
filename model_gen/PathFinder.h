@@ -140,6 +140,29 @@ public:
                  const int figScale = 16384000,
                  const std::string& drawOption = "none") const;
 
+    /** Helper method to append a path to an existing XFIG file
+        and write the result to a new output file.
+
+        \param[in] path The path to be drawn and appended.
+
+        \param[in] baseFig The existing XFIG file to append to.
+
+        \param[in] outFig The output XFIG file path where the
+        new figure (base + appended path) will be written.
+
+        \param[in] figScale The scale for the output XFIG figure so
+        that shapes and path information are readable.
+
+        \note This method does not modify the original XFIG file
+        (baseFig). Instead, a new file is created at outFig.
+        Only the path is appended; optionally, buildings and ways
+        can be drawn if integrated with a ShapeFile/Ring workflow.
+    */
+    void appendPathToXFig(const Path& path,
+                          const std::string& baseFig,
+                          const std::string& outFig,
+                          int figScale) const;
+
     /** Helper method to find the nearest node in a given way that
         contains the given coordinate.
 

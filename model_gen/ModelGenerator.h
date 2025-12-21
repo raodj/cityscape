@@ -370,11 +370,11 @@ protected:
         that this is a valid building node.
     */
     bool processBuildingElements(rapidxml::xml_node<>* node,
-                                 std::vector<double>& vertexLat,
-                                 std::vector<double>& vertexLon,
-                                 std::string& type, int& levels,
-                                 std::vector<long>& nodes,
-                                 bool& isHome) const;
+                             std::vector<double>& vertexLat,
+                             std::vector<double>& vertexLon,
+                             std::string& type, int& levels,
+                             std::vector<long>& nodes,
+                             bool& isHome) const;
 
     /** Helper method to generate an arc-ring for a given way to ease
         plotting
@@ -886,6 +886,11 @@ private:
             values above 79% to 100%.
          */
         double roundUpThreshold = 1.0;
+
+        /** The allowable distance between home buildings to classify a nearby
+        *  structure as another home.
+        */
+        double homeDistanceThreshold = 15.0;
         
     } cmdLineArgs;
 

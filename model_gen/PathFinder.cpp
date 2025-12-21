@@ -449,6 +449,83 @@ PathFinder::generateFig(const Path& path, const std::string& xfigFilePath,
 #endif
 }
 
+void PathFinder::appendPathToXFig(const Path& path,
+                                  const std::string& baseFig,
+                                  const std::string& outFig,
+                                  int figScale) const {
+#ifndef NO_XFIG
+    const std::string& baseShpFile = "placeholder";
+    if (path.empty() || baseFig.empty() || outFig.empty() || baseShpFile.empty()) return;
+
+    // 1️⃣ Copy base XFig to new output
+    {
+        std::ifstream src(baseFig, std::ios::binary);
+        std::ofstream dst(outFig, std::ios::binary);
+        if (!src || !dst) {
+            std::cerr << "Failed to copy base XFig to output: " << baseFig << std::endl;
+            return;
+        }
+        dst << src.rdbuf();
+    }
+
+    // 2️⃣ Load the original shapefile to get bounds
+    ShapeFile baseShp;
+    if (!baseShp.loadShapes(baseShpFile)) {
+        std::cerr << "Failed to load shapefile for base figure: " << baseShpFile << std::endl;
+        return;
+    }
+
+    double minX_orig, minY_orig, maxX_orig, maxY_orig;
+    baseShp.getBounds(minX_orig, minY_orig, maxX_orig, maxY_orig);
+
+    // 3️⃣ Build route coordinates
+    std::vector<double> xCoords, yCoords;
+    for (const PathSegment& seg : path) {
+        Point lonLat = getLatLon(seg);
+        xCoords.push_back(lonLat.first);
+        yCoords.push_back(lonLat.second);
+    }
+
+    double minX_route = *std::min_element(xCoords.begin(), xCoords.end());
+    double maxX_route = *std::max_element(xCoords.begin(), xCoords.end());
+    double minY_route = *std::min_element(yCoords.begin(), yCoords.end());
+    double maxY_route = *std::max_element(yCoords.begin(), yCoords.end());
+
+    // 4️⃣ Scale/translate route to match base shapefile bounds
+    double scaleX = (maxX_orig - minX_orig) != 0 ? (maxX_orig - minX_orig) / (maxX_route - minX_route) : 1.0;
+    double scaleY = (maxY_orig - minY_orig) != 0 ? (maxY_orig - minY_orig) / (maxY_route - minY_route) : 1.0;
+
+    for (size_t i = 0; i < xCoords.size(); ++i) {
+        xCoords[i] = (xCoords[i] - minX_route) * scaleX + minX_orig;
+        yCoords[i] = (yCoords[i] - minY_route) * scaleY + minY_orig;
+    }
+
+    // 5️⃣ Build route ring and add to temporary shapefile
+    std::vector<Ring::Info> vertInfo = {{1, "color", "4"}}; // red
+    Ring route(0, 0, Ring::PATH_RING,
+               static_cast<int>(xCoords.size()),
+               xCoords.data(), yCoords.data(), vertInfo);
+
+    ShapeFile routeShp;
+    routeShp.addRing(route);
+
+    // 6️⃣ Append route to the output XFig
+    XFigHelper figHelper;
+    if (!figHelper.setOutput(outFig, false, true)) {
+        std::cerr << "Failed to open output XFig for appending: " << outFig << std::endl;
+        return;
+    }
+
+    int xClip = 0, yClip = 0;
+    routeShp.genXFig(figHelper, xClip, yClip,
+                     figScale, false, {}, false, "", 80, RED);
+
+#else
+    throw std::runtime_error("appendPathToXFig is not compiled-in");
+#endif
+}
+
+
 
 // Return index of node with the same ID
 int

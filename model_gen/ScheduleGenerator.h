@@ -383,6 +383,13 @@ private:
         int numBldPairs = 5;
 
         /**
+           The number of building pairs to be used to estimate generate
+           the linear model used for predicting haversine distance in 
+           work-building assignment.
+        */
+        int lmNumSamples = 5000;
+
+        /**
            The path to the output txt file to where generated travel
            estimates are to be written.  The generated file can be
            used in the future via the --use-trvl-est command-line
