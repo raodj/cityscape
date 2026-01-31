@@ -324,6 +324,8 @@ schedule_generator_SOURCES = \
 	Stopwatch.cpp \
 	RadiusFilterWorkBuildingAssigner.h \
 	RadiusFilterWorkBuildingAssigner.cpp \
+	LinearWorkBuildingAssigner.h \
+	LinearWorkBuildingAssigner.cpp \
 	ScheduleEntry.h \
 	ScheduleEntry.cpp
 

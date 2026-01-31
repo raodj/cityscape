@@ -42,14 +42,13 @@ using BuildingMap = std::unordered_map<long, Building>;
 class RadiusFilterWorkBuildingAssigner {
 public:
     /**
-       The only constructor for this class.
+       The only constructor for this class.  
     */
     RadiusFilterWorkBuildingAssigner(const OSMData& model,
                                      const int jwtrnsIdx,
                                      const int jwmnpIdx,
                                      const int offSqFtPer,
-                                     const int avgSpeed,
-                                     int lmNumSamples);
+                                     const int avgSpeed);
 
     /** A destructor.
 
@@ -61,7 +60,7 @@ public:
     void assignWorkBuilding(int argc, char *argv[]);
 
     int getJwtrnsIdx() const { return nextBldIndex; }
-
+    
 protected:
     /**
        This is an internal helper method that is used to get the range
@@ -74,7 +73,7 @@ protected:
        buildings to be processed by the caller.
     */
     std::tuple<int, int> getBldRange(const int bldCount) const;
-
+    
     /**
        An internal convenience method to make a list of home and
        non-home buildings so that we iterate on a smaller subset of
@@ -135,7 +134,7 @@ protected:
         implemented in an MT-safe manner.
 
         \param[in] idx   The index of the building being processed.
-
+        
         \param[in] bldId The ID of the building to be processed.
 
         \param[in] bld The building object to be processed by this
@@ -144,7 +143,7 @@ protected:
     void processBuilding(const long idx, const long bldIdx,
                          Building& bld,
                          BuildingMap& nonHomeBuildings);
-
+    
     /** Internal helper method to get the start and end index of the
         next set building to be processed by a thread on this process.
 
@@ -155,14 +154,14 @@ protected:
         \note This method is called from multiple OpenMP threads. So
         this method uses an OpenMP-critical section internally to
         ensure it is MT-safe.
-
+        
         \return A the index (not the building ID) of the next building
         to be processed.  Note that this index could be beyond the
         range of valid indexs. It is the responsibility of the caller
         to suitably check and use this value.
     */
     long getNextBldIndex();
-
+    
 private:
     /**
        Reference to the model to be used for identifying work-buildings.
@@ -174,7 +173,7 @@ private:
        each person's metadata
     */
     const int jwtrnsIdx;
-
+    
     /**
        The index of the jwmnp (travel time to work) column in each
        person's metadata
@@ -191,13 +190,6 @@ private:
        estimate of travel time.
      */
     const int avgSpeed;
-
-    /**
-       The number of building pairs to be used to estimate generate
-       the linear model used for predicting haversine distance in 
-       work-building assignment.
-     */
-    int lmNumSamples;
 
     /**
        This is a globally shared counter that tracks the index (not
@@ -231,21 +223,6 @@ private:
        print to std::cout.
      */
     std::ofstream stats;
-
-    // ---------------------------
-    // Linear model parameters (distance ~ time)
-    // ---------------------------
-    double modelSlope;
-    double modelIntercept;
-    double modelR2;
-
-    // ---------------------------
-    // Helper to generate the LM from random samples (called once)
-    // ---------------------------
-    void generateLinearModel(int lmNumSamples,
-                             const BuildingMap& homeBuildings,
-                             const BuildingMap& nonHomeBuildings,
-                             const std::vector<size_t>& homeBldIdList);
 };
 
 #endif

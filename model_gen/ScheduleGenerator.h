@@ -38,6 +38,7 @@
 #include "ArgParser.h"
 #include "ShapeFile.h"
 #include "OSMData.h"
+#include "LinearWorkBuildingAssigner.h"
 
 /** A shortcut to a pair that holds the key and value */
 using KeyValue = std::pair<std::string, std::string>;

@@ -43,6 +43,7 @@
 #include "OSMData.h"
 #include "PathFinder.h"
 #include "WorkBuildingSelector.h"
+#include "LinearWorkBuildingAssigner.h"
 #include "RadiusFilterWorkBuildingAssigner.h"
 #include "MPIHelper.h"
 
@@ -147,12 +148,16 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
     // wbs.genOrUseTrvlEst(cmdLineArgs.numBldPairs, cmdLineArgs.useTrvlEstFile,
     //                     cmdLineArgs.outTrvlEstFile);
 
-    RadiusFilterWorkBuildingAssigner wbs(model, cmdLineArgs.jwtrnsIdx,
+    // Replace the LinearWorkBuildingAssigner call with 
+    // RadiusFilterWorkBuildingAssigner for radius-based assignment
+    LinearWorkBuildingAssigner wbs(model, cmdLineArgs.jwtrnsIdx,
                                          cmdLineArgs.jwmnpIdx,
                                          cmdLineArgs.offSqFtPer,
                                          cmdLineArgs.avgSpeed,
                                          cmdLineArgs.lmNumSamples);
-    std::cout << wbs.getJwtrnsIdx() << std::endl;
+                                         
+    // Below is a debugging artifact for radius-based assignment
+    //std::cout << wbs.getJwtrnsIdx() << std::endl;
     wbs.assignWorkBuilding(argc, argv);
 }
 
