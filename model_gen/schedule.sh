@@ -5,7 +5,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=32G
-#SBATCH --mail-user=raynolbj@miamioh.edu
+#SBATCH --mail-user=yourusername@miamioh.edu
 #SBATCH --mail-type=END,FAIL
 #SBATCH -A PMIU0110
 
