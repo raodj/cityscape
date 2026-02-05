@@ -317,9 +317,14 @@ void LinearWorkBuildingAssigner::processBuilding(
                     travelTime,
                     3);
 
-            int checked = 0;
-            bool assigned = false;
+std::vector<const Building*> validCandidates;
+            validCandidates.reserve(10);
 
+            int checked = 0;
+
+            // Collect up to 10 valid candidates
+            // Output will mention how many candidates were checked 
+            // before 10 valid ones were found
             for (const Building& cand : candidates) {
                 checked++;
 
@@ -327,37 +332,51 @@ void LinearWorkBuildingAssigner::processBuilding(
                     continue;
 
                 const double dist =
-                    getDistance(bld.wayLat, bld.wayLon,
-                                cand.wayLat, cand.wayLon);
+                getDistance(bld.wayLat, bld.wayLon, cand.wayLat, cand.wayLon);
 
                 if (dist < minDist || dist > maxDist)
                     continue;
 
-                // Assign immediately
-                nonHomeBuildings[cand.id].population--;
-                person.setWorkBuilding(bldId, cand.id);
+                validCandidates.push_back(&cand);
+
+                if (validCandidates.size() >= 10)
+                    break;
+            }
+
+            if (!validCandidates.empty()) {
+                // Pick one uniformly at random
+                static thread_local std::mt19937 rng(std::random_device {}());
+                std::uniform_int_distribution<size_t> distIdx(
+                0, validCandidates.size() - 1);
+
+                const Building* chosen = validCandidates[distIdx(rng)];
+
+                const double chosenDist = getDistance(bld.wayLat, bld.wayLon, 
+                                                chosen->wayLat, chosen->wayLon);
+                
+                const int estTime = std::round(chosenDist * 60.0 / avgSpeed);
+
+                // Apply assignment
+                nonHomeBuildings[chosen->id].population--;
+                person.setWorkBuilding(bldId, chosen->id);
 
 #pragma omp critical (cout)
-                stats << "    Assign Building " << cand.id
-                      << "(in ring: " << cand.attributes << ") to person "
+                stats << "    Assign Building " << chosen->id
+                      << "(in ring: " << chosen->attributes << ") to person "
                       << person.getPerID()
                       << " in building " << bld.id
                       << "(in ring: " << bld.attributes << ") after checking "
                       << checked << " out of "
                       << candidates.size() << " buildings. "
                       << "Person needs time: " << travelTime
+                      << ", estimated commute time: " << estTime
                       << ", predicted distance: " << predictedDist
-                      << ", actual straight-line distance: " << dist
+                      << ", actual straight-line distance: " << chosenDist
                       << ".  Compute time: "
                       << timer.elapsedTime()
                       << " milliseconds (linear model)"
                       << std::endl;
-
-                assigned = true;
-                break;
-            }
-
-            if (!assigned) {
+} else {
 #pragma omp critical(cout)
                 {
                     stats << "    Unable to find building for person "
@@ -376,8 +395,6 @@ void LinearWorkBuildingAssigner::processBuilding(
         }
     }
 }
-
-
 // ------------------------------------------------------------
 // Main entry
 // ------------------------------------------------------------
