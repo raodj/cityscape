@@ -303,8 +303,8 @@ void LinearWorkBuildingAssigner::processBuilding(
             timer.start();
 
             // Linear prediction
-            const double predictedDist =
-                modelIntercept + modelSlope * travelTime;
+            const double predictedDist = std::max(0.1,
+                modelIntercept + modelSlope * travelTime);
 
             const double minDist = predictedDist * 0.7;
             const double maxDist = predictedDist * 1.3;
