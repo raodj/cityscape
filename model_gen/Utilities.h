@@ -427,6 +427,31 @@ std::string getColumn(const std::string& line, const int column,
                       const char delim = '\t');
 
 /**
+ * CSV-aware column extraction that correctly handles quoted fields
+ * (e.g., fields containing commas or wrapped in double-quotes).
+ * Surrounding double-quotes are stripped from the returned value.
+ *
+ * \param[in] line A comma-separated line to parse.
+ *
+ * \param[in] column The zero-based column index to return.
+ *
+ * \return The field value with surrounding quotes stripped, or an
+ * empty string if the column index is out of range.
+ */
+std::string getCSVColumn(const std::string& line, const int column);
+
+/**
+ * Parse an ISO 8601 timestamp of the form "YYYY-MM-DDTHH:MM:SS[.mmm]"
+ * (e.g., "2024-12-31T23:45:00.000") into a struct tm.  Milliseconds
+ * are ignored if present.
+ *
+ * \param[in] timestamp The ISO 8601 timestamp string.
+ *
+ * \return The corresponding struct tm (year, month, day, hour, min, sec).
+ */
+std::tm toTimestampISO(const std::string& timestamp);
+
+/**
  * Helper method to get a substring for a given column from a given
  * string based on a delimiter.
  *
