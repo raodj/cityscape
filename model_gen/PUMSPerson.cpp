@@ -157,7 +157,7 @@ PUMSPerson::setWorkBuilding(const long homeBldId, const long bldId,
                             const long leave2workTime,
                             const long leaveFromWorkTime) {
     const ScheduleEntry toWork(1, 5, leave2workTime, bldId);
-    const ScheduleEntry toHome(1, 5, leaveFromWorkTime, leaveFromWorkTime);
+    const ScheduleEntry toHome(1, 5, leaveFromWorkTime, homeBldId);
     schedule += toWork.to_string();
     schedule += toHome.to_string();
 }
