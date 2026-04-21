@@ -292,7 +292,11 @@ void LinearWorkBuildingAssigner::processBuilding(
     for (auto& hld : bld.households) {
         for (auto& person : hld.getPeopleInfo()) {
 
-            if (person.getIntegerInfo(jwtrnsIdx) != 1)
+            const int jwtrns = person.getIntegerInfo(jwtrnsIdx);
+            if (jwtrns != TransportationMode::CAR && 
+                jwtrns != TransportationMode::BUS &&
+                jwtrns != TransportationMode::TAXI && 
+                jwtrns != TransportationMode::MOTORCYCLE)
                 continue;
 
             const int travelTime = person.getIntegerInfo(jwmnpIdx);
