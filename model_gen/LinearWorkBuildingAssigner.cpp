@@ -293,11 +293,13 @@ void LinearWorkBuildingAssigner::processBuilding(
         for (auto& person : hld.getPeopleInfo()) {
 
             const int jwtrns = person.getIntegerInfo(jwtrnsIdx);
-            if (jwtrns != TransportationMode::CAR && 
-                jwtrns != TransportationMode::BUS &&
-                jwtrns != TransportationMode::TAXI && 
-                jwtrns != TransportationMode::MOTORCYCLE)
+            const auto mode = static_cast<TransportationMode>(jwtrns)
+            if (mode != TransportationMode::CAR && 
+                mode != TransportationMode::BUS &&
+                mode != TransportationMode::TAXI && 
+                mode != TransportationMode::MOTORCYCLE) {
                 continue;
+            }
 
             const int travelTime = person.getIntegerInfo(jwmnpIdx);
             if (travelTime < 0)
