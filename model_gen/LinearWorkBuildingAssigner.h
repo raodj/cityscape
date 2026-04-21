@@ -44,7 +44,7 @@ public:
     /**
        The only constructor for this class.
      */
-    LinearWorkBuildingAssigner(const OSMData& model,
+    LinearWorkBuildingAssigner(OSMData& model,
                                const int jwtrnsIdx,
                                const int jwmnpIdx,
                                const int offSqFtPer,
@@ -104,7 +104,7 @@ protected:
 
 private:
     /** Reference to the OSM model */
-    const OSMData& model;
+    OSMData& model;
 
     /** jwtrns column index */
     const int jwtrnsIdx;
