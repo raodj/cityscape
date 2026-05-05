@@ -34,6 +34,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <limits>
 #include "OSMData.h"
 #include "PathSegment.h"
 #include "Utilities.h"
@@ -108,6 +109,88 @@ OSMData::loadModel(const std::string& modelFilePath) {
               << " buildings.\n";
     // Everything went well
     return 0;
+}
+
+void
+OSMData::saveModel(const std::string& filePath,
+                   const std::string& cmdLine) const {
+    if (filePath.empty()) {
+        return;
+    }
+    std::ofstream out(filePath);
+    if (!out.good()) {
+        throw std::runtime_error("Error writing model file: " + filePath);
+    }
+    out << std::boolalpha;
+    // Header comments
+    out << "# Model updated by schedule_generator\n"
+        << "# Command-line used: " << cmdLine << "\n"
+        << "# Rings in model: "    << popRings.size()    << "\n"
+        << "# Nodes in model: "    << nodeList.size()    << "\n"
+        << "# Buildings in model: "<< buildingMap.size() << "\n"
+        << "# Ways in model: "     << wayMap.size()      << "\n\n";
+
+    // Population rings
+    for (size_t i = 0; i < popRings.size(); i++) {
+        const PopRing& pr = popRings[i];
+        if (i == 0) {
+            out << "# Rng ID ringID shpaeID pop num_vert tl_lat tl_lon"
+                   " br_lat br_lon num_bld bld_sqFt homes home_sqFt info\n";
+        }
+        const std::streamsize prec =
+            out.precision(std::numeric_limits<double>::digits10 + 1);
+        out << "rng " << pr.id     << " " << pr.ringID  << " " << pr.shapeID
+            << " "    << pr.getPopulation() << " " << pr.getVertexCount()
+            << " "    << pr.tlLat  << " "  << pr.tlLon
+            << " "    << pr.brLat  << " "  << pr.brLon
+            << " "    << pr.numBuildings   << " " << pr.bldsTotSqFt
+            << " "    << pr.numHomes       << " " << pr.homesTotSqFt
+            << pr.info << "\n";
+        out.precision(prec);
+    }
+    out << "\n";
+
+    // Nodes (already in index order from loadModel)
+    for (size_t i = 0; i < nodeList.size(); i++) {
+        nodeList[i].write(out, i == 0);
+    }
+
+    // Ways
+    out << "\n# Ways in model: " << wayMap.size() << "\n";
+    bool firstWay = true;
+    for (const auto& entry : wayMap) {
+        entry.second.write(out, firstWay);
+        firstWay = false;
+    }
+
+    // Buildings
+    out << "\n# Buildings in model: " << buildingMap.size() << "\n";
+    bool firstBld = true;
+    for (const auto& entry : buildingMap) {
+        entry.second.write(out, firstBld);
+        firstBld = false;
+    }
+
+    // Persons
+    bool writeHeader = true;
+    for (const auto& entry : buildingMap) {
+        for (const PUMSHousehold& hld : entry.second.households) {
+            for (const auto& per : hld.getPeopleInfo()) {
+                per.write(out, writeHeader);
+                writeHeader = false;
+            }
+        }
+    }
+
+    // Households
+    writeHeader = true;
+    for (const auto& entry : buildingMap) {
+        if (!entry.second.households.empty()) {
+            entry.second.writeHouseholds(out, writeHeader);
+            writeHeader = false;
+        }
+    }
+    std::cout << "Model saved to: " << filePath << "\n";
 }
 
 // Build look-up map to find the ways that intersect at a given node

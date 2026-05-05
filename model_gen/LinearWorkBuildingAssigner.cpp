@@ -49,7 +49,7 @@ struct LMSample {
 // Constructor
 // ------------------------------------------------------------
 LinearWorkBuildingAssigner::LinearWorkBuildingAssigner(
-        const OSMData& model,
+        OSMData& model,
         const int jwtrnsIdx,
         const int jwmnpIdx,
         const int offSqFtPer,
@@ -292,8 +292,14 @@ void LinearWorkBuildingAssigner::processBuilding(
     for (auto& hld : bld.households) {
         for (auto& person : hld.getPeopleInfo()) {
 
-            if (person.getIntegerInfo(jwtrnsIdx) != 1)
+            const int jwtrns = person.getIntegerInfo(jwtrnsIdx);
+            const auto mode = static_cast<TransportationMode>(jwtrns);
+            if (mode != TransportationMode::CAR && 
+                mode != TransportationMode::BUS &&
+                mode != TransportationMode::TAXI && 
+                mode != TransportationMode::MOTORCYCLE) {
                 continue;
+            }
 
             const int travelTime = person.getIntegerInfo(jwmnpIdx);
             if (travelTime < 0)
@@ -303,8 +309,8 @@ void LinearWorkBuildingAssigner::processBuilding(
             timer.start();
 
             // Linear prediction
-            const double predictedDist =
-                modelIntercept + modelSlope * travelTime;
+            const double predictedDist = std::max(0.1,
+                modelIntercept + modelSlope * travelTime);
 
             const double minDist = predictedDist * 0.7;
             const double maxDist = predictedDist * 1.3;
@@ -433,6 +439,14 @@ void LinearWorkBuildingAssigner::assignWorkBuilding(int, char**) {
 #ifdef HAVE_LIBMPI
     MPI_Win_free(&bldIdxWin);
 #endif
+
+    // Copy updated buildings (with schedules) back to the original model
+    // so that the caller can save the model to disk.
+    for (auto& [id, bld] : homeBuildings) {
+        model.buildingMap[id] = bld;
+    }
+    std::cout << "Updated " << homeBuildings.size()
+              << " home buildings in model.\n";
 }
 
 std::tuple<BuildingMap, BuildingMap, std::vector<size_t>>

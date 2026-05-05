@@ -179,7 +179,7 @@ protected:
         return bld.getInfo(infoKey);
     }
     
-    void generateSchedule(const OSMData& model, XFigHelper& fig,
+    void generateSchedule(OSMData& model, XFigHelper& fig,
                           const std::string& infoKey, int argc, char *argv[]);
                        
     int generateSchedule(const PUMSPerson& person,
@@ -389,6 +389,14 @@ private:
            work-building assignment.
         */
         int lmNumSamples = 5000;
+
+        /**
+           The path to the output model file.  When specified, the
+           model is written back to this file after schedules have been
+           assigned to every person.  The output format is identical to
+           the input format so the file can be reloaded by cityscape.
+        */
+        std::string outModelFilePath;
 
         /**
            The path to the output txt file to where generated travel
