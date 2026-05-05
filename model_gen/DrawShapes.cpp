@@ -141,7 +141,8 @@ void DrawShapes::generateFig() {
       return;
     }
     // Get helper method to plot the
-    plotRiskWays(waysRiskTSV, fig, xClip, yClip, cmdLineArgs.figScale);
+    plotRiskWays(waysRiskTSV, fig, xClip, yClip, cmdLineArgs.figScale,
+                 cmdLineArgs.heatmapCol);
   }
 }
 
@@ -181,6 +182,8 @@ int DrawShapes::processArgs(int argc, char *argv[]) {
        &cmdLineArgs.annotColorCol, ArgParser::INTEGER},
       {"--way-risk-tsv", "Output TSV from risk analysis for plotting",
        &cmdLineArgs.wayRiskFile, ArgParser::STRING},
+      {"--heatmap-col", "Column index for heatmap color (8=visits, 9=accidents)",
+       &cmdLineArgs.heatmapCol, ArgParser::INTEGER},
       {"", "", NULL, ArgParser::INVALID}};
   // Process the command-line arguments.
   ArgParser ap(arg_list);
@@ -209,7 +212,8 @@ int DrawShapes::getColor(const int value) const {
 
 void DrawShapes::plotRiskWays(std::istream &waysRiskTSV, XFigHelper &xfig,
                               const int xClip, const int yClip,
-                              const int xfigSize, const int stLevel) const {
+                              const int xfigSize, const int heatmapCol,
+                              const int stLevel) const {
   // Process line by line
   for (std::string line; std::getline(waysRiskTSV, line);) {
     if (line.empty() || line.at(0) == '#') {
@@ -230,8 +234,7 @@ void DrawShapes::plotRiskWays(std::istream &waysRiskTSV, XFigHelper &xfig,
     const int nodeCount = std::stoi(words[6]);
     ASSERT(nodeCount > 0 && nodeCount < 1000);
     // Start a poly line for the way
-    // const int color = getColor(std::stoi(words[8]));
-    const int color = getColor(std::stoi(words[9])); // accidents heatmap
+    const int color = getColor(std::stoi(words[heatmapCol]));
     ASSERT((color > 31) && (color < 134));
     xfig.startPolyLine(nodeCount, color, stLevel);
     // The information for each node is comma separated. Here we replace

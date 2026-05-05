@@ -187,6 +187,7 @@ protected:
     */
     void plotRiskWays(std::istream& waysRiskTSV, XFigHelper& xfig,
                       const int xClip, const int yClip, const int xfigSize,
+                      const int heatmapCol,
                       const int stLevel = 20) const;
 
     int getColor(const int value) const;
@@ -263,6 +264,14 @@ private:
         */
         std::string wayRiskFile;
         
+        /**
+         * Determines the heatmap color. Column 8 is #Visits
+         * (traffic volume) and column 9 is #AccCounts (accident
+         * counts). Default is 9 (accidents). Specified via the
+         * --heatmap-col command-line option.
+        */
+        int heatmapCol = 9;  //accidents by default
+
     } cmdLineArgs;
 
     /** This is just a copy of the command-line arguments supplied to
