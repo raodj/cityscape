@@ -38,6 +38,7 @@
 #include <chrono>
 #include <numeric>
 #include <sstream>
+#include <set>
 
 int WayRiskAnalyzer::processArgs(int argc, char *argv[]) {
   // Save the command-line arguments for future reference.
@@ -86,13 +87,15 @@ int WayRiskAnalyzer::processArgs(int argc, char *argv[]) {
        &cmdLineArgs.waySummaryFile, ArgParser::STRING},
       {"--accident-nodes", "The output TSV from accidents_collator",
        &cmdLineArgs.accidentNodesTSV, ArgParser::STRING},
+      {"--road-modes", "Comma-separated JWTRNS modes for road traffic (default: 1,2,7,8)",
+       &cmdLineArgs.roadModes, ArgParser::STRING},
       {"", "", NULL, ArgParser::INVALID}};
   // Process the command-line arguments.
   ArgParser ap(arg_list);
   ap.parseArguments(argc, argv, true);
-  // Ensure at least the shape file is specified.
-  if (cmdLineArgs.modelFilePath.empty() || cmdLineArgs.shapeFilePath.empty()) {
-    std::cerr << "Specify a model file and shape file to be processed.\n"
+  // Ensure at least the model file is specified.
+  if (cmdLineArgs.modelFilePath.empty()) {
+    std::cerr << "Specify a model file to be processed.\n"
               << ap << std::endl;
     return 1;
   }
@@ -142,8 +145,13 @@ int WayRiskAnalyzer::run(int argc, char *argv[]) {
                                cmdLineArgs.dbfFilePath, osmData);
   }
 
-  // Next process taxi cab data if specified.
-  if (!cmdLineArgs.taxiRidesFile.empty()) {
+  // Process traffic data: use person schedules from the model by
+  // default, or taxi cab data if --taxi-rides is specified.
+  if (cmdLineArgs.taxiRidesFile.empty()) {
+    // Use person schedules embedded in the model
+    processPersonSchedules();
+  } else {
+    // Legacy mode: process external taxi cab data
     std::ifstream taxiData(cmdLineArgs.taxiRidesFile);
     if (!taxiData.good()) {
       std::cerr << "Error opening " << cmdLineArgs.taxiRidesFile
@@ -183,12 +191,141 @@ int WayRiskAnalyzer::run(int argc, char *argv[]) {
   return 0;
 }
 
-// // Helper to check if a file path has a .csv extension
-// static bool isCsvFile(const std::string& path) {
-//     return path.size() >= 4 &&
-//            path.compare(path.size() - 4, 4, ".csv") == 0;
-// }
-//
+void WayRiskAnalyzer::processPersonSchedules() {
+  Stopwatch timer;
+  timer.start();
+
+  // Parse the road modes string into a set for fast lookup
+  std::set<int> roadModesSet;
+  {
+    std::istringstream modeStream(cmdLineArgs.roadModes);
+    std::string token;
+    while (std::getline(modeStream, token, ',')) {
+      if (!token.empty()) {
+        roadModesSet.insert(std::stoi(token));
+      }
+    }
+  }
+  std::cout << "Road-based transport modes: ";
+  for (const int m : roadModesSet) { std::cout << m << ' '; }
+  std::cout << std::endl;
+
+  // Collect all person trips from the model
+  std::vector<PersonTrip> trips;
+  int skippedNoSchedule = 0, skippedNonRoad = 0, totalPeople = 0;
+
+  for (const auto& bldEntry : osmData.buildingMap) {
+    const long homeBldId = bldEntry.first;
+    const Building& bld = bldEntry.second;
+
+    for (const auto& hld : bld.households) {
+      const auto& people = hld.getPeopleInfo();
+      for (const auto& person : people) {
+        totalPeople++;
+
+        // Check transport mode
+        // JWTRNS (means of transportation) is at index 3 in person info
+        int jwtrnsIdx = 3;
+        const int jwtrns = person.getIntegerInfo(jwtrnsIdx);
+
+        if (roadModesSet.find(jwtrns) == roadModesSet.end()) {
+          skippedNonRoad++;
+          continue;
+        }
+
+        // Check for non-empty schedule
+        const std::string& sched = person.getSchedule();
+        if (sched.empty()) {
+          skippedNoSchedule++;
+          continue;
+        }
+
+        // Parse schedule entries
+        std::istringstream schedStream(sched);
+        std::vector<ScheduleEntry> entries;
+        while (schedStream.peek() == '(') {
+          entries.push_back(ScheduleEntry::parse(schedStream));
+        }
+
+        // Create trips from consecutive schedule entries
+        long srcBld = homeBldId;
+        for (const auto& entry : entries) {
+          const int departureMinute = entry.time / 60;
+          // Filter by time window
+          if (departureMinute >= cmdLineArgs.startMinute &&
+              departureMinute <= cmdLineArgs.endMinute) {
+            trips.push_back({srcBld, entry.destBldId, departureMinute});
+          }
+          srcBld = entry.destBldId;
+        }
+      }
+    }
+  }
+
+  std::cout << "Total people: " << totalPeople
+            << ", skipped (non-road mode): " << skippedNonRoad
+            << ", skipped (no schedule): " << skippedNoSchedule
+            << ", trips to process: " << trips.size() << std::endl;
+
+  if (trips.empty()) {
+    std::cout << "No person trips to process.\n";
+    return;
+  }
+
+  // Compute the maximum number of time-bucket entries per node
+  const int maxEntries =
+      (cmdLineArgs.endMinute - cmdLineArgs.startMinute) / 15 + 1;
+
+  // Process trips in parallel using OpenMP
+  int pathCount = 0;
+#pragma omp parallel
+  {
+    NodeVisitMap localNodeVisits;
+    WayVisitMap localWayVisits;
+
+#pragma omp for schedule(dynamic)
+    for (size_t i = 0; i < trips.size(); i++) {
+      const PersonTrip& trip = trips[i];
+      PathFinder pf(osmData);
+      Path path = pf.findBestPath(trip.srcBldId, trip.destBldId,
+                                  cmdLineArgs.useTime, cmdLineArgs.minDist,
+                                  cmdLineArgs.distScale);
+      updateNodes(path, localNodeVisits, localWayVisits,
+                  trip.departureMinute - cmdLineArgs.startMinute,
+                  maxEntries);
+    }
+
+#pragma omp critical(processSchedules_nodes)
+    {
+      for (const auto& entry : localNodeVisits) {
+        auto& destVec = nodeVisits[entry.first];
+        destVec.resize(maxEntries);
+        for (int i = 0; i < maxEntries; i++) {
+          destVec[i] += entry.second[i];
+        }
+      }
+    }
+
+#pragma omp critical(processSchedules_ways)
+    {
+      for (const auto& entry : localWayVisits) {
+        ASSERT(entry.second > 0);
+        wayVisits[entry.first] += entry.second;
+      }
+    }
+  } // OMP parallel
+
+  pathCount = trips.size();
+  std::cout << "Processed " << pathCount << " person trips in "
+            << timer.elapsed().count() / 1e3 << " seconds.\n";
+}
+
+// Helper to check if a file path has a .csv extension
+static bool isCsvFile(const std::string& path) {
+    return path.size() >= 4 &&
+           path.compare(path.size() - 4, 4, ".csv") == 0;
+}
+
 // Get a batch of entries to be processed from taxi rides tsv/csv file
 std::vector<WayRiskAnalyzer::RideBatchEntry>
 WayRiskAnalyzer::getBatch(std::istream &taxiData, const Timestamp &startDay,

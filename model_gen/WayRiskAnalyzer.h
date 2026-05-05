@@ -38,6 +38,7 @@
 #include "ArgParser.h"
 #include "ShpBldCatalog.h"
 #include "PathFinder.h"
+#include "ScheduleEntry.h"
 
 /**
  * This map tracks the number of cars that pass through the node in a
@@ -234,7 +235,15 @@ protected:
          * argument.
          */
         std::string accidentNodesTSV;
-        
+
+        /**
+         * Comma-separated list of JWTRNS transport mode values that
+         * are considered road-based (and thus generate traffic on
+         * ways).  Default: "1,2,7,8" for car, bus, taxi, motorcycle.
+         * Specified via the \c --road-modes command-line option.
+         */
+        std::string roadModes = "1,2,7,8";
+
     } cmdLineArgs;
     
 private: 
@@ -352,6 +361,27 @@ private:
      */
     WayIDAccidentsMap wayAccidents;
     
+    /**
+     * A simple struct to represent a single trip derived from a
+     * person's schedule.  Each person with a road-based transport
+     * mode generates one or more PersonTrip entries (typically two:
+     * home-to-work and work-to-home).
+     */
+    struct PersonTrip {
+        long srcBldId;        // Source building ID
+        long destBldId;       // Destination building ID
+        int  departureMinute; // Minute of the day (0-1440)
+    };
+
+    /**
+     * Process person schedules from the loaded model to generate
+     * traffic flow data.  This method iterates over all people in
+     * the model, filters by road-based transport modes, parses their
+     * schedules, finds routes via PathFinder, and updates the
+     * nodeVisits and wayVisits maps.
+     */
+    void processPersonSchedules();
+
     /**
      * A simple inner-class to encapsulate key data read from taxi cab
      * rides file.

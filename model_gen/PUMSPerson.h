@@ -92,6 +92,13 @@ public:
     long getPerID() const { return perID; }
 
     /**
+     * Get the schedule string associated with this person.
+     *
+     * \return The schedule string (may be empty if no schedule is set).
+     */
+    const std::string& getSchedule() const { return schedule; }
+
+    /**
      * Set a unique ID for this person record as it is going to be
      * added to an household.
      *
