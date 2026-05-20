@@ -96,6 +96,28 @@ ModelGenerator::run(int argc, char *argv[]) {
     createBuildings();
     createHomesOnEmptyWays();
 
+    // FIX: Zero out population for rings that ended up with no buildings.
+    // Without OSM building/street data in those rings, the population cannot
+    // be assigned to any building. This avoids "orphan rings" with stranded
+    // population that would otherwise show up in the model output.
+    {
+        long stranded = 0;
+        int orphanCount = 0;
+        for (size_t i = 0; (i < popRings.size()); i++) {
+            int bldCount = 0, homeCount = 0;
+            long bldSqFt  = 0, homeSqFt = 0;
+            getTotalSqFootage(i, bldCount, bldSqFt, homeCount, homeSqFt);
+            if (bldCount == 0 && popRings[i].getPopulation() > 0) {
+                stranded += (long) popRings[i].getPopulation();
+                orphanCount++;
+                popRings[i].setPopulation(0);
+            }
+        }
+        std::cout << "Zeroed population for " << orphanCount
+                  << " orphan rings (stranded " << stranded
+                  << " people due to missing OSM coverage)\n";
+    }
+
     // Draw buildings with PUMA area for cross reference
     generateFig();
 
@@ -1007,8 +1029,8 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
     if (!isBuilding || (vertexLat.size() < 3) ||
         (vertexLat.front() != vertexLat.back())) {
         if (debug) {
-            std::cout << "DEBUG: Failed basic building checks - isBuilding=" << isBuilding 
-                      << ", vertexCount=" << vertexLat.size() 
+            std::cout << "DEBUG: Failed basic building checks - isBuilding=" << isBuilding
+                      << ", vertexCount=" << vertexLat.size()
                       << ", isClosed=" << (vertexLat.size() >= 3 ? (vertexLat.front() == vertexLat.back()) : false) << "\n";
         }
         return false;  // This is not a valid buliding at all.
@@ -1086,17 +1108,20 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
         
         if (isExplicitHome) {
             // Building is explicitly marked as residential type, include it
+            // (regardless of whether address is present)
             isHome = true;
             if (debug) {
                 std::cout << "DEBUG: Building " << type << " included as home (explicit residential type)\n";
             }
-        } else {
-            // For non-explicit home types without addresses, be conservative and exclude them
+        } else if (!hasAddress) {
+            // Non-explicit home type AND no address — be conservative and exclude
             isHome = false;
             if (debug) {
                 std::cout << "DEBUG: Building NOT classified as home - no address and not explicit residential type\n";
             }
         }
+        // else: non-explicit home type WITH address — keep isHome=true (preserves
+        // legacy behavior for 'yes'-tagged buildings that have addr:* tags)
     }
 
     if (debug) {
