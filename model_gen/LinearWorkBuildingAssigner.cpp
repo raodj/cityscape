@@ -73,30 +73,6 @@ LinearWorkBuildingAssigner::LinearWorkBuildingAssigner(
     stats.open("stats_job" + slurmID + "_rank" + rank + ".txt");
 }
 
-LinearWorkBuildingAssigner::LinearWorkBuildingAssigner(
-        OSMData& model,
-        const int jwtrnsIdx,
-        const int jwmnpIdx,
-        const int offSqFtPer,
-        int lmNumSamples)
-    : model(model),
-      jwtrnsIdx(jwtrnsIdx),
-      jwmnpIdx(jwmnpIdx),
-      offSqFtPer(offSqFtPer),
-      lmNumSamples(lmNumSamples),
-      nextBldIndex(0),
-      modelSlope(0.0),
-      modelIntercept(0.0),
-      modelR2(0.0) {
-
-    std::string slurmID =
-        getenv("SLURM_JOB_ID") ? getenv("SLURM_JOB_ID") : "";
-    std::string rank = std::to_string(MPI_GET_RANK());
-
-    stats.open("stats_job" + slurmID + "_rank" + rank + ".txt");
-}
-
-
 // ------------------------------------------------------------
 // Atomic building index fetch
 // ------------------------------------------------------------
@@ -360,9 +336,6 @@ void LinearWorkBuildingAssigner::processBuilding(
                 if (cand.population < 1)
                     continue;
 
-                const double dist =
-                getDistance(bld.wayLat, bld.wayLon, cand.wayLat, cand.wayLon);
-
                 validCandidates.push_back(&cand);
 
                 if (validCandidates.size() >= 10)
@@ -499,7 +472,11 @@ LinearWorkBuildingAssigner::getHomeAndNonHomeBuildings(
 }
 
 // ------------------------------------------------------------
-// Candidate generation (unchanged)
+// Candidate generation: filter non-home buildings by straight-line
+// distance band. The caller derives [minDist, maxDist] from the
+// linear distance-vs-time regression, so the band reflects the
+// realistic relationship between straight-line distance and
+// PathFinder travel time -- not a constant-speed assumption.
 // ------------------------------------------------------------
 BuildingList LinearWorkBuildingAssigner::getCandidateWorkBuildings(
         const Building& src,
@@ -511,10 +488,8 @@ BuildingList LinearWorkBuildingAssigner::getCandidateWorkBuildings(
         const double d =
             getDistance(src.wayLat, src.wayLon,
                         b.wayLat, b.wayLon);
-        
         if (d >= minDist && d <= maxDist && b.population > 0)
-          out.push_back(b);
-        
+            out.push_back(b);
     }
     return out;
 }
