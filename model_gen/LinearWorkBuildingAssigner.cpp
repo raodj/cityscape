@@ -73,6 +73,30 @@ LinearWorkBuildingAssigner::LinearWorkBuildingAssigner(
     stats.open("stats_job" + slurmID + "_rank" + rank + ".txt");
 }
 
+LinearWorkBuildingAssigner::LinearWorkBuildingAssigner(
+        OSMData& model,
+        const int jwtrnsIdx,
+        const int jwmnpIdx,
+        const int offSqFtPer,
+        int lmNumSamples)
+    : model(model),
+      jwtrnsIdx(jwtrnsIdx),
+      jwmnpIdx(jwmnpIdx),
+      offSqFtPer(offSqFtPer),
+      lmNumSamples(lmNumSamples),
+      nextBldIndex(0),
+      modelSlope(0.0),
+      modelIntercept(0.0),
+      modelR2(0.0) {
+
+    std::string slurmID =
+        getenv("SLURM_JOB_ID") ? getenv("SLURM_JOB_ID") : "";
+    std::string rank = std::to_string(MPI_GET_RANK());
+
+    stats.open("stats_job" + slurmID + "_rank" + rank + ".txt");
+}
+
+
 // ------------------------------------------------------------
 // Atomic building index fetch
 // ------------------------------------------------------------
@@ -319,11 +343,10 @@ void LinearWorkBuildingAssigner::processBuilding(
                 getCandidateWorkBuildings(
                     bld,
                     nonHomeBuildings,
-                    travelTime,
-                    travelTime,
-                    3);
+                    minDist,
+                    maxDist);
 
-std::vector<const Building*> validCandidates;
+            std::vector<const Building*> validCandidates;
             validCandidates.reserve(10);
 
             int checked = 0;
@@ -339,9 +362,6 @@ std::vector<const Building*> validCandidates;
 
                 const double dist =
                 getDistance(bld.wayLat, bld.wayLon, cand.wayLat, cand.wayLon);
-
-                if (dist < minDist || dist > maxDist)
-                    continue;
 
                 validCandidates.push_back(&cand);
 
@@ -484,21 +504,17 @@ LinearWorkBuildingAssigner::getHomeAndNonHomeBuildings(
 BuildingList LinearWorkBuildingAssigner::getCandidateWorkBuildings(
         const Building& src,
         const BuildingMap& nonHome,
-        int minT, int maxT,
-        int margin) const {
+        double minDist, double maxDist) const {
 
     BuildingList out;
     for (auto& [id, b] : nonHome) {
         const double d =
             getDistance(src.wayLat, src.wayLon,
                         b.wayLat, b.wayLon);
-        const int t =
-            std::round(d * 60 / avgSpeed);
-
-        if (t >= minT - margin &&
-            t <= maxT + margin &&
-            b.population > 0)
-            out.push_back(b);
+        
+        if (d >= minDist && d <= maxDist && b.population > 0)
+          out.push_back(b);
+        
     }
     return out;
 }

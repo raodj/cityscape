@@ -39,7 +39,7 @@ using BuildingList = std::vector<Building>;
 /** An alias for a map of buildings with the building ID as the key */
 using BuildingMap = std::unordered_map<long, Building>;
 
-/* 
+/*
   All Possible Transportation Modes:
   01 . Car, truck, or van
   02 . Bus
@@ -58,118 +58,126 @@ using BuildingMap = std::unordered_map<long, Building>;
 enum class TransportationMode {
   CAR = 1,
   BUS = 2,
+  SUBWAY = 3,
+  TRAIN = 4,
+  TROLLEY = 5,
+  FERRYBOAT = 6,
   TAXI = 7,
-  MOTORCYCLE = 8
+  MOTORCYCLE = 8,
+  BICYCLE = 9,
+  WALK = 10,
+  WFH = 11,
+  OTHER = 12
 };
 
 class LinearWorkBuildingAssigner {
 public:
-    /**
-       The only constructor for this class.
-     */
-    LinearWorkBuildingAssigner(OSMData& model,
-                               const int jwtrnsIdx,
-                               const int jwmnpIdx,
-                               const int offSqFtPer,
-                               const int avgSpeed,
-                               int lmNumSamples);
+  /**
+     The only constructor for this class.
+   */
+  LinearWorkBuildingAssigner(OSMData &model, const int jwtrnsIdx,
+                             const int jwmnpIdx, const int offSqFtPer,
+                             const int avgSpeed, int lmNumSamples);
 
-    /** Dummy destructor (per coding conventions). */
-    ~LinearWorkBuildingAssigner() {}
+  /** Dummy destructor (per coding conventions). */
+  ~LinearWorkBuildingAssigner() {}
 
-    /** Entry point for work-building assignment */
-    void assignWorkBuilding(int argc, char *argv[]);
+  /** Entry point for work-building assignment */
+  void assignWorkBuilding(int argc, char *argv[]);
 
 protected:
-    /**
-       Helper method to get the range of buildings this MPI process
-       should operate on.
-     */
-    std::tuple<int, int> getBldRange(const int bldCount) const;
+  /**
+     Helper method to get the range of buildings this MPI process
+     should operate on.
+   */
+  std::tuple<int, int> getBldRange(const int bldCount) const;
 
-    /**
-       Split buildings into home and non-home sets.
-     */
-    std::tuple<BuildingMap, BuildingMap, std::vector<size_t>>
-    getHomeAndNonHomeBuildings(const BuildingMap& buildingMap) const;
+  /**
+     Split buildings into home and non-home sets.
+   */
+  std::tuple<BuildingMap, BuildingMap, std::vector<size_t>>
+  getHomeAndNonHomeBuildings(const BuildingMap &buildingMap) const;
 
-    /**
-       Generate candidate non-home buildings using time approximation.
-     */
-    BuildingList getCandidateWorkBuildings(const Building& bld,
-                                           const BuildingMap& nonHomeBlds,
-                                           const int minTravelTime,
-                                           const int maxTravelTime,
-                                           const int timeMargin = 1) const;
+  /**
+     Generate candidate non-home buildings using time approximation.
+   */
+  BuildingList getCandidateWorkBuildings(const Building &bld,
+                                         const BuildingMap &nonHomeBlds,
+                                         const int minTravelTime,
+                                         const int maxTravelTime,
+                                         const int timeMargin = 1) const;
 
-    /**
-       Assign the FIRST valid work building from the candidate list.
-     */
-    long assignWorkBuilding(const OSMData& model,
-                            const Building& bld,
-                            BuildingMap& nonHomeBuildings,
-                            BuildingList& candidateWorkBlds,
-                            const PUMSPerson& person,
-                            const int timeMargin);
+  BuildingList getCandidateWorkBuildings(const Building &bld,
+                                         const BuildingMap &nonHomeBlds,
+                                         const int minTravelTime,
+                                         const int maxTravelTime) const;
+                                         
 
-    /**
-       Process all households and people in a single home building.
-     */
-    void processBuilding(const long idx,
-                         const long bldId,
-                         Building& bld,
-                         BuildingMap& nonHomeBuildings);
 
-    /**
-       Thread-safe method to get the next building index.
-     */
-    long getNextBldIndex();
+
+  /**
+     Assign the FIRST valid work building from the candidate list.
+   */
+  long assignWorkBuilding(const OSMData &model, const Building &bld,
+                          BuildingMap &nonHomeBuildings,
+                          BuildingList &candidateWorkBlds,
+                          const PUMSPerson &person, const int timeMargin);
+
+  /**
+     Process all households and people in a single home building.
+   */
+  void processBuilding(const long idx, const long bldId, Building &bld,
+                       BuildingMap &nonHomeBuildings);
+
+  /**
+     Thread-safe method to get the next building index.
+   */
+  long getNextBldIndex();
 
 private:
-    /** Reference to the OSM model */
-    OSMData& model;
+  /** Reference to the OSM model */
+  OSMData &model;
 
-    /** jwtrns column index */
-    const int jwtrnsIdx;
+  /** jwtrns column index */
+  const int jwtrnsIdx;
 
-    /** jwmnp column index */
-    const int jwmnpIdx;
+  /** jwmnp column index */
+  const int jwmnpIdx;
 
-    /** Average square feet per office worker */
-    const int offSqFtPer;
+  /** Average square feet per office worker */
+  const int offSqFtPer;
 
-    /** Average travel speed (mph) */
-    const int avgSpeed;
+  /** Average travel speed (mph) */
+  const int avgSpeed;
 
-    /** Number of samples used to generate the linear model */
-    int lmNumSamples;
+  /** Number of samples used to generate the linear model */
+  int lmNumSamples;
 
-    /** Global building index counter */
-    long nextBldIndex = 0L;
+  /** Global building index counter */
+  long nextBldIndex = 0L;
 
 #ifdef HAVE_LIBMPI
-    /** MPI window for global building index */
-    static MPI_Win bldIdxWin;
+  /** MPI window for global building index */
+  static MPI_Win bldIdxWin;
 #endif
 
-    /** Per-process statistics output */
-    std::ofstream stats;
+  /** Per-process statistics output */
+  std::ofstream stats;
 
-    // ---------------------------
-    // Linear model parameters
-    // distance ≈ intercept + slope * time
-    // ---------------------------
-    double modelSlope;
-    double modelIntercept;
-    double modelR2;
+  // ---------------------------
+  // Linear model parameters
+  // distance ≈ intercept + slope * time
+  // ---------------------------
+  double modelSlope;
+  double modelIntercept;
+  double modelR2;
 
-    /**
-       Generate the linear distance–time model once.
-     */
-    void generateLinearModel(int lmNumSamples,
-                             const BuildingMap& homeBuildings,
-                             const BuildingMap& nonHomeBuildings,
-                             const std::vector<size_t>& homeBldIdList);
+  /**
+     Generate the linear distance–time model once.
+   */
+  void generateLinearModel(int lmNumSamples, const BuildingMap &homeBuildings,
+                           const BuildingMap &nonHomeBuildings,
+                           const std::vector<size_t> &homeBldIdList);
 };
 
 #endif
