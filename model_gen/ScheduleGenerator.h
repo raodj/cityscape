@@ -179,7 +179,7 @@ protected:
         return bld.getInfo(infoKey);
     }
     
-    void generateSchedule(const OSMData& model, XFigHelper& fig,
+    void generateSchedule(OSMData& model, XFigHelper& fig,
                           const std::string& infoKey, int argc, char *argv[]);
                        
     int generateSchedule(const PUMSPerson& person,
@@ -385,10 +385,38 @@ private:
 
         /**
            The number of building pairs to be used to estimate generate
-           the linear model used for predicting haversine distance in 
+           the linear model used for predicting haversine distance in
            work-building assignment.
         */
         int lmNumSamples = 5000;
+
+        /**
+           Minimum search radius (in miles) used by PathFinder when
+           sampling home->work paths to fit the linear time-distance
+           model.  Mirrors the same flag on PathFinderTester /
+           WayRiskAnalyzer.  Default raised from 0.25 to 2.0 based on
+           the NYC/Chicago/LA/Cincinnati R^2 sweep: the wider default
+           lifts LA's R^2 from 0.81 to 0.92 with only a ~0.01 drop
+           elsewhere.  Pass --search-dist 0.25 to restore the legacy
+           narrow value.
+        */
+        double searchDist = 2.0;
+
+        /**
+           Extra distance-per-mile that PathFinder is allowed to
+           explore beyond the straight-line distance when finding a
+           path.  Paired with --search-dist above.  Default raised
+           from 0.1 to 0.5 for the same reason.
+        */
+        double searchScale = 0.5;
+
+        /**
+           The path to the output model file.  When specified, the
+           model is written back to this file after schedules have been
+           assigned to every person.  The output format is identical to
+           the input format so the file can be reloaded by cityscape.
+        */
+        std::string outModelFilePath;
 
         /**
            The path to the output txt file to where generated travel

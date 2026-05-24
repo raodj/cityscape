@@ -49,18 +49,22 @@ struct LMSample {
 // Constructor
 // ------------------------------------------------------------
 LinearWorkBuildingAssigner::LinearWorkBuildingAssigner(
-        const OSMData& model,
+        OSMData& model,
         const int jwtrnsIdx,
         const int jwmnpIdx,
         const int offSqFtPer,
         const int avgSpeed,
-        int lmNumSamples)
+        int lmNumSamples,
+        const double searchDist,
+        const double searchScale)
     : model(model),
       jwtrnsIdx(jwtrnsIdx),
       jwmnpIdx(jwmnpIdx),
       offSqFtPer(offSqFtPer),
       avgSpeed(avgSpeed),
       lmNumSamples(lmNumSamples),
+      searchDist(searchDist),
+      searchScale(searchScale),
       nextBldIndex(0),
       modelSlope(0.0),
       modelIntercept(0.0),
@@ -164,7 +168,8 @@ void LinearWorkBuildingAssigner::generateLinearModel(
 
         // use PathFinder to compute actual travel time (slowish)
         PathFinder pf(model);
-        const Path path = pf.findBestPath(hb.id, wb.id, true, 0.25, 0.1);
+        const Path path =
+            pf.findBestPath(hb.id, wb.id, true, searchDist, searchScale);
         if (path.size() == 0) {
             // no valid path found; skip
             continue;
@@ -292,8 +297,14 @@ void LinearWorkBuildingAssigner::processBuilding(
     for (auto& hld : bld.households) {
         for (auto& person : hld.getPeopleInfo()) {
 
-            if (person.getIntegerInfo(jwtrnsIdx) != 1)
+            const int jwtrns = person.getIntegerInfo(jwtrnsIdx);
+            const auto mode = static_cast<TransportationMode>(jwtrns);
+            if (mode != TransportationMode::CAR && 
+                mode != TransportationMode::BUS &&
+                mode != TransportationMode::TAXI && 
+                mode != TransportationMode::MOTORCYCLE) {
                 continue;
+            }
 
             const int travelTime = person.getIntegerInfo(jwmnpIdx);
             if (travelTime < 0)
@@ -433,6 +444,14 @@ void LinearWorkBuildingAssigner::assignWorkBuilding(int, char**) {
 #ifdef HAVE_LIBMPI
     MPI_Win_free(&bldIdxWin);
 #endif
+
+    // Copy updated buildings (with schedules) back to the original model
+    // so that the caller can save the model to disk.
+    for (auto& [id, bld] : homeBuildings) {
+        model.buildingMap[id] = bld;
+    }
+    std::cout << "Updated " << homeBuildings.size()
+              << " home buildings in model.\n";
 }
 
 std::tuple<BuildingMap, BuildingMap, std::vector<size_t>>

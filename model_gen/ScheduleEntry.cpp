@@ -38,7 +38,8 @@
 std::string
 ScheduleEntry::to_string() const {
     std::ostringstream os;
-    os << dowStart << ' ' << dowEnd << ' ' << time << ' ' << destBldId << '\n';
+    os << '(' << dowStart << ' ' << dowEnd << ' '
+       << time << ' ' << destBldId << ')';
     return os.str();
 }
 
@@ -52,7 +53,10 @@ ScheduleEntry
 ScheduleEntry::parse(std::istream& is) {
     ScheduleEntry entry;
     short dowStart, dowEnd;
+    char paren;
+    is >> paren;  // consume '('
     is >> dowStart >> dowEnd >> entry.time >> entry.destBldId;
+    is >> paren;  // consume ')'
     entry.dowStart = dowStart;
     entry.dowEnd   = dowEnd;
     return entry;

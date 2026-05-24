@@ -88,6 +88,16 @@ public:
      */
     int loadModel(const std::string& modelFilePath);
 
+    /** Write the current model (including any updated schedules) to a
+        file.  This mirrors the format written by ModelGenerator so the
+        output can be read back by loadModel or used by cityscape.
+
+        \param[in] filePath  Destination file path.  No-op if empty.
+        \param[in] cmdLine   The command-line string to embed as a comment.
+    */
+    void saveModel(const std::string& filePath,
+                   const std::string& cmdLine = "") const;
+
     /** Method to obtain a sorted list of population rings and a
         choice of information associated with them.
 

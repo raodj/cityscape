@@ -39,17 +39,42 @@ using BuildingList = std::vector<Building>;
 /** An alias for a map of buildings with the building ID as the key */
 using BuildingMap = std::unordered_map<long, Building>;
 
+/* 
+  All Possible Transportation Modes:
+  01 . Car, truck, or van
+  02 . Bus
+  03 . Subway or elevated rail
+  04 . Long-distance train or commuter rail
+  05 . Light rail, streetcar, or trolley
+  06 . Ferryboat
+  07 . Taxicab
+  08 . Motorcycle
+  09 . Bicycle
+  10 . Walked
+  11 . Worked from home
+  12 . Other method
+  bb . N/A (not a worker)
+*/
+enum class TransportationMode {
+  CAR = 1,
+  BUS = 2,
+  TAXI = 7,
+  MOTORCYCLE = 8
+};
+
 class LinearWorkBuildingAssigner {
 public:
     /**
        The only constructor for this class.
      */
-    LinearWorkBuildingAssigner(const OSMData& model,
+    LinearWorkBuildingAssigner(OSMData& model,
                                const int jwtrnsIdx,
                                const int jwmnpIdx,
                                const int offSqFtPer,
                                const int avgSpeed,
-                               int lmNumSamples);
+                               int lmNumSamples,
+                               const double searchDist = 2.0,
+                               const double searchScale = 0.5);
 
     /** Dummy destructor (per coding conventions). */
     ~LinearWorkBuildingAssigner() {}
@@ -104,7 +129,7 @@ protected:
 
 private:
     /** Reference to the OSM model */
-    const OSMData& model;
+    OSMData& model;
 
     /** jwtrns column index */
     const int jwtrnsIdx;
@@ -120,6 +145,14 @@ private:
 
     /** Number of samples used to generate the linear model */
     int lmNumSamples;
+
+    /** Minimum search radius (mi) passed to PathFinder.findBestPath
+        during linear-model sample collection. */
+    const double searchDist;
+
+    /** Per-mile extra search budget passed to PathFinder.findBestPath
+        during linear-model sample collection. */
+    const double searchScale;
 
     /** Global building index counter */
     long nextBldIndex = 0L;

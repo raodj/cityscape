@@ -72,8 +72,13 @@ ScheduleGenerator::run(int argc, char *argv[]) {
 
     // Generate schedules for every person in the home buildings in
     // the model
-    XFigHelper xfig;    
+    XFigHelper xfig;
     generateSchedule(model, xfig, cmdLineArgs.key_info, argc, argv);
+
+    // Write the updated model (with schedules) back to disk if requested.
+    if (!cmdLineArgs.outModelFilePath.empty()) {
+        model.saveModel(cmdLineArgs.outModelFilePath, actualCmdLineArgs);
+    }
     
     // Next open an XFig file for drawing all of the necesssary
     // information.
@@ -140,7 +145,7 @@ ScheduleGenerator::drawXfig(XFigHelper& xfig) {
         (This assignment process is likely the performance bottleneck)
 */
 void
-ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
+ScheduleGenerator::generateSchedule(OSMData& model, XFigHelper& fig,
                                     const std::string& infoKey, int argc,
                                     char *argv[]) {
     // Create the building selector heler and initialize the object.
@@ -154,7 +159,9 @@ ScheduleGenerator::generateSchedule(const OSMData& model, XFigHelper& fig,
                                          cmdLineArgs.jwmnpIdx,
                                          cmdLineArgs.offSqFtPer,
                                          cmdLineArgs.avgSpeed,
-                                         cmdLineArgs.lmNumSamples);
+                                         cmdLineArgs.lmNumSamples,
+                                         cmdLineArgs.searchDist,
+                                         cmdLineArgs.searchScale);
                                          
     // Below is a debugging artifact for radius-based assignment
     //std::cout << wbs.getJwtrnsIdx() << std::endl;
@@ -281,6 +288,12 @@ ScheduleGenerator::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.numBldPairs, ArgParser::INTEGER},
         {"--lm-num-samples", "Number of samples for linear model",
         &cmdLineArgs.lmNumSamples, ArgParser::INTEGER},
+        {"--search-dist", "Minimum search distance (in miles) to find nodes",
+         &cmdLineArgs.searchDist, ArgParser::DOUBLE},
+        {"--search-scale", "Extra distance/mile to search for path",
+         &cmdLineArgs.searchScale, ArgParser::DOUBLE},
+        {"--out-model", "Output model file with schedules written back",
+         &cmdLineArgs.outModelFilePath, ArgParser::STRING},
         {"--out-trvl-est", "Output file to store travel estimate matrix",
          &cmdLineArgs.outTrvlEstFile, ArgParser::STRING},
         {"--use-trvl-est", "Input file to read travel estimate matrix",
