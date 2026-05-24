@@ -72,7 +72,9 @@ public:
                                const int jwmnpIdx,
                                const int offSqFtPer,
                                const int avgSpeed,
-                               int lmNumSamples);
+                               int lmNumSamples,
+                               const double searchDist = 2.0,
+                               const double searchScale = 0.5);
 
     /** Dummy destructor (per coding conventions). */
     ~LinearWorkBuildingAssigner() {}
@@ -143,6 +145,14 @@ private:
 
     /** Number of samples used to generate the linear model */
     int lmNumSamples;
+
+    /** Minimum search radius (mi) passed to PathFinder.findBestPath
+        during linear-model sample collection. */
+    const double searchDist;
+
+    /** Per-mile extra search budget passed to PathFinder.findBestPath
+        during linear-model sample collection. */
+    const double searchScale;
 
     /** Global building index counter */
     long nextBldIndex = 0L;
