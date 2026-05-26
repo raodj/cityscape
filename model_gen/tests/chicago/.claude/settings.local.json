@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk ' *)",
+      "Bash(sort -k1n)",
+      "Read(//Users/stefanstojanovski/Thesis/Code/cityscape/**)",
+      "Bash(sort -t'|' -k1n -k2n)"
+    ]
+  }
+}

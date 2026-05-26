@@ -324,8 +324,9 @@ void LinearWorkBuildingAssigner::processBuilding(
                 getCandidateWorkBuildings(
                     bld,
                     nonHomeBuildings,
-                    minDist,
-                    maxDist);
+                    travelTime,
+                    travelTime,
+                    3);
 
             std::vector<const Building*> validCandidates;
             validCandidates.reserve(10);
@@ -339,6 +340,12 @@ void LinearWorkBuildingAssigner::processBuilding(
                 checked++;
 
                 if (cand.population < 1)
+                    continue;
+
+                const double dist =
+                getDistance(bld.wayLat, bld.wayLon, cand.wayLat, cand.wayLon);
+
+                if (dist < minDist || dist > maxDist)
                     continue;
 
                 validCandidates.push_back(&cand);
@@ -486,14 +493,20 @@ LinearWorkBuildingAssigner::getHomeAndNonHomeBuildings(
 BuildingList LinearWorkBuildingAssigner::getCandidateWorkBuildings(
         const Building& src,
         const BuildingMap& nonHome,
-        double minDist, double maxDist) const {
+        int minT, int maxT,
+        int margin) const {
 
     BuildingList out;
     for (auto& [id, b] : nonHome) {
         const double d =
             getDistance(src.wayLat, src.wayLon,
                         b.wayLat, b.wayLon);
-        if (d >= minDist && d <= maxDist && b.population > 0)
+        const int t =
+            std::round(d * 60 / avgSpeed);
+
+        if (t >= minT - margin &&
+            t <= maxT + margin &&
+            b.population > 0)
             out.push_back(b);
     }
     return out;

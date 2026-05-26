@@ -101,14 +101,13 @@ protected:
   getHomeAndNonHomeBuildings(const BuildingMap &buildingMap) const;
 
   /**
-     Generate candidate non-home buildings whose straight-line distance
-     to `bld` lies in `[minDist, maxDist]` (miles) and whose
-     `population > 0`. The distance band is supplied by the caller
-     (typically derived from the linear distance-vs-time regression).
+     Generate candidate non-home buildings using time approximation.
    */
   BuildingList getCandidateWorkBuildings(const Building &bld,
                                          const BuildingMap &nonHomeBlds,
-                                         double minDist, double maxDist) const;
+                                         const int minTravelTime,
+                                         const int maxTravelTime,
+                                         const int timeMargin = 1) const;
 
   /**
      Assign the FIRST valid work building from the candidate list.

@@ -204,6 +204,9 @@ riskanalyzer_LDADD  += -lgdal
 endif
 
 accidents_collator_SOURCES = \
+	shpopen.c \
+	shptree.c \
+	dbfopen.c \
 	ArgParser.cpp \
 	ArgParser.h \
 	Utilities.cpp \
