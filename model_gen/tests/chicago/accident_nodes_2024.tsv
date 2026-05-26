@@ -1,3 +1,0 @@
-# Accidents collated information on Tue May  5 12:08:37 2026
-# Command run as:  ../../accidents_collator --model chicago_model_with_schedules_two.txt --accidents-tsv ../../../../data/chicago/chicago_crashes_2024.csv --output-tsv accident_nodes_2024.tsv
-# NodeID	OSMId	Latitude	Longitude	AccCount	Injuries	Deaths	OtherInfo
