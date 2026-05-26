@@ -54,13 +54,17 @@ LinearWorkBuildingAssigner::LinearWorkBuildingAssigner(
         const int jwmnpIdx,
         const int offSqFtPer,
         const int avgSpeed,
-        int lmNumSamples)
+        int lmNumSamples,
+        const double searchDist,
+        const double searchScale)
     : model(model),
       jwtrnsIdx(jwtrnsIdx),
       jwmnpIdx(jwmnpIdx),
       offSqFtPer(offSqFtPer),
       avgSpeed(avgSpeed),
       lmNumSamples(lmNumSamples),
+      searchDist(searchDist),
+      searchScale(searchScale),
       nextBldIndex(0),
       modelSlope(0.0),
       modelIntercept(0.0),
@@ -164,7 +168,8 @@ void LinearWorkBuildingAssigner::generateLinearModel(
 
         // use PathFinder to compute actual travel time (slowish)
         PathFinder pf(model);
-        const Path path = pf.findBestPath(hb.id, wb.id, true, 0.25, 0.1);
+        const Path path =
+            pf.findBestPath(hb.id, wb.id, true, searchDist, searchScale);
         if (path.size() == 0) {
             // no valid path found; skip
             continue;

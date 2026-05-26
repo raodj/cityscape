@@ -159,7 +159,9 @@ ScheduleGenerator::generateSchedule(OSMData& model, XFigHelper& fig,
                                          cmdLineArgs.jwmnpIdx,
                                          cmdLineArgs.offSqFtPer,
                                          cmdLineArgs.avgSpeed,
-                                         cmdLineArgs.lmNumSamples);
+                                         cmdLineArgs.lmNumSamples,
+                                         cmdLineArgs.searchDist,
+                                         cmdLineArgs.searchScale);
                                          
     // Below is a debugging artifact for radius-based assignment
     //std::cout << wbs.getJwtrnsIdx() << std::endl;
@@ -286,6 +288,10 @@ ScheduleGenerator::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.numBldPairs, ArgParser::INTEGER},
         {"--lm-num-samples", "Number of samples for linear model",
         &cmdLineArgs.lmNumSamples, ArgParser::INTEGER},
+        {"--search-dist", "Minimum search distance (in miles) to find nodes",
+         &cmdLineArgs.searchDist, ArgParser::DOUBLE},
+        {"--search-scale", "Extra distance/mile to search for path",
+         &cmdLineArgs.searchScale, ArgParser::DOUBLE},
         {"--out-model", "Output model file with schedules written back",
          &cmdLineArgs.outModelFilePath, ArgParser::STRING},
         {"--out-trvl-est", "Output file to store travel estimate matrix",
