@@ -345,8 +345,8 @@ void LinearWorkBuildingAssigner::processBuilding(
                 const double dist =
                 getDistance(bld.wayLat, bld.wayLon, cand.wayLat, cand.wayLon);
 
-                if (dist < minDist || dist > maxDist)
-                    continue;
+                // if (dist < minDist || dist > maxDist)
+                //     continue;
 
                 validCandidates.push_back(&cand);
 
