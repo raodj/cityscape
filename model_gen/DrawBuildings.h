@@ -118,8 +118,8 @@ protected:
     int drawShapeFiles(XFigHelper& fig, const StringList& shapeFiles,
                        const StringList& dbfFiles,
                        int& xClip, int& yClip,
-                       const int figScale = 4096, int startShapeLevel = 100);
-                       
+                       const OSMData& model,
+                       const int figScale = 4096, int startShapeLevel = 100);                       
 
     /**
        Helper method to get a specific column from a given string
@@ -157,6 +157,29 @@ protected:
 
     Ring getBldRing(int bldId, const Building& bld,
                     const std::string& infoKey) const;
+
+protected:
+    /** Helper method to generate an arc-ring for a given way to ease
+        plotting
+
+
+        \param[in] way The way whose nodes are to be convereted to a Ring
+
+        \return A ring containing teh nodes of the Way.
+    */
+    Ring getWayRing(const OSMData& model, const Way& way) const;
+
+    /** Internal helper method to determine if a given way intersects
+        with the give population ring.
+
+        \param[in] popRing The population ring through which the way
+        is expected to run.
+
+        \param[in] way The roadway to be checked if it intersects with
+        the given popRing.
+     */
+    bool isInRing(const OSMData& model, const Ring& popRing,
+                  const Way& way) const;
     
 private:
     /** This is a simple inner class that is used to conveniently
@@ -194,7 +217,7 @@ private:
         /** The scale for the output XFIG figure so that various
             shapes and information are readable
         */
-        int figScale = 1638400;
+        int figScale = 16384000;
         
         /** The key attribute/information based on which the buildings
             are to be color coded.  The legal values are: "people",
@@ -225,7 +248,19 @@ private:
             is to be obtained.
          */
         std::string modelFilePath;
-        
+
+        /** The population ring whose detailed buildings are to be
+            dumped in the XFIG file.
+        */
+        int drawPopRingID = -1;
+
+        /** The PUMA ring whose detailed buildings are to be dumped in
+            the XFIG file.
+        */
+        int drawPUMAid = -1;
+
+        /** Draw roadways in the model */
+        bool drawWays = false;
     } cmdLineArgs;
 
     /** This is just a copy of the command-line arguments supplied to

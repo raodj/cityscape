@@ -448,7 +448,9 @@ ModelGenerator::getRing(const Way& way) const {
     // Now create information associated with the ring.
     const std::vector<Ring::Info> info = {
         {0, "id", std::to_string(way.id)},
-        {0, "speed", std::to_string(way.maxSpeed)}
+        {0, "speed", std::to_string(way.maxSpeed)},
+        {0, "name", way.name},
+        {0, "kind", std::to_string(way.kind)}        
     };
     // Create and return ring.
     return Ring(way.id, -1, Ring::ARC_RING, latList.size(), &lonList[0],
