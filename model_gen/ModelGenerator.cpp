@@ -1120,21 +1120,17 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
             // A 'yes'-tagged building without an address is still usually a real
             // dwelling. Excluding it leaves its way with numBuildings==0, which
             // makes the way look empty and triggers synthetic-home backfill on a
-            // street that already has real buildings. Instead, keep a home-sized
-            // footprint as a home (using its real geometry); only larger footprints
-            // remain non-home. Area via the shoelace formula on the closed ring;
-            // 1 sq ft == 3.58701e-8 sq deg (same constant used elsewhere here).
-            const size_t nv = vertexLat.size();
-            if (nv < 3) {
+            // street that already has real buildings. Keep a home-sized footprint
+            // as a home (using its real geometry); larger footprints remain
+            // non-home. Footprint area reuses Ring::getArea() (square miles,
+            // latitude-corrected) -- the same routine used elsewhere for building
+            // areas -- converted to square feet (1 sq mi = 27,878,000 sq ft).
+            if (vertexLat.size() < 3) {
                 isHome = false;
             } else {
-                double areaDeg2 = 0.0;
-                for (size_t i = 0, j = nv - 1; (i < nv); j = i++) {
-                    areaDeg2 += (vertexLon[j] + vertexLon[i]) *
-                                (vertexLat[j] - vertexLat[i]);
-                }
-                if (areaDeg2 < 0) { areaDeg2 = -areaDeg2; }
-                const double footprintSqFt = (areaDeg2 * 0.5) / 3.58701e-8;
+                const Ring bldRing(bldID, -1, Ring::BUILDING_RING,
+                                   vertexLat.size(), &vertexLon[0], &vertexLat[0], {});
+                const double footprintSqFt = bldRing.getArea() * 27878000.0;
                 isHome = (footprintSqFt <= 6000.0);
             }
             if (debug) {
