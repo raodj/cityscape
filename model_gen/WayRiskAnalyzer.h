@@ -234,7 +234,20 @@ protected:
          * argument.
          */
         std::string accidentNodesTSV;
-        
+
+        /** Command-line argument of ways that are fully blocked. This
+            command-line argument is either names of ways or the IDs
+            of the ways.  This information is converted to nodes and
+            set in PathFinder.
+        */
+        ArgParser::StringList fullyBlockedWays;
+
+        /** Command-line argument of ways that are partially
+            blocked. This command-line argument is either names of
+            ways or the IDs of the ways.  This information is
+            converted to nodes and set in PathFinder.
+        */
+        ArgParser::StringList partiallyBlockedWays;        
     } cmdLineArgs;
     
 private: 

@@ -70,7 +70,7 @@ public:
     */
     enum Kind {UNKNOWN_RING, CLOSED_RING, ARC_RING, POPULATION_RING,
                BUILDING_RING, ENTRY_RING, PUMA_RING, SYNTH_BUILDING_RING, 
-               PATH_RING};
+               PATH_RING, POINTS_RING};
 
     /** A convenience wrapper sub-class to hold a metadata about the
         ring.  These entries are typically loaded from a separate DBF
@@ -677,6 +677,38 @@ protected:
         order of verticies in this ring.
      */
     void correctWithBoost();
+
+#ifndef NO_XFIG    
+    /** Internal helper method to print information about this Ring as
+        indepdent set of vertices in an XFig format.
+
+        \param[out] os The output stream to where the XFig data is to
+        be printed.
+
+        \param[in] figSize The overall size of the xfig file.
+
+        \param[in] xClip The left-most value to which the locations
+        are to be printed -- i.e. left-most latitude at as
+        x-coordinate zero in the generated xfig.
+
+        \param[in] yClip The top-most value to which the locations are
+        to be printed -- i.e. top-most longitude at as y-coordinate
+        zero in the generated xfig.
+
+        \param[in] fillColor The fillColor to be used to draw the ring.
+
+        \param[in] layer The XFig layer at which the ring is to be
+        printed. Note that the layer is decreased by 2 if this ring is
+        a subtraction ring so that subtraction rings automatically
+        show up above other rings.
+    */    
+    void printXFigForPointsRing(XFigHelper& fig, const int figSize,
+                                const int xClip = 0,
+                                const int yClip = 0,
+                                const int fillColor = RED,
+                                int layer = 15,
+                                const int lineColor = BLACK) const;
+#endif
     
 private:
   /** The zero-based ring ID value for this shape.

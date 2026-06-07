@@ -345,7 +345,12 @@ Ring::printXFig(XFigHelper& xfig, const int figSize, const int xClip,
     if (!info.empty()) {
         xfig.addComment(info);
     }
-    if (getKind() == Ring::CLOSED_RING) {
+    
+    if (getKind() == Ring::POINTS_RING) {
+        printXFigForPointsRing(xfig, figSize, xClip, yClip, fillColor,
+                               layer, lineColor);
+        return;
+    } else if (getKind() == Ring::CLOSED_RING) {
         if (isSubtraction()) {
             // Put subtraction rings at a higher layer.
             layer -= 2;
@@ -419,6 +424,25 @@ Ring::printXFig(XFigHelper& xfig, const int figSize, const int xClip,
         }
     }
 }
+
+void
+Ring::printXFigForPointsRing(XFigHelper& xfig, const int figSize,
+                             const int xClip, const int yClip,
+                             const int fillColor, int layer,
+                             int lineColor) const {
+    // Draw small ovals for all the vertices.
+    for (int vertex = 0;  (vertex < getVertexCount()); vertex++) {
+        int xfigX, xfigY;
+        Point p = getVertex(vertex);
+        getXYValues(p.second, p.first, xfigX, xfigY,
+                    figSize * XFIG_SCALE, false);
+        xfigX -= xClip;
+        xfigY -= yClip;
+        
+        xfig.drawOval(xfigX, xfigY, 30, 30, lineColor, fillColor, layer);
+    }
+}
+
 #endif
 
 std::ostream& operator<<(std::ostream& os, const Ring& ring) {

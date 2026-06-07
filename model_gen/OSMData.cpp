@@ -253,4 +253,16 @@ OSMData::getSortedBldInfo(int ringID, int infoKind, long& total) const {
     
 }
 
+std::vector<long>
+OSMData::findWayID(const std::string& wayName) const {
+    std::vector<long> wayIDs;
+    for (const auto& wayEntry : wayMap) {
+        const Way& way = wayEntry.second;
+        if (way.name == wayName) {
+            wayIDs.push_back(wayEntry.first);
+        }
+    }
+    return wayIDs;
+}
+
 #endif

@@ -279,6 +279,8 @@ ShapeFile::genXFig(XFigHelper& fig, int& xClip, int& yClip,
             fillColor = YELLOW;
         } else if (ring.getKind() == Ring::BUILDING_RING) {
             fillColor = 32;  // gray for existing buildings
+        } else if (ring.getKind() == Ring::SYNTH_BUILDING_RING) {
+            fillColor = MAGENTA;
         }
         ring.printXFig(fig, mapSize, xClip, yClip, drawCentroid, fillColor,
                        startLayer, (lineColor == -1 ? fillColor : lineColor));

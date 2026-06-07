@@ -32,6 +32,7 @@
 //---------------------------------------------------------------------------
 
 #include "Utilities.h"
+#include <algorithm>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -247,6 +248,11 @@ std::string getColumn(const std::string& line,   const int column,
                       const std::string& defVal, const char delim) {
     const std::string val = getColumn(line, column, delim);
     return (val.empty() ? defVal : val);
+}
+
+bool isAllDigits(const std::string& str) {
+    return std::find_if(str.begin(), str.end(),
+                        [](char c){ return !std::isdigit(c); }) == str.end();
 }
 
 #endif

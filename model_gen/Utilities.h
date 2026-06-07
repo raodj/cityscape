@@ -460,4 +460,13 @@ template<typename T> T sum(const std::vector<T>& vec, const T init = 0) {
     return std::accumulate(vec.begin(), vec.end(), init);
 }
 
+/** Helper method to determine if the string only contains all numeric
+    digits.
+
+    \param[in] str The string to be checked.
+
+    \return Returns true, if the string only contains digits from 0..9
+*/
+bool isAllDigits(const std::string& str);
+
 #endif

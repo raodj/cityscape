@@ -197,9 +197,12 @@ DrawBuildings::getBldRing(int bldId, const Building& bld,
         "--" + infoKey + ": " + std::to_string(info) +
         ", isHome: " + (bld.isHome ? "true" : "false") +
         ", kind: " + bld.kind;
-    const std::vector<Ring::Info> infoList = {{1, "info",  entInfo }};
+    const std::vector<Ring::Info> infoList = {{0, "info",  entInfo }};
     // Create a ring for this building.
-    return Ring(topLeft, botRight, info, bldId, bldId, infoList);
+    Ring bldRng(topLeft, botRight, info, bldId, bldId, infoList);
+    bldRng.setKind(bld.isSynthHome() ? Ring::SYNTH_BUILDING_RING :
+                   Ring::BUILDING_RING);
+    return bldRng;
 }
 
 std::string
@@ -224,16 +227,9 @@ DrawBuildings::getWayRing(const OSMData& model, const Way& way) const {
         latList.push_back(node.latitude);
         lonList.push_back(node.longitude);
     }
-    // Now create information associated with the ring.
-    const std::vector<Ring::Info> info = {
-        {0, "id", std::to_string(way.id)},
-        {0, "speed", std::to_string(way.maxSpeed)},
-        {0, "name", way.name},
-        {0, "kind", std::to_string(way.kind)}
-    };
     // Create and return ring.
     return Ring(way.id, -1, Ring::ARC_RING, latList.size(), &lonList[0],
-                &latList[0], info);
+                &latList[0], way.getInfo());
 }
 
 int

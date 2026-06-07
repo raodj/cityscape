@@ -34,6 +34,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include "Ring.h"
 
 /** A simple class to encapsulate series of nodes constituting a way
     representing a street/road/freeway etc.  The information extracted
@@ -128,6 +129,13 @@ public:
         for this way is to be read.
     */
     void read(std::istream& is);
+
+    /** Convenience method to get the information associated with this
+        way to be included when creating rings.
+
+        \return The information associated with this way.
+     */
+    std::vector<Ring::Info> getInfo() const;
 };
 
 #endif

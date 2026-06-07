@@ -83,6 +83,10 @@ WayRiskAnalyzer::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.waySummaryFile, ArgParser::STRING },
         {"--accident-nodes", "The output TSV from accidents_collator",
          &cmdLineArgs.accidentNodesTSV, ArgParser::STRING},
+        {"--fully-blocked-ways", "The names or IDs of fully blocked ways",
+         &cmdLineArgs.fullyBlockedWays, ArgParser::STRING_LIST },
+        {"--partially-blocked-ways", "The names or IDs of partially blocked ways",
+         &cmdLineArgs.partiallyBlockedWays, ArgParser::STRING_LIST },
         {"", "", NULL, ArgParser::INVALID}
     };
     // Process the command-line arguments.
@@ -124,7 +128,17 @@ int WayRiskAnalyzer::run(int argc, char *argv[]) {
     }
     // Next load the community shape file
     if ((error = osmData.loadModel(cmdLineArgs.modelFilePath)) != 0) {
-        return error;  // Error loading community shape file.
+        return error;  // Error loading the model.
+    }
+
+    // Setup any fully or partially blocked ways.
+    if (!cmdLineArgs.fullyBlockedWays.empty() ||
+        !cmdLineArgs.partiallyBlockedWays.empty()) {
+        const BlockedNodeMap fullyBlocked =
+            PathFinder::convertToNodes(osmData, cmdLineArgs.fullyBlockedWays);
+        const BlockedNodeMap partiallyBlocked =
+            PathFinder::convertToNodes(osmData, cmdLineArgs.partiallyBlockedWays);
+        PathFinder::setBlockedNodes(fullyBlocked, partiallyBlocked);
     }
 
     /*

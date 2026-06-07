@@ -31,17 +31,29 @@
 //
 //---------------------------------------------------------------------------
 
+#include <cmath>
 #include <sstream>
 #include "PathSegment.h"
 #include "PathFinder.h"
 #include "Utilities.h"
 #include "XFigHelper.h"
-#include <cmath>
+#include "Utilities.h"
 
 #ifndef NO_XFIG
 // Selectively compile-in support for generating XFig
 #include "ShapeFile.h"
 #endif
+
+
+/** The list of nodes that are fully blocked and msut be excluded
+    from any path computations.
+*/
+BlockedNodeMap PathFinder::fullyBlocked;
+
+/** Partially blocked are excluded if current node and next node
+    are both on the partially blocked list.
+*/
+BlockedNodeMap PathFinder::partiallyBlocked;
 
 PathFinder::PathFinder(const OSMData& osmData) :
     osmData(osmData), distIsTime(false) {
@@ -103,6 +115,7 @@ PathFinder::findBestPath(const PathSegment& src, const PathSegment& dest,
             }
         }
         // Add adjacent nodes to the next node to explore
+        // std::cout << "Exploring " << next << std::endl;
         addAdjacentNodes(next, dest);
     }
     // When control drops here, we have explored nodes and did not
@@ -147,6 +160,10 @@ PathFinder::checkAddNode(const PathSegment& parent, const Way& way,
     if ((outerLimits.getKind() != Ring::UNKNOWN_RING) &&
         !outerLimits.contains(node.longitude, node.latitude)) {
         return false;  // not out of bounds
+    }
+    // If the destination nodeID is blocked, then we ignore it.
+    if (isBlocked(nodeID, parent.nodeID)) {
+        return false;  // route is blocked.
     }
     // Create a temporary segement based on parent.
     PathSegment seg{way.id, nodeID, -1, 0., 0., 0, parent.segID};
@@ -347,7 +364,11 @@ Path
 PathFinder::getPathOnSameWay(const PathSegment& src, const PathSegment& dest) {
     // This method is designed to work with 2 segements on the same
     // way.  So ensure that pre-condition is met.
-    ASSERT (src.wayID == dest.wayID);    
+    ASSERT (src.wayID == dest.wayID);
+    // If the nodes are blocked then we won't process it
+    if (isBlocked(dest.nodeID, src.nodeID)) {
+        return {};
+    }
     // Get the way and points (longitude, latitude) used below.
     const Way& way = osmData.wayMap.at(src.wayID);
     // Get the points associated with the starting and ending.
@@ -426,7 +447,7 @@ PathFinder::generateFig(const Path& path, const std::string& xfigFilePath,
         std::vector<Ring::Info> vertInfo = {{1, "color", "4"}}; 
 
         for (const PathSegment& seg : path) {
-            Point lonLat = getLatLon(seg);
+            const Point lonLat = getLatLon(seg);
             xCoords.push_back(lonLat.first);
             yCoords.push_back(lonLat.second);
         }
@@ -434,13 +455,36 @@ PathFinder::generateFig(const Path& path, const std::string& xfigFilePath,
         Ring route(0, 0, Ring::PATH_RING, static_cast<int>(xCoords.size()),
                    xCoords.data(), yCoords.data(), vertInfo);
         shpFile.addRing(route);
-    }
-
-    // Skip extra drawing if user requested "none"
-    // Delegate buildings and ways
-    if (drawOption != "none") {
-        addBuildingsToFig(shpFile, path, drawOption);
-        addWaysToFig(shpFile, path, drawOption);
+        // Skip extra drawing if user requested "none" Delegate
+        // buildings and ways
+        if (drawOption != "none") {
+            addBuildingsToFig(shpFile, path, drawOption);
+            addWaysToFig(shpFile, path, drawOption);
+        }
+    } else {
+        // Plot all the verticies that were explored for
+        // verification/troubleshooting.
+        Path dummyPath;
+        for (const auto& segEntry : exploredPaths) {
+            const PathSegment& seg = segEntry.second;
+            dummyPath.push_back(seg);
+            const Point lonLat = getLatLon(seg);
+            const std::vector<double> xCoords = {lonLat.first};
+            const std::vector<double> yCoords = {lonLat.second};
+            std::ostringstream segInfo;
+            segInfo << seg;
+            std::vector<Ring::Info> vertInfo = {{1, "vertex", segInfo.str()}};
+            const Ring vertex(0, 0, Ring::POINTS_RING, xCoords.size(),
+                              xCoords.data(), yCoords.data(), vertInfo);
+            shpFile.addRing(vertex);
+        }
+        
+        // Skip extra drawing if user requested "none"
+        // Delegate buildings and ways
+        if (drawOption != "none") {
+            addBuildingsToFig(shpFile, dummyPath, drawOption);
+            addWaysToFig(shpFile, dummyPath, drawOption);
+        }
     }
 
     shpFile.genXFig(xfigFilePath, figScale, false, {});
@@ -556,6 +600,10 @@ PathFinder::findNearestNode(const Way& way, const double latitude,
         // Reference to 2 nodes for comparison.
         const Node& n1 = osmData.nodeList.at(way.nodeList[i]);
         const Node& n2 = osmData.nodeList.at(way.nodeList[i + 1]);
+        // If the nodes are blocked, we can't use them
+        if (isBlocked(n1.osmId) || isBlocked(n2.osmId)) {
+            continue;  // At least one of the nodes is blocked.
+        }
         // Check if given point lies between these nodes.
         if (inBetween(n1.latitude,  n2.latitude,  latitude)  &&
             inBetween(n1.longitude, n2.longitude, longitude)) {
@@ -670,8 +718,8 @@ PathFinder::addWaysToFig(ShapeFile& shpFile, const Path& path,
         if (wx.size() < 2) continue;
 
         if (drawOption == "all") {
-            Ring wRing(0, 0, Ring::ARC_RING,
-                       static_cast<int>(wx.size()), wx.data(), wy.data(), {});
+            Ring wRing(0, 0, Ring::ARC_RING, wx.size(), wx.data(),
+                       wy.data(), way.getInfo());
             shpFile.addRing(wRing);
         } else if (drawOption == "nearby") {
             long midIndex = wx.size() / 2;
@@ -688,8 +736,8 @@ PathFinder::addWaysToFig(ShapeFile& shpFile, const Path& path,
                 }
             }
             if (near) {
-                Ring wRing(0, 0, Ring::ARC_RING,
-                           static_cast<int>(wx.size()), wx.data(), wy.data(), {});
+                Ring wRing(0, 0, Ring::ARC_RING, wx.size(), wx.data(),
+                           wy.data(), way.getInfo());
                 shpFile.addRing(wRing);
             }
         }
@@ -741,6 +789,69 @@ PathFinder::addBuildingsToFig(ShapeFile& shpFile, const Path& path,
             }
         }
     }
+}
+
+void
+PathFinder::setBlockedNodes(const BlockedNodeMap& fullyBlocked,
+                            const BlockedNodeMap& partiallyBlocked) {
+    PathFinder::fullyBlocked     = fullyBlocked;
+    PathFinder::partiallyBlocked = partiallyBlocked;
+}
+
+bool
+PathFinder::isBlocked(const long candidateNodeID,
+                      const long parentNodeID) const {
+    if (fullyBlocked.find(candidateNodeID) != fullyBlocked.end()) {
+        return true;  // The candidate node is on a fully blocked
+                      // street
+    }
+    if (parentNodeID == -1) {
+        // We don't have a parent node to perform partially blocked
+        // checks.
+        return false;
+    }
+
+    if ((partiallyBlocked.find(parentNodeID)    != partiallyBlocked.end()) &&
+        (partiallyBlocked.find(candidateNodeID) != partiallyBlocked.end())) {
+        // Both the parent and candidate nodes are on partially
+        // blocked list. That means the candidate is not viable.
+        return true;
+    }
+    // The candidate is not fully or partially blocked.
+    return false;
+}
+
+BlockedNodeMap
+PathFinder::convertToNodes(const OSMData& model,
+                           const ArgParser::StringList& wayInfo) {
+    BlockedNodeMap nodes;
+    for (const std::string& nameOrID: wayInfo) {
+        std::vector<long> wayIDs;
+        if (isAllDigits(nameOrID)) {
+            // This parameter is all digits. Assume it is a way ID
+            wayIDs.push_back(std::stol(nameOrID));
+        } else {
+            // This parameter isn't a number. So we assume it is name
+            // of a way in the model.
+            wayIDs = model.findWayID(nameOrID);
+            if (wayIDs.empty()) {
+                std::cerr << "Unable to find way with name " << nameOrID
+                          << std::endl;
+            }
+        }
+        // Obtain the node IDs for each of the wayIDs
+        for (const long wayID : wayIDs) {
+            if (model.wayMap.find(wayID) != model.wayMap.end()) {
+                const Way& way = model.wayMap.at(wayID);
+                for (const long nodeID : way.nodeList) {
+                    nodes[nodeID] = 1;
+                }
+            } else {
+                std::cout << "Way ID " << wayID << " was not found.\n";
+            }
+        }
+    }
+    return nodes;
 }
 
 #endif
