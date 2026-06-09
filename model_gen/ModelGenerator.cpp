@@ -1116,10 +1116,25 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
                 std::cout << "DEBUG: Building " << type << " included as home (explicit residential type)\n";
             }
         } else if (!hasAddress) {
-            // Non-explicit home type AND no address — be conservative and exclude
-            isHome = false;
+            // Non-explicit home type AND no address: classify by footprint size.
+            // A 'yes'-tagged building without an address is still usually a real
+            // dwelling. Excluding it leaves its way with numBuildings==0, which
+            // makes the way look empty and triggers synthetic-home backfill on a
+            // street that already has real buildings. Keep a home-sized footprint
+            // as a home (using its real geometry); larger footprints remain
+            // non-home. Footprint area reuses Ring::getArea() (square miles,
+            // latitude-corrected) -- the same routine used elsewhere for building
+            // areas -- converted to square feet (1 sq mi = 27,878,000 sq ft).
+            if (vertexLat.size() < 3) {
+                isHome = false;
+            } else {
+                const Ring bldRing(bldID, -1, Ring::BUILDING_RING,
+                                   vertexLat.size(), &vertexLon[0], &vertexLat[0], {});
+                const double footprintSqFt = bldRing.getArea() * 27878000.0;
+                isHome = (footprintSqFt <= 6000.0);
+            }
             if (debug) {
-                std::cout << "DEBUG: Building NOT classified as home - no address and not explicit residential type\n";
+                std::cout << "DEBUG: no-address building classified by footprint - isHome=" << isHome << "\n";
             }
         }
         // else: non-explicit home type WITH address — keep isHome=true (preserves
