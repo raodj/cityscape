@@ -34,6 +34,7 @@
 #include <ctime>
 #include <cmath>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <numeric>
 
@@ -290,7 +291,7 @@ extern double getDistance(double latitude1, double longitude1,
     \return The normalized, space-separated token sequence (empty if \c name
     has no alphanumeric content).
 */
-extern std::string normalizeStreetName(const std::string& name);
+extern std::string normalizeStreetName(std::string_view name);
 
 /** Checks to see if val3 is in between val1 and val2
 
