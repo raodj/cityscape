@@ -35,6 +35,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <set>
 #include <stdexcept>
 #include <algorithm>
 #include <numeric>
@@ -44,6 +45,7 @@
 #include "Utilities.h"
 #include "ModelGenerator.h"
 #include "Options.h"
+#include "Way.h"
 
 int
 ModelGenerator::run(int argc, char *argv[]) {
@@ -1165,7 +1167,6 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
 }
                                              
 // NOTE: This method is called from multiple threads.
-// NOTE: This method is called from multiple threads.
 Building
 ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
                                      std::vector<double>& vertexLat,
@@ -1504,6 +1505,14 @@ ModelGenerator::findNearestIntersection(const Ring& bldRing,
     for (const int wayID : wayIDs) {
         // Find the minimum perpendicular distance to this way.
         const Way& way = wayMap.at(wayID);
+
+        // Roadway filtering to avoid entrances directly on highways and trunks
+        if (Way::Kind::motorway == way.kind ||
+            Way::Kind::motorway_link == way.kind ||
+            Way::Kind::trunk == way.kind ||
+            Way::Kind::trunk_link == way.kind)
+          continue;
+
         double interWayLat = -1, interWayLon = -1;
         const double dist = findNearestIntersection(entrance, way, interWayLat,
                                                     interWayLon);
