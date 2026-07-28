@@ -374,7 +374,7 @@ protected:
                              std::vector<double>& vertexLon,
                              std::string& type, int& levels,
                              std::vector<long>& nodes,
-                             bool& isHome) const;
+                             bool& isHome, std::string& addrStreet) const;
 
     /** Helper method to generate an arc-ring for a given way to ease
         plotting
@@ -427,7 +427,8 @@ protected:
     */
     long findNearestIntersection(const Ring& bldRing, const int popRingID,
                                  const std::vector<long>& nodeList,
-                                 double& wayLat, double& wayLon) const;
+                                 double& wayLat, double& wayLon,
+                                 const std::string& addrStreetNorm = "") const;
 
     /** This overloaded method finds the minimum perpendicular
         distance between a given entrance point to segments with the

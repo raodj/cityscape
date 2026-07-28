@@ -277,6 +277,21 @@ extern double toLongitude(const double miles, const double latitude);
 extern double getDistance(double latitude1, double longitude1,
                           double latitude2, double longitude2);
 
+/** Normalize a street name for robust matching between an OSM way name
+    and a building's addr:street value.
+
+    This lower-cases the name, drops punctuation, and canonicalizes common
+    directional prefixes (e.g. "North" -> "n") and street-type suffixes
+    (e.g. "Street" -> "st", "Avenue" -> "ave") so that variants like
+    "North 5th Street" and "N 5th St" reduce to the same token sequence.
+
+    \param[in] name The raw street name to normalize.
+
+    \return The normalized, space-separated token sequence (empty if \c name
+    has no alphanumeric content).
+*/
+extern std::string normalizeStreetName(const std::string& name);
+
 /** Checks to see if val3 is in between val1 and val2
 
     \param[in] val1 One end of the range to check.

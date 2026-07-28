@@ -679,6 +679,9 @@ ModelGenerator::extractWays() {
                 ASSERT(node->first_attribute()->name() == IDAttr);
                 wayEntry.id = std::stol(node->first_attribute()->value());
                 wayEntry.name = wayName;
+                // Precompute the normalized name once so building
+                // addr:street matching does not re-normalize per building.
+                wayEntry.normalizedName = normalizeStreetName(wayName);
                 // If the oneWay flag is set to -1, then we need to
                 // reverse the direction of the nodes to get the
                 // direction corrected.
@@ -928,7 +931,8 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
                                         std::vector<double>& vertexLon,
                                         std::string& type, int& levels,
                                         std::vector<long>& nodes,
-                                        bool& isHome) const {
+                                        bool& isHome,
+                                        std::string& addrStreet) const {
     const std::string BldNode = "nd", Tag = "tag", Ref = "ref";
     const std::string KeyAttr = "k", ValAttr = "v", IDAttr = "id";
     
@@ -958,6 +962,7 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
     nodes.clear();
     type   = "n/a";
     levels = -1;  // Overridden below
+    addrStreet.clear();  // Set below if an addr:street tag is present
 
     // Local flags updated in the for-loop below.
     bool isBuilding = false, isAmenity = false, hasAddress = false;
@@ -1020,6 +1025,11 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
             } else if (kv.first.find("addr:") == 0) {
                 // Consider any addr:* tag as having an address
                 hasAddress = true;
+                // Capture the addressed street name (if any) so the road
+                // connection can prefer the street the building addresses.
+                if (kv.first == "addr:street") {
+                    addrStreet = kv.second;
+                }
                 if (debug) {
                     std::cout << "DEBUG: Found address tag: " << kv.first << "\n";
                 }
@@ -1201,8 +1211,10 @@ ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
     int levels = -1;
     bool isHome = false;
     std::vector<long> nodes;
+    std::string addrStreet;  // OSM addr:street value (if any)
     if (!processBuildingElements(node, vertexLat, vertexLon,
-                                 buildingType, levels, nodes, isHome)) {
+                                 buildingType, levels, nodes, isHome,
+                                 addrStreet)) {
         if (bldID == 295875953) {
             std::cout << "DEBUG: Building 295875953 failed processBuildingElements check\n";
         }
@@ -1250,7 +1262,8 @@ ModelGenerator::checkExtractBuilding(rapidxml::xml_node<>* node,
                                     buildingType);
     bld.isHome   = isHome;
     bld.wayID = findNearestIntersection(ring, popRingID, nodes,
-                                        bld.wayLat, bld.wayLon);
+                                        bld.wayLat, bld.wayLon,
+                                        normalizeStreetName(addrStreet));
     if (bld.wayID == -1) {
         // Could not find an entrace to a given building.
         if (bldID == 295875953) {
@@ -1489,13 +1502,20 @@ long
 ModelGenerator::findNearestIntersection(const Ring& bldRing,
                                         const int popRingID,
                                         const std::vector<long>& nodeList,
-                                        double& wayLat, double& wayLon) const {
+                                        double& wayLat, double& wayLon,
+                                        const std::string& addrStreetNorm) const {
     // Find the entrance (most likely the centroid of this building)
     const Point entrance = findEntrance(bldRing, nodeList);
     // Find the way in the given populationRing with shortest
     // perpendicular distance to the entrance
     long   nearWayID = -1;
     double minDist   = 1000;
+    // Track the nearest way whose (normalized) name matches the building's
+    // addr:street value, if any. This is preferred over the geometric
+    // nearest so a building attaches to the street it actually addresses.
+    long   nameWayID = -1;
+    double nameDist  = 1000;
+    double nameLat = -1, nameLon = -1;
     wayLat = wayLon  = -1;
     // If population rings are specified, then we only iterate over
     // ways in the population ring as they would be the nearest and
@@ -1524,6 +1544,26 @@ ModelGenerator::findNearestIntersection(const Ring& bldRing,
             wayLat    = interWayLat;
             wayLon    = interWayLon;
         }
+        // Separately track the nearest way that matches the street the
+        // building addresses (via addr:street)
+        if (!addrStreetNorm.empty() && !way.normalizedName.empty() &&
+            (way.normalizedName == addrStreetNorm) && (dist < nameDist)) {
+            nameWayID = way.id;
+            nameDist  = dist;
+            nameLat   = interWayLat;
+            nameLon   = interWayLon;
+        }
+    }
+    // Prefer the street the building addresses (addr:street) over the
+    // geometric nearest, as long as that street is within a plausable distance.
+    // This guards against a coincidentally same-named street elsewhere in
+    // the population ring. getDistance() returns miles (~0.15 mi == 240 m)
+    const double MaxAddrMatchMiles = 0.15;
+    if ((nameWayID != -1) && (nameDist <= MaxAddrMatchMiles)) {
+        nearWayID = nameWayID;
+        minDist   = nameDist;
+        wayLat    = nameLat;
+        wayLon    = nameLon;
     }
     // Check to ensure we have a way and distance to return
     if ((nearWayID == -1) || (minDist > 0.1)) {

@@ -92,6 +92,13 @@ public:
     /** The name for the way extracted from the OSM file */
     std::string name;
 
+    /** 
+      The normalized form of \c name (see normalizeStreetName) used to
+      match building addr:street values to this way. Populated at parse
+      time; not serialized to the model file. 
+    */
+    std::string normalizedName;
+
     /**
      * Returns the kind of this way as a string for printing
      *

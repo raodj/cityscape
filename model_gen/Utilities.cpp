@@ -33,6 +33,10 @@
 
 #include "Utilities.h"
 #include <algorithm>
+#include <sstream>
+#include <string_view>
+#include <unordered_map>
+#include <cctype>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -160,7 +164,45 @@ getDistance(double latitude1, double longitude1,
     double distance = 3958.75587 * c;
     
     // Now return the distance in miles back to the caller.
-    return distance;        
+    return distance;
+}
+
+std::string
+normalizeStreetName(std::string_view name) {
+    // cannonicalize directional prefixes and common street-type suffixes so
+    // that an OSM way name ("North 5th Street") and a building addr:street
+    // value ("N 5th St") normalize to the same token sequence ("n 5 st")
+    static const std::unordered_map<std::string_view, std::string_view> translationMap {
+        // Directionals
+        {"north", "n"}, {"south", "s"}, {"east", "e"}, {"west", "w"},
+        {"northeast", "ne"}, {"northwest", "nw"},
+        {"southeast", "se"}, {"southwest", "sw"},
+        // Street-type suffixes
+        {"street", "st"}, {"avenue", "ave"}, {"av", "ave"}, {"road", "rd"},
+        {"boulevard", "blvd"}, {"drive", "dr"}, {"lane", "ln"}, {"court", "ct"},
+        {"place", "pl"}, {"terrace", "ter"}, {"parkway", "pkwy"},
+        {"highway", "hwy"}, {"square", "sq"}, {"circle", "cir"},
+        {"trail", "trl"}, {"expressway", "expy"}, {"turnpike", "tpke"}
+    };
+ 
+    // Lower-case, and replace every non-alphanumeric character with a space.
+    std::string cleanedName;
+    cleanedName.reserve(name.size());
+    for (const unsigned char ch : name) {
+        cleanedName += std::isalnum(ch) ? (char) std::tolower(ch) : ' ';
+    }
+
+    // Tokenize and apply the directional/suffix
+    std::istringstream in(cleanedName);
+    std::ostringstream out;
+    std::string token;
+    bool first = true;
+    while (in >> token) {
+        const auto it = translationMap.find(token);
+        out << (first ? "" : " ") << (it != translationMap.end() ? it->second : token);
+        first = false;
+    }
+    return out.str();
 }
 
 // A simple method to detect if val3 is between val1 and val2
