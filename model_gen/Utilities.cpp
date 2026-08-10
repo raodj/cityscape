@@ -33,6 +33,7 @@
 
 #include "Utilities.h"
 #include <algorithm>
+#include <optional>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -164,9 +165,8 @@ getDistance(double latitude1, double longitude1,
 }
 
 // A simple method to detect if val3 is between val1 and val2
-constexpr double epsilon = 0.001;
 bool inBetween(const double val1, const double val2,
-               const double val3) {
+               const double val3, const double epsilon) {
     const double min = std::min(val1, val2) - epsilon;
     const double max = std::max(val1, val2) + epsilon;
     return ((min <= val3) && (val3 <= max));    
@@ -176,7 +176,8 @@ bool inBetween(const double val1, const double val2,
 bool findPerpendicularIntersection(const double entLat,   const double entLon,
                                    const double node1Lat, const double node1Lon,
                                    const double node2Lat, const double node2Lon,
-                                   double& interLat, double& interLon) {
+                                   double& interLat, double& interLon,
+                                   std::optional<double> epsilon) {
     // Compute perpendicular distance from the entrance to this
     // segment.  First calculate common term delta latitude (dLat)
     // and delta longitude (dLon).
@@ -188,15 +189,14 @@ bool findPerpendicularIntersection(const double entLat,   const double entLon,
     // Now compute the intercept coordinates on the way's segment
     interLon = entLon - (k * dLat);
     interLat = entLat + (k * dLon);
+
     // Check if the coordinates are within the line segment of choice
-    if (inBetween(node1Lat, node2Lat, interLat) &&
-        inBetween(node1Lon, node2Lon, interLon)) {
-        // The intersection is within bounds of the line segment. So
-        // it is acceptable.
-        return true;
-    }
-    // A valid intercept could not be found
-    return false;
+    if (epsilon.has_value())
+      return inBetween(node1Lat, node2Lat, interLat, epsilon.value()) &&
+             inBetween(node1Lon, node2Lon, interLon, epsilon.value());
+
+    return inBetween(node1Lat, node2Lat, interLat) &&
+            inBetween(node1Lon, node2Lon, interLon);
 }
 
 // Compute lat, lon of a point on a given line that is "dist" miles

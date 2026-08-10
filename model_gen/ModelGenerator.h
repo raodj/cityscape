@@ -31,6 +31,7 @@
 //
 //---------------------------------------------------------------------------
 
+#include <optional>
 #include <unordered_map>
 #include <set>
 #include "Node.h"
@@ -470,7 +471,8 @@ protected:
     */
     bool findPerpendicularIntersection(const Point& entrance,
                                        const Node& node1, const Node& node2,
-                                       double& wayLat, double& wayLon) const;
+                                       double& wayLat, double& wayLon,
+                                       std::optional<double> epsilon = {}) const;
 
     /** Helper method to find the nearest of two given nodes.
 

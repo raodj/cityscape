@@ -35,6 +35,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <algorithm>
@@ -1550,32 +1551,11 @@ ModelGenerator::findNearestIntersection(const Point& entrance, const Way& way,
         double interLon = entrance.first, interLat = entrance.second;
         // Compute x or y intercept with the way depending on location
         if (!findPerpendicularIntersection(entrance, node1, node2,
-                                           interLat, interLon)) {        
-            if (inBetween(node1.latitude,  node2.latitude,  entrance.second)) {
-                // Point is between the y-coordinates. So retain y-coordinate
-                // of entrance and find the x-coordinate on the way
-                const double slope = (node2.longitude - node1.longitude) /
-                    (node2.latitude - node1.latitude);
-                const double offset = node2.latitude -
-                    (node2.longitude / slope);
-                interLat = entrance.first;
-                interLon = (interLat - offset) * slope;
-            } else if (inBetween(node1.longitude, node2.longitude,
-                                 entrance.first)) {
-                // Point is between the x-coordinates. So retain
-                // longitude and find the latitude
-                const double slope = (node2.latitude - node1.latitude) /
-                    (node2.longitude - node1.longitude);
-                const double offset = node2.latitude -
-                    (node2.longitude * slope);
-                interLon = entrance.second;
-                interLat = (slope * interLon) + offset;
-            } else {
-                // A perpendicular (or shortest path) to the
-                // way-segment is not feasible. So just check the two
-                // ends and pick the shortest of the two.
-                getShortestDist(entrance, node1, node2, interLat, interLon);
-            }
+                                           interLat, interLon, 1e-9)) {        
+            // A perpendicular (or shortest path) to the
+            // way-segment is not feasible. So just check the two
+            // ends and pick the shortest of the two.
+            getShortestDist(entrance, node1, node2, interLat, interLon);
         }
         // Next compute the distance between the entrance and the
         // intercept on the way.
@@ -1618,12 +1598,13 @@ ModelGenerator::findPerpendicularIntersection(const Point& entrance,
                                               const Node& node1,
                                               const Node& node2,
                                               double& wayLat,
-                                              double& wayLon) const {
+                                              double& wayLon,
+                                              std::optional<double> epsilon) const {
     // Use helper method in Utilities to compute perpendicular intersection
     return ::findPerpendicularIntersection(entrance.second, entrance.first,
                                            node1.latitude, node1.longitude,
                                            node2.latitude, node2.longitude,
-                                           wayLat, wayLon);
+                                           wayLat, wayLon, epsilon);
 }
 
 // NOTE: This method is called from multiple threads

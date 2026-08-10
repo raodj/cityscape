@@ -33,6 +33,7 @@
 
 #include <ctime>
 #include <cmath>
+#include <optional>
 #include <string>
 #include <vector>
 #include <numeric>
@@ -286,11 +287,15 @@ extern double getDistance(double latitude1, double longitude1,
     \param[in] val3 Value to be checked to see if it is in between
     val1 and val2.
 
+    \param[in] epsilon Value that loosens the tolerance of the check 
+    in order to absorb any floating-point noise. Smaller the value,
+    the tigher ther tolerance. Default value = 0.001.
+
     \return This method returns true if val3 is in between val1
     and val2 (val1 may be lesser or greater than val2).
 */
 extern bool inBetween(const double val1, const double val2,
-                      const double val3);
+                      const double val3, const double epsilon = 0.001);
 
 /** Helper method to find perpendicular intersection between a
     given entrance and a segment of a way.
@@ -327,7 +332,8 @@ extern bool inBetween(const double val1, const double val2,
 bool findPerpendicularIntersection(const double entLat,   const double entLon,
                                    const double node1Lat, const double node1Lon,
                                    const double node2Lat, const double node2Lon,
-                                   double& interLat, double& interLon);
+                                   double& interLat, double& interLon,
+                                   std::optional<double> epsilon = {});
 
 /** Helper method to find a new point along a given line at a given
     distance away from node1.
