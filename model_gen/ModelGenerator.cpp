@@ -1754,11 +1754,15 @@ ModelGenerator::createHomesOnEmptyWays(std::ostream& os) {
         }
         // Found an empty way. Generate buildings.
         emptyWayCount++;
-        // Generate homes 
-        const int genHomes = generateHomes(way);
+        // Generate synthetic homes 
+	// attempts made to check for possibility of synthetic homes. At the
+	// boundary edges some streets will extend beyond the boundary. In 
+	// such cases attempts are made but homes are not added because a ring
+	// was not found
+        const auto [genHomes, attempts] = generateHomes(way);
         genHomeCount      += genHomes;
         os << "Way #" << way.id << " is empty. Generated " << genHomes
-           << " homes.\n";
+           << " homes after making " << attempts << " attempts.\n";
     }
     // Finally print number of empty ways.
     os << "Out of " << wayMap.size() << " ways, "  << emptyWayCount
@@ -1766,7 +1770,7 @@ ModelGenerator::createHomesOnEmptyWays(std::ostream& os) {
        << " total homes have been generated.\n";
 }    
 
-int
+std::tuple<int, int>
 ModelGenerator::generateHomes(Way& way, const double spacing,
                               const double sqFoot, const double depth) {
     // Curr node is the current lat,lon point where the home will be
@@ -1778,6 +1782,7 @@ ModelGenerator::generateHomes(Way& way, const double spacing,
                                    nextNode.latitude, nextNode.longitude);
     // The index of the node up to which we have calculated spaceLeft
     size_t nodeIdx = 1;  // Index of current node in the way
+    int attempts   = 0;  // Checks made to see if synthetic home fits
     // Create homes along the way, while updating various variables.
     do {
         // Check to see if we have enough space to create a home. If
@@ -1795,6 +1800,7 @@ ModelGenerator::generateHomes(Way& way, const double spacing,
             double homeLat, homeLon;
             getPoint(currNode.latitude, currNode.longitude, nextNode.latitude,
                      nextNode.longitude, spacing / 2, homeLat, homeLon);
+	    attempts++;
             if (inBetween(currNode.latitude, nextNode.latitude, homeLat)   &&
                 inBetween(currNode.longitude, nextNode.longitude, homeLon) &&
                 (getPopRing(homeLat, homeLon) != -1)) {
@@ -1803,18 +1809,18 @@ ModelGenerator::generateHomes(Way& way, const double spacing,
                 generateHomes(currNode, nextNode, homeLat, homeLon,
                               spacing, depth, sqFoot, way.id);
                 way.numBuildings += 2;
-                // Move the currNode to the next home location and
-                // decrease the space left.
-                getPoint(currNode.latitude, currNode.longitude,
-                         nextNode.latitude, nextNode.longitude, spacing,
+	    }
+	    // Move the currNode to the next home location and
+	    // decrease the space left.
+	    getPoint(currNode.latitude, currNode.longitude,
+		     nextNode.latitude, nextNode.longitude, spacing,
                      currNode.latitude, currNode.longitude);
-            }
             spaceLeft -= spacing;
         }
     } while ((spaceLeft >= spacing) || (nodeIdx < way.nodeList.size()));
 
     // Return the number of buildings created for this way
-    return way.numBuildings;
+    return {way.numBuildings, attempts};
 }
 
 void
