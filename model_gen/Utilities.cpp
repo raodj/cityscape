@@ -177,26 +177,37 @@ bool findPerpendicularIntersection(const double entLat,   const double entLon,
                                    const double node1Lat, const double node1Lon,
                                    const double node2Lat, const double node2Lon,
                                    double& interLat, double& interLon) {
-    // Compute perpendicular distance from the entrance to this
-    // segment.  First calculate common term delta latitude (dLat)
-    // and delta longitude (dLon).
-    const double dLat = (node2Lat - node1Lat);
-    const double dLon = (node2Lon - node1Lon);
-    // Compute intercept factor.
-    const double k = (dLat * (entLon - node1Lon) - dLon * (entLat - node1Lat)) /
-        (pow(dLat, 2) + pow(dLon, 2));
-    // Now compute the intercept coordinates on the way's segment
-    interLon = entLon - (k * dLat);
-    interLat = entLat + (k * dLon);
-    // Check if the coordinates are within the line segment of choice
-    if (inBetween(node1Lat, node2Lat, interLat) &&
-        inBetween(node1Lon, node2Lon, interLon)) {
-        // The intersection is within bounds of the line segment. So
-        // it is acceptable.
-        return true;
+    // 1. Scale longitude to match latitude distance using average latitude
+    const double meanLatRad = (node1Lat + node2Lat) * 0.5 * (M_PI / 180.0);
+    const double cosLat = std::cos(meanLatRad);
+
+    // 2. Compute segment vector components in scaled space
+    const double dx = (node2Lon - node1Lon) * cosLat;
+    const double dy = node2Lat - node1Lat;
+    const double segmentLengthSq = dx * dx + dy * dy;
+
+    // Prevent division by zero if segment nodes overlap
+    if (segmentLengthSq == 0.0) {
+        return false;
     }
-    // A valid intercept could not be found
-    return false;
+
+    // 3. Compute vector from node1 to target point in scaled space
+    const double px = (entLon - node1Lon) * cosLat;
+    const double py = entLat - node1Lat;
+
+    // 4. Calculate projection parameter t via dot product
+    const double t = (px * dx + py * dy) / segmentLengthSq;
+
+    // 5. Verify the intersection falls strictly within the segment bounds
+    if (t < 0.0 || t > 1.0) {
+        return false;
+    }
+
+    // 6. Interpolate back to original lat/lon coordinates
+    interLat = node1Lat + t * (node2Lat - node1Lat);
+    interLon = node1Lon + t * (node2Lon - node1Lon);
+
+    return true;
 }
 
 // Compute lat, lon of a point on a given line that is "dist" miles
