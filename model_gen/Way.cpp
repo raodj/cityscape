@@ -87,4 +87,16 @@ Way::getKindStr() const {
     return KindNames.at(kind);
 }
 
+std::vector<Ring::Info>
+Way::getInfo() const {
+    // Now create information associated with the ring.
+    const std::vector<Ring::Info> info = {
+        {0, "id", std::to_string(id)},
+        {0, "speed", std::to_string(maxSpeed)},
+        {0, "name", name},
+        {0, "kind", std::to_string(kind)}
+    };
+    return info;
+}
+
 #endif

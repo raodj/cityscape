@@ -40,65 +40,68 @@
 #include <sstream>
 #include <set>
 
-int WayRiskAnalyzer::processArgs(int argc, char *argv[]) {
-  // Save the command-line arguments for future reference.
-  auto concat = [](std::string s1, std::string s2) { return s1 + " " + s2; };
-  cmdLineArgs.fullCmdLine =
-      std::accumulate(argv, argv + argc, cmdLineArgs.fullCmdLine, concat);
-  // Make the arg_record to process command-line arguments.
-  ArgParser::ArgRecord arg_list[] = {
-      {"--model", "The input model file to be processed",
-       &cmdLineArgs.modelFilePath, ArgParser::STRING},
-      {"--xfig", "Optional output XFig file", &cmdLineArgs.xfigFilePath,
-       ArgParser::STRING},
-      {"--xfig-scale", "The size of the output map", &cmdLineArgs.figScale,
-       ArgParser::INTEGER},
-      {"--search-dist", "Minimum search distance (in miles) to find nodes",
-       &cmdLineArgs.minDist, ArgParser::DOUBLE},
-      {"--search-scale", "Extra distance/mile to search for path",
-       &cmdLineArgs.distScale, ArgParser::DOUBLE},
-      {"--best-time", "Return path based on fastest time", &cmdLineArgs.useTime,
-       ArgParser::BOOLEAN},
-      {"--rnd-test", "Run a given number of random tests",
-       &cmdLineArgs.rndTestCount, ArgParser::INTEGER},
-      {"--shape", "The input shapefile to be drawn", &cmdLineArgs.shapeFilePath,
-       ArgParser::STRING},
-      {"--dbf", "The associated DBF file to be used for metadata",
-       &cmdLineArgs.dbfFilePath, ArgParser::STRING},
-      {"--taxi-rides", "The file with taxi rides to be processed",
-       &cmdLineArgs.taxiRidesFile, ArgParser::STRING},
-      {"--start-date", "The starting date (mm/dd/yyyy) in taxi rides",
-       &cmdLineArgs.startDate, ArgParser::STRING},
-      {"--end-date", "The ending date (mm/dd/yyyy) in taxi rides",
-       &cmdLineArgs.endDate, ArgParser::STRING},
-      {"--start-minute",
-       "The starting minute of the day (multiple of 15, inclusive) in taxi "
-       "rides (0 to 1440)",
-       &cmdLineArgs.startMinute, ArgParser::INTEGER},
-      {"--end-minute",
-       "The end minute of the day (multiple of 15, inclusive) in taxi rides (0 "
-       "to 1440)",
-       &cmdLineArgs.endMinute, ArgParser::INTEGER},
-      {"--batch-size", "Number of entries to be processed as a batch",
-       &cmdLineArgs.batchSize, ArgParser::INTEGER},
-      {"--node-summary", "Set file where node summary is printed.",
-       &cmdLineArgs.nodeSummaryFile, ArgParser::STRING},
-      {"--way-summary", "Set file where way summary is printed.",
-       &cmdLineArgs.waySummaryFile, ArgParser::STRING},
-      {"--accident-nodes", "The output TSV from accidents_collator",
-       &cmdLineArgs.accidentNodesTSV, ArgParser::STRING},
-      {"--road-modes", "Comma-separated JWTRNS modes for road traffic (default: 1,2,7,8)",
-       &cmdLineArgs.roadModes, ArgParser::STRING},
-      {"", "", NULL, ArgParser::INVALID}};
-  // Process the command-line arguments.
-  ArgParser ap(arg_list);
-  ap.parseArguments(argc, argv, true);
-  // Ensure at least the model file is specified.
-  if (cmdLineArgs.modelFilePath.empty()) {
-    std::cerr << "Specify a model file to be processed.\n"
-              << ap << std::endl;
-    return 1;
-  }
+int
+WayRiskAnalyzer::processArgs(int argc, char *argv[]) {
+    // Save the command-line arguments for future reference.
+    auto concat = [](std::string s1, std::string s2) { return s1 + " " + s2; };
+    cmdLineArgs.fullCmdLine = std::accumulate(argv, argv + argc,
+                                              cmdLineArgs.fullCmdLine, concat);
+    // Make the arg_record to process command-line arguments.
+    ArgParser::ArgRecord arg_list[] = {
+        {"--model", "The input model file to be processed",
+         &cmdLineArgs.modelFilePath, ArgParser::STRING},
+        {"--xfig", "Optional output XFig file",
+         &cmdLineArgs.xfigFilePath, ArgParser::STRING},        
+        {"--xfig-scale", "The size of the output map",
+         &cmdLineArgs.figScale, ArgParser::INTEGER},
+        {"--search-dist", "Minimum search distance (in miles) to find nodes",
+         &cmdLineArgs.minDist, ArgParser::DOUBLE},
+        {"--search-scale", "Extra distance/mile to search for path",
+         &cmdLineArgs.distScale, ArgParser::DOUBLE},
+        {"--best-time", "Return path based on fastest time",
+         &cmdLineArgs.useTime, ArgParser::BOOLEAN},
+        {"--rnd-test", "Run a given number of random tests",
+         &cmdLineArgs.rndTestCount, ArgParser::INTEGER},
+        {"--shape", "The input shapefile to be drawn",
+         &cmdLineArgs.shapeFilePath, ArgParser::STRING },
+        {"--dbf", "The associated DBF file to be used for metadata",
+         &cmdLineArgs.dbfFilePath, ArgParser::STRING },
+        {"--taxi-rides", "The file with taxi rides to be processed",
+         &cmdLineArgs.taxiRidesFile, ArgParser::STRING },
+        {"--start-date", "The starting date (mm/dd/yyyy) in taxi rides",
+         &cmdLineArgs.startDate, ArgParser::STRING },
+        {"--end-date", "The ending date (mm/dd/yyyy) in taxi rides",
+         &cmdLineArgs.endDate, ArgParser::STRING },
+        {"--start-minute", "The starting minute of the day (multiple of 15, inclusive) in taxi rides (0 to 1440)",
+         &cmdLineArgs.startMinute, ArgParser::INTEGER },
+        {"--end-minute", "The end minute of the day (multiple of 15, inclusive) in taxi rides (0 to 1440)",
+         &cmdLineArgs.endMinute, ArgParser::INTEGER },
+        {"--batch-size", "Number of entries to be processed as a batch",
+         &cmdLineArgs.batchSize, ArgParser::INTEGER },
+        {"--node-summary", "Set file where node summary is printed.",
+         &cmdLineArgs.nodeSummaryFile, ArgParser::STRING },
+        {"--way-summary", "Set file where way summary is printed.",
+         &cmdLineArgs.waySummaryFile, ArgParser::STRING },
+        {"--accident-nodes", "The output TSV from accidents_collator",
+         &cmdLineArgs.accidentNodesTSV, ArgParser::STRING},
+        {"--road-modes", "Comma-separated JWTRNS modes for road traffic (default: 1,2,7,8)",
+         &cmdLineArgs.roadModes, ArgParser::STRING},
+        {"--fully-blocked-ways", "The names or IDs of fully blocked ways",
+         &cmdLineArgs.fullyBlockedWays, ArgParser::STRING_LIST },
+        {"--partially-blocked-ways", "The names or IDs of partially blocked ways",
+         &cmdLineArgs.partiallyBlockedWays, ArgParser::STRING_LIST },
+        {"", "", NULL, ArgParser::INVALID}
+    };
+    // Process the command-line arguments.
+    ArgParser ap(arg_list);
+    ap.parseArguments(argc, argv, true);
+    // Ensure at least the shape file is specified.
+    if (cmdLineArgs.modelFilePath.empty() ||
+        cmdLineArgs.shapeFilePath.empty()) {
+        std::cerr << "Specify a model file and shape file to be processed.\n"
+                  << ap << std::endl;
+        return 1;
+    }
 
   // Things seem fine so far
   return 0;
@@ -118,16 +121,26 @@ Timestamp WayRiskAnalyzer::toTimestamp(const std::string &timestamp) const {
 }
 
 int WayRiskAnalyzer::run(int argc, char *argv[]) {
-  int error = 0; // Error from various helper methods.
-  // First process the command-line args and ensure we have
-  // necessary arguments for performing various operations.
-  if ((error = processArgs(argc, argv)) != 0) {
-    return error; // Error processing command-line args.
-  }
-  // Next load the community shape file
-  if ((error = osmData.loadModel(cmdLineArgs.modelFilePath)) != 0) {
-    return error; // Error loading community shape file.
-  }
+    int error = 0;  // Error from various helper methods.
+    // First process the command-line args and ensure we have
+    // necessary arguments for performing various operations.
+    if ((error = processArgs(argc, argv)) != 0) {
+        return error;  // Error processing command-line args.
+    }
+    // Next load the community shape file
+    if ((error = osmData.loadModel(cmdLineArgs.modelFilePath)) != 0) {
+        return error;  // Error loading the model.
+    }
+
+    // Setup any fully or partially blocked ways.
+    if (!cmdLineArgs.fullyBlockedWays.empty() ||
+        !cmdLineArgs.partiallyBlockedWays.empty()) {
+        const BlockedNodeMap fullyBlocked =
+            PathFinder::convertToNodes(osmData, cmdLineArgs.fullyBlockedWays);
+        const BlockedNodeMap partiallyBlocked =
+            PathFinder::convertToNodes(osmData, cmdLineArgs.partiallyBlockedWays);
+        PathFinder::setBlockedNodes(fullyBlocked, partiallyBlocked);
+    }
 
   /*
   PathFinder pf(osmData);

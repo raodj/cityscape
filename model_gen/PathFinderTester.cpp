@@ -81,6 +81,10 @@ PathFinderTester::processArgs(int argc, char *argv[]) {
          &cmdLineArgs.shapeFilePath, ArgParser::STRING },
         {"--dbf", "The associated DBF file to be used for metadata",
          &cmdLineArgs.dbfFilePath, ArgParser::STRING },
+        {"--fully-blocked-ways", "The names or IDs of fully blocked ways",
+         &cmdLineArgs.fullyBlockedWays, ArgParser::STRING_LIST },
+        {"--partially-blocked-ways", "The names or IDs of partially blocked ways",
+         &cmdLineArgs.partiallyBlockedWays, ArgParser::STRING_LIST },
         {"", "", NULL, ArgParser::INVALID}
     };
     // Process the command-line arguments.
@@ -100,12 +104,14 @@ PathFinderTester::processArgs(int argc, char *argv[]) {
                   << ap << std::endl;
         return 2;
     }
+
     // Things seem fine so far
     return 0;
 }
 
 double
-PathFinderTester::getDistance(const long startBldID, const long endBldID) const {
+PathFinderTester::getDistance(const long startBldID,
+                              const long endBldID) const {
     const Building& stBld  = osmData.buildingMap.at(startBldID);
     const Building& endBld = osmData.buildingMap.at(endBldID);
     return ::getDistance(stBld.wayLat, stBld.wayLon,
@@ -279,6 +285,17 @@ PathFinderTester::run(int argc, char *argv[]) {
     if ((error = osmData.loadModel(cmdLineArgs.modelFilePath)) != 0) {
         return error;  // Error loading community shape file.
     }
+
+    // Setup any fully or partially blocked ways.
+    if (!cmdLineArgs.fullyBlockedWays.empty() ||
+        !cmdLineArgs.partiallyBlockedWays.empty()) {
+        const BlockedNodeMap fullyBlocked =
+            PathFinder::convertToNodes(osmData, cmdLineArgs.fullyBlockedWays);
+        const BlockedNodeMap partiallyBlocked =
+            PathFinder::convertToNodes(osmData, cmdLineArgs.partiallyBlockedWays);
+        PathFinder::setBlockedNodes(fullyBlocked, partiallyBlocked);
+    }
+    
     // Perform entry checks if requested
     if (cmdLineArgs.checkEntries) {
         checkEntries();
@@ -318,16 +335,15 @@ PathFinderTester::run(int argc, char *argv[]) {
         // Draw the path as xfig
         std::cout << path;    
         
-        if (!cmdLineArgs.baseFigPath.empty() && !cmdLineArgs.xfigFilePath.empty()) {
+        if (!cmdLineArgs.baseFigPath.empty() &&
+            !cmdLineArgs.xfigFilePath.empty()) {
             pf.appendPathToXFig(path, cmdLineArgs.baseFigPath, 
-                               cmdLineArgs.xfigFilePath, cmdLineArgs.figScale);     
+                                cmdLineArgs.xfigFilePath, cmdLineArgs.figScale);
         } else if (!cmdLineArgs.xfigFilePath.empty()) {
             // Regular generation if no base XFig
             pf.generateFig(path, cmdLineArgs.xfigFilePath, cmdLineArgs.figScale,
                        cmdLineArgs.drawMode);
         }
-
-        
     } else {
         // Run random tests
         runRndTests(cmdLineArgs.rndTestCount);

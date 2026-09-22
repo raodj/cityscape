@@ -448,7 +448,9 @@ ModelGenerator::getRing(const Way& way) const {
     // Now create information associated with the ring.
     const std::vector<Ring::Info> info = {
         {0, "id", std::to_string(way.id)},
-        {0, "speed", std::to_string(way.maxSpeed)}
+        {0, "speed", std::to_string(way.maxSpeed)},
+        {0, "name", way.name},
+        {0, "kind", std::to_string(way.kind)}        
     };
     // Create and return ring.
     return Ring(way.id, -1, Ring::ARC_RING, latList.size(), &lonList[0],
@@ -1114,10 +1116,25 @@ ModelGenerator::processBuildingElements(rapidxml::xml_node<>* node,
                 std::cout << "DEBUG: Building " << type << " included as home (explicit residential type)\n";
             }
         } else if (!hasAddress) {
-            // Non-explicit home type AND no address — be conservative and exclude
-            isHome = false;
+            // Non-explicit home type AND no address: classify by footprint size.
+            // A 'yes'-tagged building without an address is still usually a real
+            // dwelling. Excluding it leaves its way with numBuildings==0, which
+            // makes the way look empty and triggers synthetic-home backfill on a
+            // street that already has real buildings. Keep a home-sized footprint
+            // as a home (using its real geometry); larger footprints remain
+            // non-home. Footprint area reuses Ring::getArea() (square miles,
+            // latitude-corrected) -- the same routine used elsewhere for building
+            // areas -- converted to square feet (1 sq mi = 27,878,000 sq ft).
+            if (vertexLat.size() < 3) {
+                isHome = false;
+            } else {
+                const Ring bldRing(bldID, -1, Ring::BUILDING_RING,
+                                   vertexLat.size(), &vertexLon[0], &vertexLat[0], {});
+                const double footprintSqFt = bldRing.getArea() * 27878000.0;
+                isHome = (footprintSqFt <= 6000.0);
+            }
             if (debug) {
-                std::cout << "DEBUG: Building NOT classified as home - no address and not explicit residential type\n";
+                std::cout << "DEBUG: no-address building classified by footprint - isHome=" << isHome << "\n";
             }
         }
         // else: non-explicit home type WITH address — keep isHome=true (preserves
@@ -1737,11 +1754,15 @@ ModelGenerator::createHomesOnEmptyWays(std::ostream& os) {
         }
         // Found an empty way. Generate buildings.
         emptyWayCount++;
-        // Generate homes 
-        const int genHomes = generateHomes(way);
+        // Generate synthetic homes 
+	// attempts made to check for possibility of synthetic homes. At the
+	// boundary edges some streets will extend beyond the boundary. In 
+	// such cases attempts are made but homes are not added because a ring
+	// was not found
+        const auto [genHomes, attempts] = generateHomes(way);
         genHomeCount      += genHomes;
         os << "Way #" << way.id << " is empty. Generated " << genHomes
-           << " homes.\n";
+           << " homes after making " << attempts << " attempts.\n";
     }
     // Finally print number of empty ways.
     os << "Out of " << wayMap.size() << " ways, "  << emptyWayCount
@@ -1749,7 +1770,7 @@ ModelGenerator::createHomesOnEmptyWays(std::ostream& os) {
        << " total homes have been generated.\n";
 }    
 
-int
+std::tuple<int, int>
 ModelGenerator::generateHomes(Way& way, const double spacing,
                               const double sqFoot, const double depth) {
     // Curr node is the current lat,lon point where the home will be
@@ -1761,6 +1782,7 @@ ModelGenerator::generateHomes(Way& way, const double spacing,
                                    nextNode.latitude, nextNode.longitude);
     // The index of the node up to which we have calculated spaceLeft
     size_t nodeIdx = 1;  // Index of current node in the way
+    int attempts   = 0;  // Checks made to see if synthetic home fits
     // Create homes along the way, while updating various variables.
     do {
         // Check to see if we have enough space to create a home. If
@@ -1778,6 +1800,7 @@ ModelGenerator::generateHomes(Way& way, const double spacing,
             double homeLat, homeLon;
             getPoint(currNode.latitude, currNode.longitude, nextNode.latitude,
                      nextNode.longitude, spacing / 2, homeLat, homeLon);
+	    attempts++;
             if (inBetween(currNode.latitude, nextNode.latitude, homeLat)   &&
                 inBetween(currNode.longitude, nextNode.longitude, homeLon) &&
                 (getPopRing(homeLat, homeLon) != -1)) {
@@ -1786,18 +1809,18 @@ ModelGenerator::generateHomes(Way& way, const double spacing,
                 generateHomes(currNode, nextNode, homeLat, homeLon,
                               spacing, depth, sqFoot, way.id);
                 way.numBuildings += 2;
-                // Move the currNode to the next home location and
-                // decrease the space left.
-                getPoint(currNode.latitude, currNode.longitude,
-                         nextNode.latitude, nextNode.longitude, spacing,
+	    }
+	    // Move the currNode to the next home location and
+	    // decrease the space left.
+	    getPoint(currNode.latitude, currNode.longitude,
+		     nextNode.latitude, nextNode.longitude, spacing,
                      currNode.latitude, currNode.longitude);
-            }
             spaceLeft -= spacing;
         }
     } while ((spaceLeft >= spacing) || (nodeIdx < way.nodeList.size()));
 
     // Return the number of buildings created for this way
-    return way.numBuildings;
+    return {way.numBuildings, attempts};
 }
 
 void

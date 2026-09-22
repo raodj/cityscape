@@ -40,6 +40,7 @@
 #include "PathSegment.h"
 #include "OSMData.h"
 #include "ShapeFile.h"
+#include "ArgParser.h"
 
 /** A path consists of a sequence of path segements.  This is a
     shortcut to refer to a vector of path segments.
@@ -59,6 +60,15 @@ using Path = std::vector<PathSegment>;
     \return This method returns os, as per API convention.
 */
 std::ostream& operator<<(std::ostream& os, const Path& path);
+
+/** Synonym for a map with set of blocked nodes along with an integer
+    attribute about the type of blockage.  Currently, the integer
+    attribute is unused.  This map is used to represent both fully
+    blocked and partially blocked nodes.  Fully blocked nodes are
+    excluded from pathways.  Partially blocked are excluded if current
+    node and next node are both on the partially blocked list.
+*/
+using BlockedNodeMap = std::unordered_map<long, int>;
 
 class PathFinder {
 public:
@@ -202,6 +212,31 @@ public:
         count of nodes already explored.
     */
     long getExploredNodeCount() const;
+
+    /** Sets the list of partially and fully blocked nodes.
+
+        \param[in] fullyBlocked The list of nodes that are fully
+        blocked and msut be excluded from any path computations.
+
+        \param[in] partiallyBlocked Partially blocked are excluded if
+        current node and next node are both on the partially blocked
+        list.
+    */
+    static void setBlockedNodes(const BlockedNodeMap& fullyBlocked,
+                                const BlockedNodeMap& partiallyBlocked);
+
+    /** Helper method to convert way names or way IDs in a model to a
+        set of nodes that are flagged as being partially or fully
+        blocked.
+
+        \param[in] model The model from where the nodes are to be
+        extracted.
+
+        \param[in] wayInfo The name or IDs of the ways to be converted
+        to nodes.
+    */
+    static BlockedNodeMap convertToNodes(const OSMData& model,
+                                         const ArgParser::StringList& wayInfo);
 
 protected:
     /** Setup a boundary ring that defines the maximum outer limits up
@@ -356,34 +391,57 @@ protected:
     void checkAddLoopNodes(const Way& way, const int nodeIndex,
                            const PathSegment& curr);
     /**
-    * Add buildings to the XFig shape file, either all or those near the path,
-    * depending on the draw option.
-    *
-    * @param[in,out] shpFile   The ShapeFile object to which building rings will be added.
-    * @param[in] path          The path used to determine proximity when filtering buildings.
-    * @param[in] drawOption    Determines which buildings to add:
-    *                          - "all" adds all buildings.
-    *                          - "nearby" adds only buildings within a distance threshold of the path.
-    *                          - if the option was "none", this method is skipped entirely
-    */
+     * Add buildings to the XFig shape file, either all or those near
+     * the path, depending on the draw option.
+     *
+     * \param[in,out] shpFile The ShapeFile object to which building
+     * rings will be added.
+     *
+     * \param[in] path The path used to determine proximity when
+     * filtering buildings.
+     *
+     * \param[in] drawOption Determines which buildings to add:
+     *    - "all" adds all buildings.
+     *    - "nearby" adds only buildings within a distance threshold
+     *      of the path.
+     *    - if the option was "none", this method is skipped entirely
+     */
     void addBuildingsToFig(ShapeFile& shpFile, const Path& path,
                            const std::string& drawOption) const;
     
     
     /**
-    * Add ways (e.g., roads, paths) to the XFig shape file, either all or those near
-    * the given path, depending on the draw option.
+    * Add ways (e.g., roads, paths) to the XFig shape file, either all
+    * or those near the given path, depending on the draw option.
     *
-    * @param[in,out] shpFile   The ShapeFile object to which way rings will be added.
-    * @param[in] path          The path used to determine proximity when filtering ways.
-    * @param[in] drawOption    Determines which ways to add:
-    *                          - "all" adds all ways.
-    *                          - "nearby" adds only ways within a distance threshold of the path.
-    *                          - if the option was "none", this method is skipped entirely
+    * @param[in,out] shpFile The ShapeFile object to which way rings
+    * will be added.
+    *
+    * @param[in] path The path used to determine proximity when
+    * filtering ways.
+    *
+    * \param[in] drawOption Determines which buildings to add:
+    *    - "all" adds all buildings.
+    *    - "nearby" adds only buildings within a distance threshold
+    *      of the path.
+    *    - if the option was "none", this method is skipped entirely
     */
     void addWaysToFig(ShapeFile& shpFile, const Path& path,
                       const std::string& drawOption) const;
 
+    /** Helper method to determine if the path from a parent to a
+        child node is partially or fully blocked -- that is the child
+        node cannot be used as a viable path.
+
+        \param[in] candidateNodeID The node ID that is being
+        considered as a candidate to be added to the path.
+
+        \param[in] parentNodeID An optional node ID for the parent
+        that is currently being explored.  If this value is -1, then
+        it is ignored and partially blocked checks are not performed.
+    */
+    bool isBlocked(const long candidateNodeID,
+                   const long parentNodeID = -1L) const;
 
 private:
     /**
@@ -441,6 +499,16 @@ private:
         distance.
     */
     bool distIsTime;
+
+    /** The list of nodes that are fully blocked and msut be excluded
+        from any path computations.
+    */
+    static BlockedNodeMap fullyBlocked;
+
+    /** Partially blocked are excluded if current node and next node
+       are both on the partially blocked list.
+     */
+    static BlockedNodeMap partiallyBlocked;
 };
 
 #endif

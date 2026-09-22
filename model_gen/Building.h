@@ -220,6 +220,15 @@ public:
         return sqFootage * std::max(1, levels);
     }
 
+    /** Convenience method to determine if this building's kind is set
+        of be synthehtic home.
+
+        \return Returns true if this->kind == "syn_home"
+     */
+    bool isSynthHome() const {
+        return kind == SynthHome;
+    }
+    
     /** The unique id set for this node.  This is the same id value
         that was in the OSM XML file */
     unsigned int id = 0;

@@ -32,8 +32,9 @@
 //---------------------------------------------------------------------------
 
 #include "Utilities.h"
-#include <sys/stat.h>
+#include <algorithm>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 std::string getTimeStamp(const std::string &fileName) {
   if (fileName.empty()) {
@@ -171,27 +172,38 @@ bool inBetween(const double val1, const double val2, const double val3) {
 bool findPerpendicularIntersection(const double entLat, const double entLon,
                                    const double node1Lat, const double node1Lon,
                                    const double node2Lat, const double node2Lon,
-                                   double &interLat, double &interLon) {
-  // Compute perpendicular distance from the entrance to this
-  // segment.  First calculate common term delta latitude (dLat)
-  // and delta longitude (dLon).
-  const double dLat = (node2Lat - node1Lat);
-  const double dLon = (node2Lon - node1Lon);
-  // Compute intercept factor.
-  const double k = (dLat * (entLon - node1Lon) - dLon * (entLat - node1Lat)) /
-                   (pow(dLat, 2) + pow(dLon, 2));
-  // Now compute the intercept coordinates on the way's segment
-  interLon = entLon - (k * dLat);
-  interLat = entLat + (k * dLon);
-  // Check if the coordinates are within the line segment of choice
-  if (inBetween(node1Lat, node2Lat, interLat) &&
-      inBetween(node1Lon, node2Lon, interLon)) {
-    // The intersection is within bounds of the line segment. So
-    // it is acceptable.
+                                   double& interLat, double& interLon) {
+    // 1. Scale longitude to match latitude distance using average latitude
+    const double meanLatRad = (node1Lat + node2Lat) * 0.5 * (M_PI / 180.0);
+    const double cosLat = std::cos(meanLatRad);
+
+    // 2. Compute segment vector components in scaled space
+    const double dx = (node2Lon - node1Lon) * cosLat;
+    const double dy = node2Lat - node1Lat;
+    const double segmentLengthSq = dx * dx + dy * dy;
+
+    // Prevent division by zero if segment nodes overlap
+    if (segmentLengthSq == 0.0) {
+        return false;
+    }
+
+    // 3. Compute vector from node1 to target point in scaled space
+    const double px = (entLon - node1Lon) * cosLat;
+    const double py = entLat - node1Lat;
+
+    // 4. Calculate projection parameter t via dot product
+    const double t = (px * dx + py * dy) / segmentLengthSq;
+
+    // 5. Verify the intersection falls strictly within the segment bounds
+    if (t < 0.0 || t > 1.0) {
+        return false;
+    }
+
+    // 6. Interpolate back to original lat/lon coordinates
+    interLat = node1Lat + t * (node2Lat - node1Lat);
+    interLon = node1Lon + t * (node2Lon - node1Lon);
+
     return true;
-  }
-  // A valid intercept could not be found
-  return false;
 }
 
 // Compute lat, lon of a point on a given line that is "dist" miles
@@ -284,6 +296,11 @@ std::tm toTimestampISO(const std::string &timestamp) {
   // Parse ISO 8601 format: YYYY-MM-DDTHH:MM:SS (milliseconds ignored)
   strptime(timestamp.c_str(), "%Y-%m-%dT%H:%M:%S", &time);
   return time;
+}
+
+bool isAllDigits(const std::string& str) {
+    return std::find_if(str.begin(), str.end(),
+                        [](char c){ return !std::isdigit(c); }) == str.end();
 }
 
 #endif

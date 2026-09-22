@@ -602,9 +602,9 @@ protected:
         of the home should be located.  The default value of 0.028
         maps to 150 feet.
 
-        \return The number of homes generated.
+        \return The number of homes generated and attempts made.
     */
-    int generateHomes(Way& way, const double spacing = 0.01,
+    std::tuple<int, int> generateHomes(Way& way, const double spacing = 0.01,
                       const double sqFoot = 800,
                       const double depth = 0.01);
 

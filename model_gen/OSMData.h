@@ -153,6 +153,16 @@ public:
     */
     OSMData::InfoVec getSortedBldInfo(int ringID, int infoKind,
                                       long& total) const;
+
+    /** Returns the ID for a given wayName.
+
+        \param[in] wayName The name of the way whose IDs are to be
+        returned.
+
+        \return The list of IDs for the given way name. If the way is
+        not found, then the returned list will be empty.
+     */
+    std::vector<long> findWayID(const std::string& wayName) const;
     
     /** The list of nodes loaded from the model file.  The nodes are
         stored as a vector as they are generated as a contiguous list
